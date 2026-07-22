@@ -1,0 +1,20 @@
+{
+	"name": "Airport Security!",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$path": "sync/ReplicatedStorage"
+		},
+		"ServerScriptService": {
+			"$path": "sync/ServerScriptService"
+		},
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"$path": "sync/StarterPlayer/StarterPlayerScripts"
+			}
+		},
+		"TestService": {
+			"$path": "sync/TestService"
+		}
+	}
+}

@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:devforum.roblox.com)",
+      "Read(//tmp/claude-brainstorm-check/hooks/**)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/claude-brainstorm-check/.claude-plugin/**)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/claude-brainstorm-check/**)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/claude-brainstorm-check/hooks/**)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/claude-brainstorm-check/scripts/**)",
+      "Read(//c/Users/Keii/.claude/**)",
+      "Bash(ls -la ~/.claude/plugins/ 2>&1)",
+      "Read(//c/Users/Keii/.claude/plugins/**)",
+      "Bash(rm -rf ~/.claude/plugins/claude-brainstorm)",
+      "Bash(git clone *)",
+      "Bash(claude plugin *)",
+      "Bash(rm -rf ~/.claude/plugins/claude-brainstorm /tmp/claude-brainstorm-check)",
+      "Bash(\"/c/Users/Keii/.claude/plugins/cache/MadeByTokens-marketplace/brainstorm/1.1.1/scripts/start-session.sh\" \"untitled\")",
+      "Bash(\"/c/Users/Keii/.claude/plugins/cache/MadeByTokens-marketplace/brainstorm/1.1.1/scripts/end-session.sh\")",
+      "PowerShell(argon build plugin.project.json --plugin -y 2>&1)",
+      "PowerShell(Get-Item \"$env:LOCALAPPDATA\\\\Roblox\\\\Plugins\\\\Mapify.rbxm\" | Select-Object LastWriteTime; Get-Date)",
+      "Bash(python3 -c ' *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Keii\\.claude"
+    ]
+  }
+}

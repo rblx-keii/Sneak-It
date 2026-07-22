@@ -1,0 +1,101 @@
+{
+	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"DisplayOrder": 1000000000,
+		"ResetOnSpawn": false,
+		"Attributes": {
+			"Ignored": {
+				"Bool": false
+			},
+			"Startup": {
+				"Bool": false
+			}
+		},
+		"ZIndexBehavior": "Sibling"
+	},
+	"Children": [
+		{
+			"Children": [
+				{
+					"Name": "UIAspectRatioConstraint",
+					"ClassName": "UIAspectRatioConstraint"
+				},
+				{
+					"Properties": {
+						"TopRightRadius": {
+							"UDim": [
+								1,
+								0
+							]
+						},
+						"BottomRightRadius": {
+							"UDim": [
+								1,
+								0
+							]
+						},
+						"TopLeftRadius": {
+							"UDim": [
+								1,
+								0
+							]
+						},
+						"BottomLeftRadius": {
+							"UDim": [
+								1,
+								0
+							]
+						}
+					},
+					"Name": "UICorner",
+					"ClassName": "UICorner"
+				}
+			],
+			"Properties": {
+				"AnchorPoint": [
+					0.5,
+					0.5
+				],
+				"Position": {
+					"UDim2": [
+						[
+							0.5,
+							0
+						],
+						[
+							0.5,
+							0
+						]
+					]
+				},
+				"BorderColor3": [
+					0,
+					0,
+					0
+				],
+				"Size": {
+					"UDim2": [
+						[
+							0.005211047362536192,
+							0
+						],
+						[
+							0.009267840534448624,
+							0
+						]
+					]
+				},
+				"BorderSizePixel": 0,
+				"BackgroundColor3": [
+					1,
+					1,
+					1
+				]
+			},
+			"Name": "Frame",
+			"ClassName": "Frame"
+		}
+	],
+	"ClassName": "ScreenGui"
+}

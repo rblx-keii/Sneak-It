@@ -1,0 +1,6104 @@
+{
+	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"ZIndexBehavior": "Sibling",
+		"ResetOnSpawn": false,
+		"Attributes": {
+			"Ignored": {
+				"Bool": false
+			},
+			"Startup": {
+				"Bool": false
+			}
+		}
+	},
+	"Children": [
+		{
+			"Children": [
+				{
+					"Properties": {
+						"Color": {
+							"ColorSequence": {
+								"keypoints": [
+									{
+										"time": 0,
+										"color": [
+											0.01568627543747425,
+											0.3294117748737335,
+											0.8588235378265381
+										]
+									},
+									{
+										"time": 1,
+										"color": [
+											0.008380338549613953,
+											0.175987109541893,
+											0.4588235318660736
+										]
+									}
+								]
+							}
+						},
+						"Rotation": 90
+					},
+					"Name": "UIGradient",
+					"ClassName": "UIGradient"
+				},
+				{
+					"Properties": {
+						"Color": [
+							0.012000000104308128,
+							0.012000000104308128,
+							0.012000000104308128
+						],
+						"Thickness": 2,
+						"ApplyStrokeMode": "Border"
+					},
+					"Name": "UIStroke",
+					"ClassName": "UIStroke"
+				},
+				{
+					"Properties": {
+						"TopRightRadius": {
+							"UDim": [
+								0.06212121248245239,
+								0
+							]
+						},
+						"BottomRightRadius": {
+							"UDim": [
+								0.06212121248245239,
+								0
+							]
+						},
+						"TopLeftRadius": {
+							"UDim": [
+								0.06212121248245239,
+								0
+							]
+						},
+						"BottomLeftRadius": {
+							"UDim": [
+								0.06212121248245239,
+								0
+							]
+						}
+					},
+					"Name": "UICorner",
+					"ClassName": "UICorner"
+				},
+				{
+					"Children": [
+						{
+							"Properties": {
+								"Rotation": 90,
+								"Transparency": {
+									"NumberSequence": {
+										"keypoints": [
+											{
+												"value": 0,
+												"time": 0,
+												"envelope": 0
+											},
+											{
+												"value": 0,
+												"time": 0.2837056517601013,
+												"envelope": 0
+											},
+											{
+												"value": 0,
+												"time": 1,
+												"envelope": 0
+											}
+										]
+									}
+								},
+								"Color": {
+									"ColorSequence": {
+										"keypoints": [
+											{
+												"time": 0,
+												"color": [
+													0.01568627543747425,
+													0.3294117748737335,
+													0.8588235378265381
+												]
+											},
+											{
+												"time": 0.2837056517601013,
+												"color": [
+													0,
+													0.12546731531620026,
+													0.33719342947006226
+												]
+											},
+											{
+												"time": 1,
+												"color": [
+													0,
+													0.09341598302125931,
+													0.251055508852005
+												]
+											}
+										]
+									}
+								}
+							},
+							"Name": "UIGradient",
+							"ClassName": "UIGradient"
+						},
+						{
+							"Properties": {
+								"Thickness": 2,
+								"Transparency": 0.5,
+								"Color": [
+									1,
+									1,
+									1
+								],
+								"ApplyStrokeMode": "Border",
+								"BorderStrokePosition": "Inner"
+							},
+							"Name": "UIStroke",
+							"ClassName": "UIStroke"
+						},
+						{
+							"Properties": {
+								"TopRightRadius": {
+									"UDim": [
+										0.06212121248245239,
+										0
+									]
+								},
+								"BottomRightRadius": {
+									"UDim": [
+										0.06212121248245239,
+										0
+									]
+								},
+								"TopLeftRadius": {
+									"UDim": [
+										0.06212121248245239,
+										0
+									]
+								},
+								"BottomLeftRadius": {
+									"UDim": [
+										0.06212121248245239,
+										0
+									]
+								}
+							},
+							"Name": "UICorner",
+							"ClassName": "UICorner"
+						}
+					],
+					"Properties": {
+						"Size": {
+							"UDim2": [
+								[
+									1,
+									0
+								],
+								[
+									1,
+									0
+								]
+							]
+						},
+						"BackgroundColor3": [
+							1,
+							1,
+							1
+						],
+						"BorderSizePixel": 0,
+						"Active": true
+					},
+					"Name": "innerframe",
+					"ClassName": "Frame"
+				},
+				{
+					"Properties": {
+						"AnchorPoint": [
+							0.5,
+							0.5
+						],
+						"Image": "rbxassetid://131784923917219",
+						"BackgroundTransparency": 1,
+						"Position": {
+							"UDim2": [
+								[
+									0.9467049837112427,
+									0
+								],
+								[
+									0.08232000470161438,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"Size": {
+							"UDim2": [
+								[
+									0.04845000058412552,
+									0
+								],
+								[
+									0.07621999830007553,
+									0
+								]
+							]
+						}
+					},
+					"Name": "close",
+					"ClassName": "ImageButton"
+				},
+				{
+					"Children": [
+						{
+							"Children": [
+								{
+									"Properties": {
+										"Thickness": 3,
+										"LineJoinMode": "Miter",
+										"Transparency": 0.9100000262260437
+									},
+									"Name": "UIStroke",
+									"ClassName": "UIStroke"
+								}
+							],
+							"Properties": {
+								"FontFace": {
+									"family": "rbxassetid://11702779517",
+									"style": "Normal",
+									"weight": "Bold"
+								},
+								"Active": true,
+								"Text": "Shop",
+								"TextWrapped": true,
+								"AnchorPoint": [
+									0.5,
+									0.5
+								],
+								"TextSize": 58,
+								"BackgroundTransparency": 1,
+								"Position": {
+									"UDim2": [
+										[
+											0.5,
+											0
+										],
+										[
+											0.5,
+											0
+										]
+									]
+								},
+								"TextScaled": true,
+								"TextColor3": [
+									1,
+									1,
+									1
+								],
+								"BorderSizePixel": 0,
+								"Size": {
+									"UDim2": [
+										[
+											0.8594757914543152,
+											0
+										],
+										[
+											1.087699294090271,
+											0
+										]
+									]
+								}
+							},
+							"Name": "title",
+							"ClassName": "TextLabel"
+						},
+						{
+							"Properties": {
+								"AnchorPoint": [
+									0.5,
+									0.5
+								],
+								"Image": "rbxassetid://136653755947269",
+								"BackgroundTransparency": 1,
+								"Active": true,
+								"ImageTransparency": 0.6000000238418579,
+								"Position": {
+									"UDim2": [
+										[
+											0.5,
+											0
+										],
+										[
+											0.5,
+											0
+										]
+									]
+								},
+								"BorderSizePixel": 0,
+								"Size": {
+									"UDim2": [
+										[
+											0.9987000226974487,
+											0
+										],
+										[
+											0.9642500281333923,
+											0
+										]
+									]
+								}
+							},
+							"Name": "planes",
+							"ClassName": "ImageLabel"
+						}
+					],
+					"Properties": {
+						"BackgroundTransparency": 1,
+						"Active": true,
+						"Position": {
+							"UDim2": [
+								[
+									0.33915001153945923,
+									0
+								],
+								[
+									0.032010000199079514,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"Size": {
+							"UDim2": [
+								[
+									0.321289986371994,
+									0
+								],
+								[
+									0.10366000235080719,
+									0
+								]
+							]
+						}
+					},
+					"Name": "title",
+					"ClassName": "Frame"
+				},
+				{
+					"Properties": {
+						"AspectRatio": 1.5696970224380493
+					},
+					"Name": "UIAspectRatioConstraint",
+					"ClassName": "UIAspectRatioConstraint"
+				},
+				{
+					"Children": [
+						{
+							"Properties": {
+								"TopRightRadius": {
+									"UDim": [
+										0.04580152779817581,
+										0
+									]
+								},
+								"BottomRightRadius": {
+									"UDim": [
+										0.04580152779817581,
+										0
+									]
+								},
+								"TopLeftRadius": {
+									"UDim": [
+										0.04580152779817581,
+										0
+									]
+								},
+								"BottomLeftRadius": {
+									"UDim": [
+										0.04580152779817581,
+										0
+									]
+								}
+							},
+							"Name": "UICorner",
+							"ClassName": "UICorner"
+						},
+						{
+							"Children": [
+								{
+									"Children": [
+										{
+											"Children": [
+												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"FontFace": {
+																	"family": "rbxassetid://11702779517",
+																	"style": "Normal",
+																	"weight": "Bold"
+																},
+																"Active": true,
+																"Text": "Earn More Daily Rewards!",
+																"TextWrapped": true,
+																"TextSize": 21,
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.04473999887704849,
+																			0
+																		],
+																		[
+																			0,
+																			0
+																		]
+																	]
+																},
+																"TextScaled": true,
+																"TextColor3": [
+																	0,
+																	0.10599999874830246,
+																	0.2840000092983246
+																],
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.9131600260734558,
+																			0
+																		],
+																		[
+																			0.17143000662326813,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "title",
+															"ClassName": "TextLabel"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.15384399890899658,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.15384399890899658,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.15384399890899658,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.15384399890899658,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Transparency": 0.75,
+																				"Color": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderStrokePosition": "Inner"
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384399890899658,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384399890899658,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384399890899658,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384399890899658,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		}
+																	],
+																	"Properties": {
+																		"TextWrapped": true,
+																		"TextSize": 1,
+																		"TextScaled": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1,
+																					0
+																				],
+																				[
+																					1,
+																					0
+																				]
+																			]
+																		},
+																		"Text": "",
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "TextButton"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "BUY",
+																		"TextWrapped": true,
+																		"AnchorPoint": [
+																			0.5,
+																			0.5
+																		],
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.5,
+																					0
+																				],
+																				[
+																					0.5,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			1,
+																			1,
+																			1
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.4105300307273865,
+																					0
+																				],
+																				[
+																					0.5405399799346924,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "BUY",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"Active": true,
+																"Size": {
+																	"UDim2": [
+																		[
+																			1.005263090133667,
+																			0
+																		],
+																		[
+																			0.27857574820518494,
+																			0
+																		]
+																	]
+																},
+																"Position": {
+																	"UDim2": [
+																		[
+																			0,
+																			-1
+																		],
+																		[
+																			0.7357100248336792,
+																			-1
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "buy",
+															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"FontFace": {
+																	"family": "rbxassetid://11702779517",
+																	"style": "Normal",
+																	"weight": "Regular"
+																},
+																"Active": true,
+																"Text": "Complete extra challenges and get the ability to get a bonus daily reward!",
+																"TextXAlignment": "Left",
+																"TextWrapped": true,
+																"TextSize": 12,
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.4842100143432617,
+																			0
+																		],
+																		[
+																			0.24286000430583954,
+																			0
+																		]
+																	]
+																},
+																"TextScaled": true,
+																"TextColor3": [
+																	0,
+																	0,
+																	0
+																],
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.5157899856567383,
+																			0
+																		],
+																		[
+																			0.3214299976825714,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "desc",
+															"ClassName": "TextLabel"
+														}
+													],
+													"Properties": {
+														"BackgroundTransparency": 1,
+														"Active": true,
+														"Position": {
+															"UDim2": [
+																[
+																	0.02500000037252903,
+																	0
+																],
+																[
+																	0.096390001475811,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"Size": {
+															"UDim2": [
+																[
+																	0.949999988079071,
+																	0
+																],
+																[
+																	0.8433700203895569,
+																	0
+																]
+															]
+														}
+													},
+													"Name": "padding",
+													"ClassName": "Frame"
+												}
+											],
+											"Properties": {
+												"Active": true,
+												"Size": {
+													"UDim2": [
+														[
+															1,
+															0
+														],
+														[
+															0.3346799910068512,
+															0
+														]
+													]
+												},
+												"Position": {
+													"UDim2": [
+														[
+															0,
+															0
+														],
+														[
+															0.6653199791908264,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"BackgroundColor3": [
+													1,
+													1,
+													1
+												]
+											},
+											"Name": "large",
+											"ClassName": "Frame"
+										},
+										{
+											"Children": [
+												{
+													"Children": [
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "2x Tokens",
+																		"TextWrapped": true,
+																		"TextSize": 21,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.09769999980926514,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8103399872779846,
+																					0
+																				],
+																				[
+																					0.1846199929714203,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.4137899875640869,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0114941596984863,
+																					0
+																				],
+																				[
+																					0.300004780292511,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.7153800129890442,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Regular"
+																		},
+																		"Active": true,
+																		"Text": "Earn 2x Tokens everytime!",
+																		"TextXAlignment": "Right",
+																		"TextWrapped": true,
+																		"TextSize": 12,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.05172000080347061,
+																					0
+																				],
+																				[
+																					0.17691999673843384,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8965499997138977,
+																					0
+																				],
+																				[
+																					0.11537999659776688,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "desc",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.0515500009059906,
+																			0
+																		],
+																		[
+																			0.08496999740600586,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8969100713729858,
+																			0
+																		],
+																		[
+																			0.8496699929237366,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "padding",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"Size": {
+															"UDim2": [
+																[
+																	0.48500001430511475,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														],
+														"BorderSizePixel": 0,
+														"Active": true
+													},
+													"Name": "itemframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "2x Tokens",
+																		"TextWrapped": true,
+																		"TextSize": 21,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.09769999980926514,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8103399872779846,
+																					0
+																				],
+																				[
+																					0.1846199929714203,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.4137899875640869,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0114941596984863,
+																					0
+																				],
+																				[
+																					0.300004780292511,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.7153800129890442,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Regular"
+																		},
+																		"Active": true,
+																		"Text": "Earn 2x Tokens everytime!",
+																		"TextXAlignment": "Right",
+																		"TextWrapped": true,
+																		"TextSize": 12,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.05172000080347061,
+																					0
+																				],
+																				[
+																					0.17691999673843384,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8965499997138977,
+																					0
+																				],
+																				[
+																					0.11537999659776688,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "desc",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.0515500009059906,
+																			0
+																		],
+																		[
+																			0.08496999740600586,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8969100713729858,
+																			0
+																		],
+																		[
+																			0.8496699929237366,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "padding",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															1,
+															0
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.48500001430511475,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	0,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "itemframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "2x Tokens",
+																		"TextWrapped": true,
+																		"TextSize": 21,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.09769999980926514,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8103399872779846,
+																					0
+																				],
+																				[
+																					0.1846199929714203,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.4137899875640869,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0114941596984863,
+																					0
+																				],
+																				[
+																					0.300004780292511,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.7153800129890442,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Regular"
+																		},
+																		"Active": true,
+																		"Text": "Earn 2x Tokens everytime!",
+																		"TextXAlignment": "Right",
+																		"TextWrapped": true,
+																		"TextSize": 12,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.05172000080347061,
+																					0
+																				],
+																				[
+																					0.17691999673843384,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8965499997138977,
+																					0
+																				],
+																				[
+																					0.11537999659776688,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "desc",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.0515500009059906,
+																			0
+																		],
+																		[
+																			0.08496999740600586,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8969100713729858,
+																			0
+																		],
+																		[
+																			0.8496699929237366,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "padding",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															0,
+															1
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.48500001430511475,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	0,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "itemframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.07843200117349625,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "2x Tokens",
+																		"TextWrapped": true,
+																		"TextSize": 21,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.09769999980926514,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8103399872779846,
+																					0
+																				],
+																				[
+																					0.1846199929714203,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384550392627716,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384550392627716,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.4137899875640869,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0114941596984863,
+																					0
+																				],
+																				[
+																					0.300004780292511,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.7153800129890442,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Regular"
+																		},
+																		"Active": true,
+																		"Text": "Earn 2x Tokens everytime!",
+																		"TextXAlignment": "Right",
+																		"TextWrapped": true,
+																		"TextSize": 12,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.05172000080347061,
+																					0
+																				],
+																				[
+																					0.17691999673843384,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8965499997138977,
+																					0
+																				],
+																				[
+																					0.11537999659776688,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "desc",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.0515500009059906,
+																			0
+																		],
+																		[
+																			0.08496999740600586,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8969100713729858,
+																			0
+																		],
+																		[
+																			0.8496699929237366,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "padding",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															1,
+															1
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.48500001430511475,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "itemframe",
+													"ClassName": "Frame"
+												}
+											],
+											"Properties": {
+												"Size": {
+													"UDim2": [
+														[
+															1,
+															0
+														],
+														[
+															0.6411299705505371,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"BackgroundTransparency": 1,
+												"Active": true
+											},
+											"Name": "small",
+											"ClassName": "Frame"
+										}
+									],
+									"Properties": {
+										"BackgroundTransparency": 1,
+										"Active": true,
+										"Position": {
+											"UDim2": [
+												[
+													0.31060001254081726,
+													0
+												],
+												[
+													0,
+													0
+												]
+											]
+										},
+										"BorderSizePixel": 0,
+										"Size": {
+											"UDim2": [
+												[
+													0.419730007648468,
+													0
+												],
+												[
+													1,
+													0
+												]
+											]
+										}
+									},
+									"Name": "tokens",
+									"ClassName": "Frame"
+								},
+								{
+									"Children": [
+										{
+											"Properties": {
+												"ApplyStrokeMode": "Border",
+												"Color": [
+													0.5329999923706055,
+													0.6629999876022339,
+													0.8349999785423279
+												],
+												"BorderStrokePosition": "Inner"
+											},
+											"Name": "UIStroke",
+											"ClassName": "UIStroke"
+										},
+										{
+											"Properties": {
+												"TopRightRadius": {
+													"UDim": [
+														0.04225289821624756,
+														0
+													]
+												},
+												"BottomRightRadius": {
+													"UDim": [
+														0.04225289821624756,
+														0
+													]
+												},
+												"TopLeftRadius": {
+													"UDim": [
+														0.04225289821624756,
+														0
+													]
+												},
+												"BottomLeftRadius": {
+													"UDim": [
+														0.04225289821624756,
+														0
+													]
+												}
+											},
+											"Name": "UICorner",
+											"ClassName": "UICorner"
+										},
+										{
+											"Properties": {
+												"FontFace": {
+													"family": "rbxassetid://11702779517",
+													"style": "Normal",
+													"weight": "Bold"
+												},
+												"Active": true,
+												"Text": "Featured Pack!",
+												"TextWrapped": true,
+												"TextSize": 25,
+												"BackgroundTransparency": 1,
+												"Position": {
+													"UDim2": [
+														[
+															0.11268000304698944,
+															0
+														],
+														[
+															0.02621000073850155,
+															0
+														]
+													]
+												},
+												"TextScaled": true,
+												"TextColor3": [
+													0,
+													0.10599999874830246,
+													0.2840000092983246
+												],
+												"BorderSizePixel": 0,
+												"Size": {
+													"UDim2": [
+														[
+															0.7781699895858765,
+															0
+														],
+														[
+															0.058469999581575394,
+															0
+														]
+													]
+												}
+											},
+											"Name": "title",
+											"ClassName": "TextLabel"
+										},
+										{
+											"Properties": {
+												"FontFace": {
+													"family": "rbxassetid://11702779517",
+													"style": "Normal",
+													"weight": "Regular"
+												},
+												"Active": true,
+												"Text": "Proident tempor incididunt aute. Deserunt ut nulla nostrud exercitation cillum velit nulla reprehenderit ",
+												"TextWrapped": true,
+												"TextSize": 12,
+												"BackgroundTransparency": 1,
+												"Position": {
+													"UDim2": [
+														[
+															0.05282000079751015,
+															0
+														],
+														[
+															0.092739999294281,
+															0
+														]
+													]
+												},
+												"TextScaled": true,
+												"TextColor3": [
+													0,
+													0,
+													0
+												],
+												"BorderSizePixel": 0,
+												"Size": {
+													"UDim2": [
+														[
+															0.8978899717330933,
+															0
+														],
+														[
+															0.09072999656200409,
+															0
+														]
+													]
+												}
+											},
+											"Name": "desc",
+											"ClassName": "TextLabel"
+										},
+										{
+											"Children": [
+												{
+													"Children": [
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							1,
+																							0.27471452951431274,
+																							0.5720815658569336
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.8173367381095886,
+																							0,
+																							0.2642722427845001
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																}
+															],
+															"Properties": {
+																"Image": "rbxassetid://",
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			1,
+																			0
+																		],
+																		[
+																			1,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "Rectangle 34",
+															"ClassName": "ImageLabel"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							1,
+																							0.27471452951431274,
+																							0.5720815658569336
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.8173367381095886,
+																							0,
+																							0.2642722427845001
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																}
+															],
+															"Properties": {
+																"Image": "rbxassetid://",
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			1,
+																			0
+																		],
+																		[
+																			1,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "Rectangle 35",
+															"ClassName": "ImageLabel"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"ImageColor3": [
+																			0.8510000109672546,
+																			0.8510000109672546,
+																			0.8510000109672546
+																		],
+																		"Image": "rbxassetid://",
+																		"BackgroundTransparency": 1,
+																		"Active": true,
+																		"ImageTransparency": 0.800000011920929,
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1,
+																					0
+																				],
+																				[
+																					1,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "Rectangle 35",
+																	"ClassName": "ImageLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"DominantAxis": "Height"
+																			},
+																			"Name": "UIAspectRatioConstraint",
+																			"ClassName": "UIAspectRatioConstraint"
+																		}
+																	],
+																	"Properties": {
+																		"Image": "rbxassetid://",
+																		"BackgroundTransparency": 1,
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1,
+																					0
+																				],
+																				[
+																					7.823503017425537,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					0
+																				],
+																				[
+																					-3.4411799907684326,
+																					0
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "image 622",
+																	"ClassName": "ImageLabel"
+																}
+															],
+															"Properties": {
+																"Size": {
+																	"UDim2": [
+																		[
+																			1,
+																			0
+																		],
+																		[
+																			1,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"BackgroundTransparency": 1,
+																"Active": true
+															},
+															"Name": "Mask group",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"Size": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundTransparency": 1,
+														"Active": true
+													},
+													"Name": "Group 111",
+													"ClassName": "Frame"
+												},
+												{
+													"Properties": {
+														"FontFace": {
+															"family": "rbxassetid://11702779517",
+															"style": "Normal",
+															"weight": "Regular"
+														},
+														"Active": true,
+														"Text": "LEAD TITLE HERE",
+														"TextWrapped": true,
+														"TextSize": 16,
+														"BackgroundTransparency": 1,
+														"Position": {
+															"UDim2": [
+																[
+																	0.09774000197649002,
+																	0
+																],
+																[
+																	0.20588000118732452,
+																	0
+																]
+															]
+														},
+														"TextScaled": true,
+														"TextColor3": [
+															1,
+															1,
+															1
+														],
+														"BorderSizePixel": 0,
+														"Size": {
+															"UDim2": [
+																[
+																	0.8082699775695801,
+																	0
+																],
+																[
+																	0.5882400274276733,
+																	0
+																]
+															]
+														}
+													},
+													"Name": "LEAD TITLE HERE",
+													"ClassName": "TextLabel"
+												}
+											],
+											"Properties": {
+												"Image": "rbxassetid://",
+												"BackgroundTransparency": 1,
+												"Active": true,
+												"Position": {
+													"UDim2": [
+														[
+															0.031690001487731934,
+															0
+														],
+														[
+															0.1995999962091446,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"Size": {
+													"UDim2": [
+														[
+															0.9366199970245361,
+															0
+														],
+														[
+															0.0685499981045723,
+															0
+														]
+													]
+												}
+											},
+											"Name": "banner",
+											"ClassName": "ImageLabel"
+										},
+										{
+											"Children": [
+												{
+													"Properties": {
+														"AnchorPoint": [
+															0.5,
+															1
+														],
+														"Image": "rbxassetid://133193525824186",
+														"BackgroundTransparency": 1,
+														"Active": true,
+														"Position": {
+															"UDim2": [
+																[
+																	0.5,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"ZIndex": 0,
+														"BorderSizePixel": 0,
+														"Size": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														}
+													},
+													"Name": "yellowbg",
+													"ClassName": "ImageLabel"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.0895531177520752,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.0895531177520752,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.0895531177520752,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.0895531177520752,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.15789437294006348,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.15789437294006348,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.15789437294006348,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.15789437294006348,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Transparency": 0.75,
+																				"Color": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderStrokePosition": "Inner"
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15789437294006348,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15789437294006348,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15789437294006348,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15789437294006348,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		}
+																	],
+																	"Properties": {
+																		"TextWrapped": true,
+																		"TextSize": 1,
+																		"TextScaled": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1,
+																					0
+																				],
+																				[
+																					1,
+																					0
+																				]
+																			]
+																		},
+																		"Text": "",
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "TextButton"
+																},
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "BUY",
+																		"TextWrapped": true,
+																		"AnchorPoint": [
+																			0.5,
+																			0.5
+																		],
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.5,
+																					0
+																				],
+																				[
+																					0.5,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			1,
+																			1,
+																			1
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.3333300054073334,
+																					0
+																				],
+																				[
+																					0.5555599927902222,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "BUY",
+																	"ClassName": "TextLabel"
+																}
+															],
+															"Properties": {
+																"Active": true,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.936622142791748,
+																			0
+																		],
+																		[
+																			0.2835855185985565,
+																			0
+																		]
+																	]
+																},
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.03520999848842621,
+																			-1
+																		],
+																		[
+																			0.656719982624054,
+																			-1
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "buy",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	0.3906700015068054,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	0,
+																	0
+																],
+																[
+																	0.6093299984931946,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "container",
+													"ClassName": "Frame"
+												}
+											],
+											"Properties": {
+												"BackgroundTransparency": 1,
+												"Active": true,
+												"Position": {
+													"UDim2": [
+														[
+															0,
+															0
+														],
+														[
+															0.3084700107574463,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"Size": {
+													"UDim2": [
+														[
+															1,
+															0
+														],
+														[
+															0.6915299892425537,
+															0
+														]
+													]
+												}
+											},
+											"Name": "mainframe",
+											"ClassName": "Frame"
+										}
+									],
+									"Properties": {
+										"Size": {
+											"UDim2": [
+												[
+													0.298009991645813,
+													0
+												],
+												[
+													1,
+													0
+												]
+											]
+										},
+										"BackgroundColor3": [
+											1,
+											1,
+											1
+										],
+										"BorderSizePixel": 0,
+										"Active": true
+									},
+									"Name": "featured",
+									"ClassName": "Frame"
+								},
+								{
+									"Children": [
+										{
+											"Children": [
+												{
+													"Children": [
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "+50k Cash",
+																		"TextWrapped": true,
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.06863000243902206,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8627499938011169,
+																					0
+																				],
+																				[
+																					0.3278700113296509,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.6666699647903442,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		},
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0196080207824707,
+																					0
+																				],
+																				[
+																					0.6393473744392395,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.39344000816345215,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.060339998453855515,
+																			0
+																		],
+																		[
+																			0.5294100046157837,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8793100118637085,
+																			0
+																		],
+																		[
+																			0.39868998527526855,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "content",
+															"ClassName": "Frame"
+														}
+													],
+													"Properties": {
+														"Size": {
+															"UDim2": [
+																[
+																	0.473470002412796,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														],
+														"BorderSizePixel": 0,
+														"Active": true
+													},
+													"Name": "smallframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "+50k Cash",
+																		"TextWrapped": true,
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.06863000243902206,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8627499938011169,
+																					0
+																				],
+																				[
+																					0.3278700113296509,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.6666699647903442,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0196080207824707,
+																					0
+																				],
+																				[
+																					0.6393473744392395,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.39344000816345215,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.060339998453855515,
+																			0
+																		],
+																		[
+																			0.5294100046157837,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8793100118637085,
+																			0
+																		],
+																		[
+																			0.39868998527526855,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "content",
+															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															1,
+															0
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.473470002412796,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	0,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "smallframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "+50k Cash",
+																		"TextWrapped": true,
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.06863000243902206,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8627499938011169,
+																					0
+																				],
+																				[
+																					0.3278700113296509,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.6666699647903442,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0196080207824707,
+																					0
+																				],
+																				[
+																					0.6393473744392395,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.39344000816345215,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.060339998453855515,
+																			0
+																		],
+																		[
+																			0.5294100046157837,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8793100118637085,
+																			0
+																		],
+																		[
+																			0.39868998527526855,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "content",
+															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															0,
+															1
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.473470002412796,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	0,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "smallframe",
+													"ClassName": "Frame"
+												},
+												{
+													"Children": [
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"FontFace": {
+																			"family": "rbxassetid://11702779517",
+																			"style": "Normal",
+																			"weight": "Bold"
+																		},
+																		"Active": true,
+																		"Text": "+50k Cash",
+																		"TextWrapped": true,
+																		"TextSize": 16,
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.06863000243902206,
+																					0
+																				],
+																				[
+																					0,
+																					0
+																				]
+																			]
+																		},
+																		"TextScaled": true,
+																		"TextColor3": [
+																			0,
+																			0.10599999874830246,
+																			0.2840000092983246
+																		],
+																		"BorderSizePixel": 0,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8627499938011169,
+																					0
+																				],
+																				[
+																					0.3278700113296509,
+																					0
+																				]
+																			]
+																		}
+																	},
+																	"Name": "title",
+																	"ClassName": "TextLabel"
+																},
+																{
+																	"Children": [
+																		{
+																			"Properties": {
+																				"Color": {
+																					"ColorSequence": {
+																						"keypoints": [
+																							{
+																								"time": 0,
+																								"color": [
+																									0.17803916335105896,
+																									0.7710128426551819,
+																									0.35593125224113464
+																								]
+																							},
+																							{
+																								"time": 1,
+																								"color": [
+																									0.12207998335361481,
+																									0.5163134336471558,
+																									0.24034999310970306
+																								]
+																							}
+																						]
+																					}
+																				},
+																				"Rotation": 90
+																			},
+																			"Name": "UIGradient",
+																			"ClassName": "UIGradient"
+																		},
+																		{
+																			"Properties": {
+																				"ApplyStrokeMode": "Border",
+																				"Color": [
+																					0.08500000089406967,
+																					0.33500000834465027,
+																					0.1599999964237213
+																				]
+																			},
+																			"Name": "UIStroke",
+																			"ClassName": "UIStroke"
+																		},
+																		{
+																			"Properties": {
+																				"TopRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomRightRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"TopLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				},
+																				"BottomLeftRadius": {
+																					"UDim": [
+																						0.15384772419929504,
+																						0
+																					]
+																				}
+																			},
+																			"Name": "UICorner",
+																			"ClassName": "UICorner"
+																		},
+																		{
+																			"Children": [
+																				{
+																					"Properties": {
+																						"Color": {
+																							"ColorSequence": {
+																								"keypoints": [
+																									{
+																										"time": 0,
+																										"color": [
+																											0.17803916335105896,
+																											0.7710128426551819,
+																											0.35593125224113464
+																										]
+																									},
+																									{
+																										"time": 1,
+																										"color": [
+																											0.12207998335361481,
+																											0.5163134336471558,
+																											0.24034999310970306
+																										]
+																									}
+																								]
+																							}
+																						},
+																						"Rotation": 90
+																					},
+																					"Name": "UIGradient",
+																					"ClassName": "UIGradient"
+																				},
+																				{
+																					"Properties": {
+																						"ApplyStrokeMode": "Border",
+																						"Transparency": 0.75,
+																						"Color": [
+																							1,
+																							1,
+																							1
+																						],
+																						"BorderStrokePosition": "Inner"
+																					},
+																					"Name": "UIStroke",
+																					"ClassName": "UIStroke"
+																				},
+																				{
+																					"Properties": {
+																						"TopRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomRightRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"TopLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						},
+																						"BottomLeftRadius": {
+																							"UDim": [
+																								0.15384772419929504,
+																								0
+																							]
+																						}
+																					},
+																					"Name": "UICorner",
+																					"ClassName": "UICorner"
+																				}
+																			],
+																			"Properties": {
+																				"TextWrapped": true,
+																				"TextSize": 1,
+																				"TextScaled": true,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							1,
+																							0
+																						],
+																						[
+																							1,
+																							0
+																						]
+																					]
+																				},
+																				"Text": "",
+																				"BorderSizePixel": 0,
+																				"BackgroundColor3": [
+																					1,
+																					1,
+																					1
+																				]
+																			},
+																			"Name": "buy",
+																			"ClassName": "TextButton"
+																		},
+																		{
+																			"Properties": {
+																				"FontFace": {
+																					"family": "rbxassetid://11702779517",
+																					"style": "Normal",
+																					"weight": "Bold"
+																				},
+																				"Active": true,
+																				"Text": "BUY",
+																				"TextWrapped": true,
+																				"AnchorPoint": [
+																					0.5,
+																					0.5
+																				],
+																				"TextSize": 16,
+																				"BackgroundTransparency": 1,
+																				"Position": {
+																					"UDim2": [
+																						[
+																							0.5,
+																							0
+																						],
+																						[
+																							0.5,
+																							0
+																						]
+																					]
+																				},
+																				"TextScaled": true,
+																				"TextColor3": [
+																					1,
+																					1,
+																					1
+																				],
+																				"BorderSizePixel": 0,
+																				"Size": {
+																					"UDim2": [
+																						[
+																							0.6666699647903442,
+																							0
+																						],
+																						[
+																							0.5405399799346924,
+																							0
+																						]
+																					]
+																				}
+																			},
+																			"Name": "BUY",
+																			"ClassName": "TextLabel"
+																		}
+																	],
+																	"Properties": {
+																		"Active": true,
+																		"Size": {
+																			"UDim2": [
+																				[
+																					1.0196080207824707,
+																					0
+																				],
+																				[
+																					0.6393473744392395,
+																					0
+																				]
+																			]
+																		},
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0,
+																					-1
+																				],
+																				[
+																					0.39344000816345215,
+																					-1
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "buy",
+																	"ClassName": "Frame"
+																}
+															],
+															"Properties": {
+																"BackgroundTransparency": 1,
+																"Active": true,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.060339998453855515,
+																			0
+																		],
+																		[
+																			0.5294100046157837,
+																			0
+																		]
+																	]
+																},
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8793100118637085,
+																			0
+																		],
+																		[
+																			0.39868998527526855,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "content",
+															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.10344906896352768,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.5329999923706055,
+																	0.6629999876022339,
+																	0.8349999785423279
+																],
+																"BorderStrokePosition": "Inner"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														}
+													],
+													"Properties": {
+														"AnchorPoint": [
+															1,
+															1
+														],
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.473470002412796,
+																	0
+																],
+																[
+																	0.4811300039291382,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	1,
+																	0
+																],
+																[
+																	1,
+																	0
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "smallframe",
+													"ClassName": "Frame"
+												}
+											],
+											"Properties": {
+												"Size": {
+													"UDim2": [
+														[
+															1,
+															0
+														],
+														[
+															0.6411299705505371,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"BackgroundTransparency": 1,
+												"Active": true
+											},
+											"Name": "small",
+											"ClassName": "Frame"
+										},
+										{
+											"Children": [
+												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.07228896766901016,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"LineJoinMode": "Miter"
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														}
+													],
+													"Properties": {
+														"FontFace": {
+															"family": "rbxassetid://11702779517",
+															"style": "Normal",
+															"weight": "Bold"
+														},
+														"Active": true,
+														"Text": "BEST VALUE!",
+														"TextWrapped": true,
+														"TextSize": 12,
+														"BackgroundTransparency": 1,
+														"Position": {
+															"UDim2": [
+																[
+																	0.17143000662326813,
+																	-1
+																],
+																[
+																	0.2409600019454956,
+																	-1
+																]
+															]
+														},
+														"TextScaled": true,
+														"TextColor3": [
+															1,
+															0.8330000042915344,
+															0
+														],
+														"BorderSizePixel": 0,
+														"Size": {
+															"UDim2": [
+																[
+																	0.6653033494949341,
+																	0
+																],
+																[
+																	0.10240815579891205,
+																	0
+																]
+															]
+														}
+													},
+													"Name": "subtitle",
+													"ClassName": "TextLabel"
+												},
+												{
+													"Properties": {
+														"FontFace": {
+															"family": "rbxassetid://11702779517",
+															"style": "Normal",
+															"weight": "Bold"
+														},
+														"Active": true,
+														"Text": "+50k Cash",
+														"TextWrapped": true,
+														"TextSize": 21,
+														"BackgroundTransparency": 1,
+														"Position": {
+															"UDim2": [
+																[
+																	0.1755100041627884,
+																	0
+																],
+																[
+																	0.096390001475811,
+																	0
+																]
+															]
+														},
+														"TextScaled": true,
+														"TextColor3": [
+															0,
+															0.10599999874830246,
+															0.2840000092983246
+														],
+														"BorderSizePixel": 0,
+														"Size": {
+															"UDim2": [
+																[
+																	0.6530600190162659,
+																	0
+																],
+																[
+																	0.14458000659942627,
+																	0
+																]
+															]
+														}
+													},
+													"Name": "title",
+													"ClassName": "TextLabel"
+												},
+												{
+													"Children": [
+														{
+															"Properties": {
+																"Color": {
+																	"ColorSequence": {
+																		"keypoints": [
+																			{
+																				"time": 0,
+																				"color": [
+																					0.17803916335105896,
+																					0.7710128426551819,
+																					0.35593125224113464
+																				]
+																			},
+																			{
+																				"time": 1,
+																				"color": [
+																					0.12207998335361481,
+																					0.5163134336471558,
+																					0.24034999310970306
+																				]
+																			}
+																		]
+																	}
+																},
+																"Rotation": 90
+															},
+															"Name": "UIGradient",
+															"ClassName": "UIGradient"
+														},
+														{
+															"Properties": {
+																"ApplyStrokeMode": "Border",
+																"Color": [
+																	0.08500000089406967,
+																	0.33500000834465027,
+																	0.1599999964237213
+																]
+															},
+															"Name": "UIStroke",
+															"ClassName": "UIStroke"
+														},
+														{
+															"Properties": {
+																"TopRightRadius": {
+																	"UDim": [
+																		0.15384680032730103,
+																		0
+																	]
+																},
+																"BottomRightRadius": {
+																	"UDim": [
+																		0.15384680032730103,
+																		0
+																	]
+																},
+																"TopLeftRadius": {
+																	"UDim": [
+																		0.15384680032730103,
+																		0
+																	]
+																},
+																"BottomLeftRadius": {
+																	"UDim": [
+																		0.15384680032730103,
+																		0
+																	]
+																}
+															},
+															"Name": "UICorner",
+															"ClassName": "UICorner"
+														},
+														{
+															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Transparency": 0.75,
+																		"Color": [
+																			1,
+																			1,
+																			1
+																		],
+																		"BorderStrokePosition": "Inner"
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.15384680032730103,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.15384680032730103,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.15384680032730103,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.15384680032730103,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																}
+															],
+															"Properties": {
+																"TextWrapped": true,
+																"TextSize": 1,
+																"TextScaled": true,
+																"Size": {
+																	"UDim2": [
+																		[
+																			1,
+																			0
+																		],
+																		[
+																			1,
+																			0
+																		]
+																	]
+																},
+																"Text": "",
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "buy",
+															"ClassName": "TextButton"
+														},
+														{
+															"Properties": {
+																"FontFace": {
+																	"family": "rbxassetid://11702779517",
+																	"style": "Normal",
+																	"weight": "Bold"
+																},
+																"Active": true,
+																"Text": "BUY",
+																"TextWrapped": true,
+																"AnchorPoint": [
+																	0.5,
+																	0.5
+																],
+																"TextSize": 16,
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.5,
+																			0
+																		],
+																		[
+																			0.5,
+																			0
+																		]
+																	]
+																},
+																"TextScaled": true,
+																"TextColor3": [
+																	1,
+																	1,
+																	1
+																],
+																"BorderSizePixel": 0,
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.6078400015830994,
+																			0
+																		],
+																		[
+																			0.5405399799346924,
+																			0
+																		]
+																	]
+																}
+															},
+															"Name": "BUY",
+															"ClassName": "TextLabel"
+														}
+													],
+													"Properties": {
+														"Active": true,
+														"Size": {
+															"UDim2": [
+																[
+																	0.42449334263801575,
+																	0
+																],
+																[
+																	0.23493815958499908,
+																	0
+																]
+															]
+														},
+														"Position": {
+															"UDim2": [
+																[
+																	0.5551000237464905,
+																	-1
+																],
+																[
+																	0.7168700098991394,
+																	-1
+																]
+															]
+														},
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
+													},
+													"Name": "buy",
+													"ClassName": "Frame"
+												}
+											],
+											"Properties": {
+												"Active": true,
+												"Size": {
+													"UDim2": [
+														[
+															1,
+															0
+														],
+														[
+															0.3346799910068512,
+															0
+														]
+													]
+												},
+												"Position": {
+													"UDim2": [
+														[
+															0,
+															0
+														],
+														[
+															0.6653199791908264,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
+												"BackgroundColor3": [
+													1,
+													1,
+													1
+												]
+											},
+											"Name": "large",
+											"ClassName": "Frame"
+										}
+									],
+									"Properties": {
+										"BackgroundTransparency": 1,
+										"Active": true,
+										"Position": {
+											"UDim2": [
+												[
+													0.7429199814796448,
+													0
+												],
+												[
+													0,
+													0
+												]
+											]
+										},
+										"BorderSizePixel": 0,
+										"Size": {
+											"UDim2": [
+												[
+													0.25707998871803284,
+													0
+												],
+												[
+													1,
+													0
+												]
+											]
+										}
+									},
+									"Name": "cash",
+									"ClassName": "Frame"
+								}
+							],
+							"Properties": {
+								"BackgroundTransparency": 1,
+								"Active": true,
+								"Position": {
+									"UDim2": [
+										[
+											0.014270000159740448,
+											0
+										],
+										[
+											0.02672000043094158,
+											0
+										]
+									]
+								},
+								"BorderSizePixel": 0,
+								"Size": {
+									"UDim2": [
+										[
+											0.9714599847793579,
+											0
+										],
+										[
+											0.9465600252151489,
+											0
+										]
+									]
+								}
+							},
+							"Name": "padding",
+							"ClassName": "Frame"
+						}
+					],
+					"Properties": {
+						"AnchorPoint": [
+							0.5,
+							0.5
+						],
+						"Active": true,
+						"Size": {
+							"UDim2": [
+								[
+									0.9469112157821655,
+									0
+								],
+								[
+									0.7939394116401672,
+									0
+								]
+							]
+						},
+						"Position": {
+							"UDim2": [
+								[
+									0.5,
+									0
+								],
+								[
+									0.559999942779541,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"BackgroundColor3": [
+							0.8550000190734863,
+							0.8899999856948853,
+							0.9449999928474426
+						]
+					},
+					"Name": "items",
+					"ClassName": "Frame"
+				}
+			],
+			"Properties": {
+				"AnchorPoint": [
+					0.5,
+					0.5
+				],
+				"Active": true,
+				"Size": {
+					"UDim2": [
+						[
+							0.5409921407699585,
+							0
+						],
+						[
+							0.5593220591545105,
+							0
+						]
+					]
+				},
+				"Position": {
+					"UDim2": [
+						[
+							0.5,
+							0
+						],
+						[
+							0.5,
+							0
+						]
+					]
+				},
+				"BorderSizePixel": 0,
+				"BackgroundColor3": [
+					1,
+					1,
+					1
+				]
+			},
+			"Name": "Shop",
+			"ClassName": "Frame"
+		}
+	],
+	"ClassName": "ScreenGui"
+}

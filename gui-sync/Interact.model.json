@@ -1,0 +1,367 @@
+{
+	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"ZIndexBehavior": "Sibling",
+		"ResetOnSpawn": false,
+		"Attributes": {
+			"Ignored": {
+				"Bool": true
+			},
+			"Startup": {
+				"Bool": true
+			}
+		}
+	},
+	"Children": [
+		{
+			"Children": [
+				{
+					"Properties": {
+						"VerticalAlignment": "Center",
+						"SortOrder": "LayoutOrder",
+						"HorizontalAlignment": "Center"
+					},
+					"Name": "UIListLayout",
+					"ClassName": "UIListLayout"
+				},
+				{
+					"Children": [
+						{
+							"Children": [
+								{
+									"Properties": {
+										"VerticalAlignment": "Center",
+										"FillDirection": "Horizontal",
+										"HorizontalAlignment": "Center",
+										"Padding": {
+											"UDim": [
+												0.05000000074505806,
+												0
+											]
+										},
+										"SortOrder": "LayoutOrder"
+									},
+									"Name": "UIListLayout",
+									"ClassName": "UIListLayout"
+								},
+								{
+									"Properties": {
+										"Image": "rbxassetid://86426194197515",
+										"BackgroundTransparency": 1,
+										"Size": {
+											"UDim2": [
+												[
+													0.19565217196941376,
+													0
+												],
+												[
+													0.7051281929016113,
+													0
+												]
+											]
+										},
+										"BorderColor3": [
+											0,
+											0,
+											0
+										],
+										"ScaleType": "Fit",
+										"BorderSizePixel": 0,
+										"BackgroundColor3": [
+											1,
+											1,
+											1
+										]
+									},
+									"Name": "Key",
+									"ClassName": "ImageLabel"
+								},
+								{
+									"Children": [
+										{
+											"Properties": {
+												"StrokeSizingMode": "ScaledSize",
+												"Thickness": 0.08500000089406967
+											},
+											"Name": "UIStroke",
+											"ClassName": "UIStroke"
+										}
+									],
+									"Properties": {
+										"FontFace": {
+											"family": "rbxasset://fonts/families/SourceSansPro.json",
+											"style": "Normal",
+											"weight": "Bold"
+										},
+										"TextColor3": [
+											1,
+											1,
+											1
+										],
+										"BorderColor3": [
+											0,
+											0,
+											0
+										],
+										"Text": "Pick up Item",
+										"TextXAlignment": "Left",
+										"TextWrapped": true,
+										"TextSize": 14,
+										"BackgroundTransparency": 1,
+										"Position": {
+											"UDim2": [
+												[
+													0.29021739959716797,
+													0
+												],
+												[
+													0.2628205120563507,
+													0
+												]
+											]
+										},
+										"TextScaled": true,
+										"Size": {
+											"UDim2": [
+												[
+													0.6372208595275879,
+													0
+												],
+												[
+													0.4743589758872986,
+													0
+												]
+											]
+										},
+										"BorderSizePixel": 0,
+										"BackgroundColor3": [
+											1,
+											1,
+											1
+										]
+									},
+									"Name": "Action",
+									"ClassName": "TextLabel"
+								}
+							],
+							"Properties": {
+								"AnchorPoint": [
+									0.5,
+									0.5
+								],
+								"BackgroundTransparency": 1,
+								"Position": {
+									"UDim2": [
+										[
+											0.5,
+											0
+										],
+										[
+											0.5,
+											0
+										]
+									]
+								},
+								"BorderColor3": [
+									0,
+									0,
+									0
+								],
+								"Size": {
+									"UDim2": [
+										[
+											0.9999893307685852,
+											0
+										],
+										[
+											1.324485421180725,
+											0
+										]
+									]
+								},
+								"BorderSizePixel": 0,
+								"BackgroundColor3": [
+									1,
+									1,
+									1
+								]
+							},
+							"Name": "Content",
+							"ClassName": "Frame"
+						},
+						{
+							"Children": [
+								{
+									"Properties": {
+										"Offset": [
+											-7.528699885739343e-16,
+											0
+										],
+										"Transparency": {
+											"NumberSequence": {
+												"keypoints": [
+													{
+														"value": 1,
+														"time": 0,
+														"envelope": 0
+													},
+													{
+														"value": 1,
+														"time": 0.25561097264289856,
+														"envelope": 0
+													},
+													{
+														"value": 0.6499999761581421,
+														"time": 0.7094763517379761,
+														"envelope": 0
+													},
+													{
+														"value": 0,
+														"time": 1,
+														"envelope": 0
+													}
+												]
+											}
+										}
+									},
+									"Name": "UIGradient",
+									"ClassName": "UIGradient"
+								}
+							],
+							"Properties": {
+								"AnchorPoint": [
+									0.5,
+									0.5
+								],
+								"Size": {
+									"UDim2": [
+										[
+											0.9999893307685852,
+											0
+										],
+										[
+											0.9339320659637451,
+											0
+										]
+									]
+								},
+								"Position": {
+									"UDim2": [
+										[
+											0.5,
+											0
+										],
+										[
+											0.5,
+											0
+										]
+									]
+								},
+								"BorderColor3": [
+									0,
+									0,
+									0
+								],
+								"ZIndex": 0,
+								"BorderSizePixel": 0,
+								"BackgroundColor3": [
+									0.14509804546833038,
+									0.1764705926179886,
+									0.29019609093666077
+								]
+							},
+							"Name": "Background",
+							"ClassName": "Frame"
+						}
+					],
+					"Properties": {
+						"BackgroundTransparency": 1,
+						"Position": {
+							"UDim2": [
+								[
+									0,
+									0
+								],
+								[
+									0.444240540266037,
+									0
+								]
+							]
+						},
+						"BorderColor3": [
+							0,
+							0,
+							0
+						],
+						"Size": {
+							"UDim2": [
+								[
+									1,
+									0
+								],
+								[
+									0.16825944185256958,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"BackgroundColor3": [
+							1,
+							1,
+							1
+						]
+					},
+					"Name": "Template",
+					"ClassName": "CanvasGroup"
+				}
+			],
+			"Properties": {
+				"AnchorPoint": [
+					1,
+					0.5
+				],
+				"BackgroundTransparency": 1,
+				"Position": {
+					"UDim2": [
+						[
+							0.9953100681304932,
+							0
+						],
+						[
+							0.5,
+							0
+						]
+					]
+				},
+				"BorderColor3": [
+					0,
+					0,
+					0
+				],
+				"Size": {
+					"UDim2": [
+						[
+							0.1198553740978241,
+							0
+						],
+						[
+							0.32437437772750854,
+							0
+						]
+					]
+				},
+				"BorderSizePixel": 0,
+				"BackgroundColor3": [
+					1,
+					1,
+					1
+				]
+			},
+			"Name": "Frame",
+			"ClassName": "Frame"
+		}
+	],
+	"ClassName": "ScreenGui"
+}
