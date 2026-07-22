@@ -164,7 +164,6 @@ function item.OnInitialize()
 	if _initialized then return end
 
 	if RunService:IsServer() then
-		-- Replicated motor joint mutation setup
 		local _lastItemGripWeld: WeldConstraint? = nil
 		Network:BindEvent(EVENT_NAME, "Equip", function(playerOwner: Player, _itemModel: Instance?)
 			if not _itemModel then return end
@@ -211,7 +210,6 @@ function item.OnInitialize()
 			_lastItemGripWeld = nil
 		end)
 
-		-- Integrated hit processing directly within your module boundary
 		Network:BindEvent(EVENT_NAME, "ReportToyGunHit", function(sender: Player, data: any)
 			local record = JailService.GetRecord(sender)
 			if not record or record.isJailed then return end

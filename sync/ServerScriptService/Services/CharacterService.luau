@@ -38,7 +38,6 @@ function Shared.Init()
 	-- and "climb" onto another when the one ahead hadn't moved yet.
 	PhysicsService:CollisionGroupSetCollidable("NPC", "NPC", false)
 
-	-- observeCharacter automatically handles players joining, leaving, and respawning
 	_stopCharacterObserver = Observers.observeCharacter(function(player: Player, character: Model)
 		character:AddTag("Player")
 

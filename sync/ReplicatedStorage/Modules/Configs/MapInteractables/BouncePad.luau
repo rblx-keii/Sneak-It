@@ -30,7 +30,6 @@ function BouncePad.new(model: Model)
 	self.IdleTrack = self.Animator:LoadAnimation(self.IdleAnim)
 	self.LaunchTrack = self.Animator:LoadAnimation(self.LaunchAnim)
 
-	-- Connection tracking for cleanup
 	self._connections = {} :: {RBXScriptConnection}
 
 	self:Init()
@@ -38,11 +37,9 @@ function BouncePad.new(model: Model)
 end
 
 function BouncePad:Init()
-	-- Play idle background state loop
 	self.IdleTrack.Looped = true
 	self.IdleTrack:Play()
 
-	-- Connect physical overlap trigger
 	local touchConn = self.Hitbox.Touched:Connect(function(hit)
 		if not self.IsActive then return end
 
@@ -55,16 +52,14 @@ function BouncePad:Init()
 	end)
 	table.insert(self._connections, touchConn)
 
-	-- Connect the precise Animation Event Marker
 	local markerConn = self.LaunchTrack:GetMarkerReachedSignal("Launch"):Connect(function()
 		self:ExecuteLaunchForces()
 	end)
 	table.insert(self._connections, markerConn)
 
-	-- Connect animation stop sequence to transition into recovery phase
 	local stopConn = self.LaunchTrack.Stopped:Connect(function()
 		task.wait(RECOVERY_TIME)
-		-- Ensure the pad wasn't destroyed mid-cooldown before attempting to reset
+		-- Pad may have been destroyed mid-cooldown
 		if self.Reset then
 			self:Reset()
 		end
@@ -76,7 +71,6 @@ function BouncePad:TriggerSequence()
 	self.IsActive = false
 	self.LaunchTrack:Play()
 
-	-- Dim the pad to visually communicate it's recovering
 	TweenService:Create(self.Pad, COLOR_TWEEN_INFO, {Color = self.DarkColor}):Play()
 end
 
@@ -111,7 +105,6 @@ function BouncePad:Reset()
 end
 
 function BouncePad:Destroy()
-	-- Disconnect all active event connections
 	for _, conn in self._connections do
 		if conn.Connected then
 			conn:Disconnect()
@@ -119,11 +112,9 @@ function BouncePad:Destroy()
 	end
 	table.clear(self._connections)
 
-	-- Stop playing any remaining animation tracks
 	if self.IdleTrack then self.IdleTrack:Stop() self.IdleTrack:Destroy() end
 	if self.LaunchTrack then self.LaunchTrack:Stop() self.LaunchTrack:Destroy() end
 
-	-- Garbage collect references
 	self.Model = nil
 	self.Hitbox = nil
 	self.Pad = nil

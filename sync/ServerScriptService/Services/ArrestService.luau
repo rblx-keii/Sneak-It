@@ -101,16 +101,12 @@ function Local.HasLineOfSight(tsaPlayer: Player, target: Player | Model): boolea
 	if not tsaHRP or not targetHRP then return false end
 
 	local targetInstance = (target:IsA("Player") and target.Character) or target
-
-	-- Exclude both characters/rigs from the raycast
 	RAYCAST_PARAMS.FilterDescendantsInstances = { tsaPlayer.Character, targetInstance }
 
 	local origin = tsaHRP.Position
 	local direction = targetHRP.Position - origin
 
 	local result = Workspace:Raycast(origin, direction, RAYCAST_PARAMS)
-
-	-- If nothing was hit between them, line of sight is clear
 	return result == nil
 end
 
@@ -132,13 +128,9 @@ function Shared.AttemptArrest(tsaPlayer: Player, targetPlayer: Player)
 	Network:FireClient("Arrest", targetPlayer, "Caught", { arrestedBy = tsaPlayer.UserId })
 end
 
--- TSA targeting an NPC instead of a Player. A regular crowd NPC is an
--- innocent bystander — arresting one is a false arrest (3-strike system,
--- Project.md). A Decoy is a deliberate trap: no reward, no strike, handled
--- entirely by NpcService.Shared.CaptureDecoy (jail + destroy/replace) — not
--- currently reachable, since NpcService doesn't spawn Decoys this slice and
--- GetNPCKind never returns "Decoy", so this branch stays dormant rather than
--- erroring until Decoys return.
+-- Arresting a regular NPC is a false arrest (3-strike system); a Decoy is a
+-- trap handled by NpcService.CaptureDecoy. Decoys aren't spawned yet, so
+-- that branch is currently dormant.
 function Shared.AttemptArrestNPC(tsaPlayer: Player, npc: Model)
 	if TeamService.GetTeam(tsaPlayer) ~= "TSA" then return end
 	if JailService.IsJailed(tsaPlayer) then return end

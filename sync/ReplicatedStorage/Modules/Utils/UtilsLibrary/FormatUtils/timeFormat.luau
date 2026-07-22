@@ -1,7 +1,7 @@
 -- Time formatting utilities
 local TimeFormatter = {}
 
--- A: Converts seconds into "Xd Yh Zm" style, only showing needed parts
+-- Converts seconds into "Xd Yh Zm" style, only showing needed parts
 function TimeFormatter.FormatDHMS(seconds)
 	seconds = math.round(seconds)
 	local days = math.floor(seconds / 86400)
@@ -27,7 +27,7 @@ function TimeFormatter.FormatDHMS(seconds)
 	return result
 end
 
--- B: Converts seconds into "D:HH:MM:SS" style (digital clock)
+-- Converts seconds into "D:HH:MM:SS" style (digital clock)
 function TimeFormatter.FormatDigital(seconds)
 	seconds = math.round(seconds)
 	local days = math.floor(seconds / 86400)
@@ -51,13 +51,13 @@ function TimeFormatter.FormatDigital(seconds)
 	return result
 end
 
--- C: Converts seconds into just "Xs" (plain seconds)
+-- Converts seconds into just "Xs" (plain seconds)
 function TimeFormatter.FormatSeconds(seconds)
 	seconds = math.max(0, math.floor(math.round(seconds)))
 	return string.format("%ds", seconds)
 end
 
--- D: Flexible short format (e.g., "1d 2h 3m", "2h 30m 10s", etc.)
+-- Flexible short format (e.g., "1d 2h 3m", "2h 30m 10s", etc.)
 function TimeFormatter.FormatCompact(seconds)
 	seconds = math.max(0, math.floor(math.round(seconds)))
 	local days = math.floor(seconds / 86400)

@@ -1,9 +1,7 @@
--- Drives the repeating "airplane at Zone D" cycle for the whole InProgress
--- state: Arrived -> Boarding -> Departing -> Waiting -> loop. Purely
--- attribute-driven (Workspace.GateStage/GateTimeLeft/BoardingOpen), same
--- convention as RoundService's RoundState/TimeLeft — no Network remotes,
--- so any system (client Hud, future in-world signage/PA props, DepositService,
--- NpcService) can react without this service knowing about them.
+-- Drives the repeating airplane cycle for the InProgress state:
+-- Arrived -> Boarding -> Departing -> Waiting -> loop. Purely attribute-driven
+-- (Workspace.GateStage/GateTimeLeft/BoardingOpen), no Network remotes, so any
+-- system can react without this service knowing about them.
 --|| Services
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -36,15 +34,10 @@ local ATTR_TIME_LEFT = "GateTimeLeft"
 local ATTR_BOARDING_OPEN = "BoardingOpen"
 
 -- [[ Departing Door animation ]] --
--- <ActiveMap>.Assets["Departing Door"] -- an AnimationController with a
--- child Animator. Two looped Idle tracks (door held open/closed) and two
--- one-shot Action tracks (the actual swing) that hand off to each other via
--- animation-event markers authored on the Action tracks themselves: the
--- Open marker (on openAction) is the frame the door visually reaches fully
--- open, and Close marker (on closeAction) the frame it's fully shut again —
--- that's the cue to swap which Idle loop is playing, not the Action track's
--- own Stopped event (the Action clip likely keeps playing a short settle
--- after the marker).
+-- Two looped Idle tracks (door held open/closed) and two one-shot Action
+-- tracks (the swing), which hand off to the matching Idle via animation-event
+-- markers (Open/Close) rather than the Action track's Stopped event, since
+-- the Action clip keeps playing a short settle after the marker.
 local DOOR_ASSET_NAME = "DepartingDoor"
 local DOOR_ANIM_IDS = {
 	openIdle = 72890270209807,

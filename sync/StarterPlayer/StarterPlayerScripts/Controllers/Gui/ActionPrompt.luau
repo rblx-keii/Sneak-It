@@ -152,8 +152,6 @@ end
 function Shared.ChangeActionText(key: Enum.KeyCode | Enum.UserInputType, newAction: string)
 	local formattedKey = Local.GetFormattedKey(key)
 	local frame = _activePrompts[formattedKey]
-
-	-- Early return if no prompt exists for this key
 	if not frame then return end
 
 	local content = frame:FindFirstChild("Content")

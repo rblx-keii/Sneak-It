@@ -55,7 +55,6 @@ function Local.GetCharacterByUserId(userId: number): Model?
 end
 
 function Local.StartHighlight(targetUserId: number)
-	-- Already highlighting this target
 	if _activeSessions[targetUserId] then return end
 
 	local character = Local.GetCharacterByUserId(targetUserId)
@@ -77,10 +76,8 @@ function Local.StartHighlight(targetUserId: number)
 
 	_activeSessions[targetUserId] = session
 
-	-- Pulse loop
 	session.pulseThread = task.spawn(function()
 		while _activeSessions[targetUserId] do
-			-- Fade in
 			local fadeIn = TweenService:Create(
 				highlight,
 				TweenInfo.new(PULSE_FADE_IN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
@@ -91,7 +88,6 @@ function Local.StartHighlight(targetUserId: number)
 
 			task.wait(0.2)
 
-			-- Fade out
 			local fadeOut = TweenService:Create(
 				highlight,
 				TweenInfo.new(PULSE_FADE_OUT_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
@@ -100,7 +96,6 @@ function Local.StartHighlight(targetUserId: number)
 			fadeOut:Play()
 			fadeOut.Completed:Wait()
 
-			-- Wait remainder of pulse interval before next pulse
 			task.wait(PULSE_INTERVAL - PULSE_FADE_IN_TIME - PULSE_FADE_OUT_TIME - 0.2)
 		end
 	end)
@@ -121,7 +116,6 @@ function Local.StopHighlight(targetUserId: number)
 	end
 
 	if session.highlight and session.highlight.Parent then
-		-- Fade out cleanly before destroying
 		local fadeOut = TweenService:Create(
 			session.highlight,
 			TweenInfo.new(PULSE_FADE_OUT_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.In),

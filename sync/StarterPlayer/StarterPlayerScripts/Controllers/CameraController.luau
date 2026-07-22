@@ -166,7 +166,6 @@ function Local.GetInputDelta(dt: number): Vector2
 	local thumbstick = Local.GetThumbstickDelta()
 	local mouseDelta = UserInputService:GetMouseDelta()
 
-	-- Prefer gamepad if thumbstick has meaningful input, otherwise fall back to mouse
 	if thumbstick.Magnitude > 0 then
 		_lastInputWasGamepad = true
 		return thumbstick * GAMEPAD_SENSITIVITY * dt * 60
@@ -218,7 +217,6 @@ function Local.OnRenderStepped(dt: number)
 	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
 	if not hrp or not humanoid or humanoid.Health <= 0 then return end
 
-	-- Only lock mouse when on PC
 	if not _lastInputWasGamepad then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 	else
@@ -245,7 +243,6 @@ function Local.OnRenderStepped(dt: number)
 	_pitch -= delta.Y
 	_pitch = math.clamp(_pitch, -PITCH_LIMIT, PITCH_LIMIT)
 
-	-- Camera positioning & collision
 	local focusPos = hrp.Position + Vector3.new(0, 1.5, 0)
 	local camRotation = CFrame.Angles(0, math.rad(_yaw), 0) * CFrame.Angles(math.rad(_pitch), 0, 0)
 	local targetPos = focusPos + (camRotation * CAMERA_OFFSET)
@@ -262,7 +259,6 @@ function Local.OnRenderStepped(dt: number)
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = CFrame.new(finalPos) * camRotation
 
-	-- Character alignment (physics based)
 	local align = Local.GetOrSetupAlign(hrp)
 
 	if _isFreeLook then

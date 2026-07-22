@@ -2,7 +2,7 @@
 local NPCConfig = {}
 
 -- [[ Population ]] --
-NPCConfig.MAX_NPCS = 10 -- TEMP: lowered from 10 for solo NPC AI testing, revert once done
+NPCConfig.MAX_NPCS = 10
 
 -- [[ Movement ]] --
 NPCConfig.WALK_SPEED = 14

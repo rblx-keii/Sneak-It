@@ -140,7 +140,6 @@ function Local.OnRenderStepped()
 
 	if newTarget == _currentTarget then return end
 
-	-- Target changed
 	if _currentTarget then
 		Local.OnTargetExited()
 	end
@@ -226,7 +225,6 @@ function Local.CreateStatsUI(target: Instance): BillboardGui
 
 	local ui = statsTemplate:Clone()
 
-	-- Populate labels
 	local itemNameLabel = ui:FindFirstChild("ItemName") :: TextLabel
 	local weightLabel = ui:FindFirstChild("Weight") :: TextLabel
 	local ratingFrame = ui:FindFirstChild("Rating") :: Frame

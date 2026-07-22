@@ -238,7 +238,6 @@ function item.OnInitialize()
 	if _initialized then return end
 
 	if RunService:IsServer() then
-		-- Server handles secure joint setup for global replication
 		local _lastItemGripWeld: WeldConstraint? = nil
 
 		Network:BindEvent(EVENT_NAME, "Equip", function(playerOwner: Player, _itemModel: Instance?)
@@ -257,7 +256,6 @@ function item.OnInitialize()
 
 			if not gripWeld then return end
 
-			-- Replicating joint spawned server-side
 			local motor = Instance.new("Motor6D")
 			motor.Name = "Handle_Motor"
 			motor.Part0 = gripWeld.Part0
@@ -321,7 +319,6 @@ function item.OnEquip(_itemModel: Instance?)
 
 	_currentAnimator = animator
 
-	-- Yield for the server-replicated joint to arrive safely
 	local handleMotor = _itemModel and _itemModel:WaitForChild("Handle_Motor", 5)
 	if not handleMotor then return end
 

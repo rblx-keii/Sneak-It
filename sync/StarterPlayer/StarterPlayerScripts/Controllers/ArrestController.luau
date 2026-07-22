@@ -133,21 +133,7 @@ function Local.RemovePrompt(character: Model)
 end
 
 function Local.WatchNPCs()
-	-- Observers.observeChildren(Workspace, function(npcsFolder)
-	-- 	return Observers.observeChildren(npcsFolder, function(npc)
-	-- 		_knownNPCs[npc] = true
-	-- 		Local.RefreshNPCPrompt(npc)
-
-	-- 		return function()
-	-- 			_knownNPCs[npc] = nil
-	-- 			Local.RemoveNPCPrompt(npc)
-	-- 		end
-	-- 	end, function(child)
-	-- 		return child:IsA("Model")
-	-- 	end)
-	-- end, function(child)
-	-- 	return child.Name == "NPCs" and child:IsA("Folder")
-	-- end)
+	-- TODO: not yet implemented — NPC arrest prompts never populate
 end
 
 function Local.RefreshAllNPCPrompts()

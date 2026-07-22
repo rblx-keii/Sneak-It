@@ -103,7 +103,6 @@ end
 
 -- [[ Public ]] --
 function InputController.BindAction(config: ActionConfig): ActionHandle
-	-- Auto-unbind if name already registered
 	if _registry[config.name] then
 		InputController.UnbindAction(config.name)
 	end

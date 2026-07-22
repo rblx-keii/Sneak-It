@@ -114,7 +114,6 @@ function Local.TeleportToJail(player: Player)
 	local jailCFrame = CFrame.new(Vector3.new(pivotCFrame.Position.X, spawnY, pivotCFrame.Position.Z))
 	character:PivotTo(jailCFrame)
 
-	-- Lock movement on client
 	Network:FireClient("Jail", player, "LockMovement", {})
 end
 
@@ -128,7 +127,6 @@ function Local.RunJailCountdown(player: Player, duration: number)
 		record.isJailed = false
 		record.jailThread = nil
 
-		-- Unlock movement before respawning
 		Network:FireClient("Jail", player, "UnlockMovement", {})
 
 		local teamName = TeamService.GetTeam(player)
@@ -149,23 +147,20 @@ function Shared.JailPlayer(player: Player, reason: "Arrested" | "FalseArrest" | 
 	local record = Shared.GetRecord(player)
 	if not record then return end
 
-	-- Cancel any existing jail thread (re-arrest resets the timer)
+	-- Re-arrest resets the timer
 	if record.jailThread then
 		task.cancel(record.jailThread)
 		record.jailThread = nil
 	end
 
 	if reason == "Strike" then
-		-- TSA strike handling
 		record.strikeCount += 1
 
 		if record.strikeCount < TSA_MAX_STRIKES then
-			-- Not jailed yet, just notify
 			Network:FireClient("Jail", player, "Strike", { strikeCount = record.strikeCount, maxStrikes = TSA_MAX_STRIKES })
 			return
 		end
 
-		-- Hit max strikes — jail the TSA agent and reset strikes
 		record.strikeCount = 0
 		record.offenseCount += 1
 	else
@@ -199,7 +194,6 @@ function Shared.ReleasePlayer(player: Player)
 
 	record.isJailed = false
 
-	-- Unlock movement before respawning
 	Network:FireClient("Jail", player, "UnlockMovement", {})
 
 	local teamName = TeamService.GetTeam(player)

@@ -160,18 +160,6 @@ function Timer.Pause(self: Timer)
 		return
 	end
 
-	local t = self.TimeFunction
-	local now = t()
-
-	-- Logic to calculate exactly how much time was left
-	-- For Drift timers, we just need the difference.
-	-- For NoDrift, we calculate based on the current cycle.
-	if self.AllowDrift then
-		-- We estimate remaining time based on the last tick or start
-		-- Since we don't store 'nextTick' in the self object,
-		-- we capture it before disconnecting.
-	end
-
 	self._paused = true
 	self:Stop()
 end

@@ -137,12 +137,10 @@ function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: I
 	local camera = Workspace.CurrentCamera
 	if not camera then return Enum.ContextActionResult.Pass end
 
-	-- Load and execute visual playback track locally
 	local throwTrack = _currentAnimator:LoadAnimation(THROW_ANIM_INSTANCE)
 	throwTrack.Priority = Enum.AnimationPriority.Action
 	throwTrack:Play()
 
-	-- Set up a one-time connection listening exclusively for the physical release moment
 	local markerConnection: RBXScriptConnection? = nil
 	markerConnection = throwTrack:GetMarkerReachedSignal("Throw"):Connect(function()
 		if markerConnection then
@@ -256,7 +254,6 @@ function Local.BindActions()
 		ActionPromptController.ShowPrompt(Enum.UserInputType.MouseButton1, "Use Item")
 	end
 
-	-- If holding a bag, bind the Q key
 	if _isHoldingBag and not _popHandle then
 		_popHandle = InputController.BindAction({
 			name = POP_ACTION,

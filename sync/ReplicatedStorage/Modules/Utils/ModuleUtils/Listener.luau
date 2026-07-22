@@ -57,12 +57,7 @@ end
 ]=]
 function Listener:Unsubscribe()
 	if self._connection then
-		-- Handles both RBXScriptConnection and custom Connection types
-		if typeof(self._connection) == "RBXScriptConnection" then
-			self._connection:Disconnect()
-		else
-			self._connection:Disconnect()
-		end
+		self._connection:Disconnect()
 		self._connection = nil
 	end
 	self._callback = nil

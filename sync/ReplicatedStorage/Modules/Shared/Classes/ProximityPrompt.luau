@@ -143,12 +143,10 @@ function ProximityPrompt.new(settings: PromptSettings): ClassType
 	self._resetThread = nil
 	self._externalBtnConns = {}
 
-	-- Auto-create signals
 	self.Triggered = ModuleUtils.signal.new()
 	self.HoldStarted = ModuleUtils.signal.new()
 	self.HoldEnded = ModuleUtils.signal.new()
 
-	-- Clone and parent UI
 	local promptClone = Prompt:Clone() :: BillboardGui
 	promptClone.Adornee = settings.parent
 	promptClone.Enabled = false
@@ -170,12 +168,10 @@ function ProximityPrompt.new(settings: PromptSettings): ClassType
 	self._radialProgress:SetProgress(0)
 	self._contentScale = contentFrame:FindFirstChildOfClass("UIScale")
 
-	-- Populate static UI
 	self._actionLabel.Text = settings.actionText
 	self._objectLabel.Text = settings.objectText
 	self._keyLabel.Text = settings.keyboardKeyCode.Name
 
-	-- Wire input
 	self._BindInput(self)
 	self._StartHeartbeat(self)
 
@@ -286,11 +282,9 @@ function ProximityPrompt._OnHeartbeat(self: ClassType, dt: number)
 		self._currentProgress -= (dt / self._settings.holdDuration)
 	end
 
-	-- Clamp and render visually
 	self._currentProgress = math.clamp(self._currentProgress, 0, 1)
 	self._UpdateProgressBar(self, self._currentProgress)
 
-	-- Trigger completion when full
 	if self._isHolding and self._currentProgress >= 1 then
 		self._StopHold(self, true)
 	end
@@ -429,7 +423,6 @@ function ProximityPrompt.Destroy(self: ClassType)
 		self._prompt:Destroy()
 	end
 
-	-- Cleanup signals
 	self.Triggered:DisconnectAll()
 	self.HoldStarted:DisconnectAll()
 	self.HoldEnded:DisconnectAll()

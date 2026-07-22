@@ -303,10 +303,8 @@ function Shared.Ragdoll(target: Player | Model, hitPosition: Vector3, direction:
 	local humanoid = rig:FindFirstChildOfClass("Humanoid")
 	if not humanoid or humanoid.Health <= 0 then return end
 
-	-- Don't double-ragdoll
 	if _activeRagdolls[rig] then return end
-	
-	-- Lock movement on client (only meaningful if this is an actual Player)
+
 	if player then
 		Network:FireClient("Jail", player, "LockMovement", {})
 		Shared.OnPlayerRagdolled:Fire(player)
@@ -314,11 +312,9 @@ function Shared.Ragdoll(target: Player | Model, hitPosition: Vector3, direction:
 
 	Shared.OnRagdolled:Fire(rig, target)
 
-	-- Disable Humanoid state machine
 	humanoid.EvaluateStateMachine = false
 	humanoid.PlatformStand = true
 
-	-- Stop animations, disable motors, add ball sockets, swap collision state, pin ownership
 	Local.StopAnimations(rig)
 	local motorStates = Local.DisableMotors(rig)
 	local ballSockets, attachments = Local.AddBallSockets(rig)
@@ -340,10 +336,7 @@ function Shared.Ragdoll(target: Player | Model, hitPosition: Vector3, direction:
 		Local.CleanupState(rig)
 	end)
 
-	-- Apply the hit force
 	Local.ApplyForce(rig, hitPosition, direction, force)
-
-	-- Start internal restore timer
 	Local.RunRestoreTimer(rig)
 end
 
@@ -359,7 +352,6 @@ function Shared.Restore(target: Player | Model)
 
 	local humanoid = rig:FindFirstChildOfClass("Humanoid")
 
-	-- Remove ball sockets before re-enabling motors
 	Local.RemoveBallSockets(state.ballSockets, state.attachments)
 	Local.EnableMotors(state.motorStates)
 	Local.RestoreCollisionState(state.collisionStates)
@@ -372,13 +364,11 @@ function Shared.Restore(target: Player | Model)
 		Local.SetServerOwnership(rig)
 	end
 
-	-- Restore Humanoid state machine
 	if humanoid then
 		humanoid.PlatformStand = false
 		humanoid.EvaluateStateMachine = true
 	end
 
-	-- Unlock movement on client
 	if state.player then
 		Network:FireClient("Jail", state.player, "UnlockMovement", {})
 	end

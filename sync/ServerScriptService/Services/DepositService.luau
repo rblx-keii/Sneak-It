@@ -41,10 +41,8 @@ function Shared.Init()
 	table.insert(_connections, Players.PlayerRemoving:Connect(Local.CancelDeposit))
 	table.insert(_connections, JailService.OnJailed:Connect(Local.CancelDeposit))
 
-	-- The gate only accepts deposits while the airplane's boarding window is
-	-- open (GateService.SetStage) -- cancel every in-flight deposit the
-	-- instant it closes rather than letting them silently fail once their
-	-- timer runs out.
+	-- Cancel every in-flight deposit as soon as the boarding window closes,
+	-- rather than letting them silently fail once their timer runs out.
 	table.insert(_connections, Workspace:GetAttributeChangedSignal("BoardingOpen"):Connect(function()
 		if Workspace:GetAttribute("BoardingOpen") then return end
 
@@ -107,9 +105,6 @@ function Local.StartDeposit(player: Player)
 		end
 	end)
 
-	-- Optional: Fire client here to show "Depositing... 5.0s" UI
-	-- Network:FireClient(player, "Deposit", "StartTimer", { duration = DEPOSIT_TIME })
-
 	_depositThreads[player] = task.delay(DEPOSIT_TIME, function()
 		Local.CompleteDeposit(player)
 	end)
@@ -119,12 +114,8 @@ function Local.CancelDeposit(player: Player)
 	if _depositThreads[player] then
 		task.cancel(_depositThreads[player])
 		_depositThreads[player] = nil
-
-		-- Optional: Tell client to hide the progress bar
-		-- Network:FireClient(player, "Deposit", "CancelTimer")
 	end
 
-	-- Clean up the Disable/Tackle listener
 	if _depositConnections[player] then
 		_depositConnections[player]:Disconnect()
 		_depositConnections[player] = nil
@@ -132,7 +123,6 @@ function Local.CancelDeposit(player: Player)
 end
 
 function Local.CompleteDeposit(player: Player)
-	-- Clean up state
 	_depositThreads[player] = nil
 	if _depositConnections[player] then
 		_depositConnections[player]:Disconnect()
@@ -140,7 +130,7 @@ function Local.CompleteDeposit(player: Player)
 	end
 
 	if RoundService.GetState() ~= "InProgress" then return end
-	if not Workspace:GetAttribute("BoardingOpen") then return end -- gate closed mid-timer -- the BoardingOpen watcher above should have already cancelled this, kept as a final guard
+	if not Workspace:GetAttribute("BoardingOpen") then return end -- final guard; BoardingOpen watcher should already have cancelled this
 
 	local record = JailService.GetRecord(player)
 	if record and record.isJailed then return end
@@ -149,7 +139,6 @@ function Local.CompleteDeposit(player: Player)
 	local humanoid = character and character:FindFirstChildWhichIsA("Humanoid")
 	if not character or not humanoid or humanoid.Health <= 0 then return end
 
-	-- Final sanity check just in case they were disabled on the exact frame the timer ended
 	if character:GetAttribute("Disabled") then return end
 	if TeamService.GetTeam(player) ~= "Smuggler" then return end
 
@@ -179,9 +168,6 @@ function Local.CompleteDeposit(player: Player)
 			data = { key = "totalItemsSmuggled", amount = itemsDeposited },
 		})
 	end
-
-	-- 4. Tell the client it was successful (Play sound, update cash, etc.)
-	-- Network:FireClient(player, "Deposit", "Success", { value = starsDeposited })
 
 	SpawnService.SpawnPlayer(player, player.Team and player.Team.Name or "Smuggler")
 end
