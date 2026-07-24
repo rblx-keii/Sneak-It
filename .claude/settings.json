@@ -30,7 +30,10 @@
       "WebFetch(domain:create.roblox.com)",
       "Bash(git stash *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Keii\\.claude",
