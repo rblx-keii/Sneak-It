@@ -5,6 +5,7 @@ local Workspace = game:GetService("Workspace")
 --|| References
 local RoundService = require(script.Parent.RoundService)
 local MapService = require(script.Parent.MapService)
+local NodeGraph = require(script.Parent.NpcService.NodeGraph)
 
 --|| Types
 export type GateStage = "Arrived" | "Boarding" | "Departing" | "Waiting"
@@ -109,6 +110,12 @@ function Local.SetDoorCollisionGroup(groupName: string)
 			descendant.CollisionGroup = groupName
 		end
 	end
+
+	-- The door is the only thing in this map whose CollisionGroup swap
+	-- changes what NPC-group raycasts can see (see NodeGraph's RAYCAST_PARAMS)
+	-- — any cached line-of-sight result computed while it was in the other
+	-- state is now stale.
+	NodeGraph.InvalidateLoSCache()
 end
 
 function Local.SetupDoor()

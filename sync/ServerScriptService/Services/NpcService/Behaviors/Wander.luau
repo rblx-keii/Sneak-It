@@ -95,7 +95,7 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 
 		local otherPos = NodeGraph.GetNodePosition(other)
 		if (otherPos - originPos).Magnitude > NPCConfig.NODE_SEARCH_RADIUS then continue end
-		if not NodeGraph.HasClearLine(originPos, otherPos, ignore) then continue end
+		if not NodeGraph.HasClearLineBetweenNodes(node, other, ignore) then continue end
 
 		table.insert(candidates, other)
 	end

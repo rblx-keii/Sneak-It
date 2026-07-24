@@ -51,6 +51,7 @@ type NPCRecord = {
 	seatObject: Seat?,
 	lineDwellUntil: number,
 	departArrivedAt: number,
+	shopDwellUntil: number,
 	pendingRepath: boolean,
 	pathBlockedConn: RBXScriptConnection?,
 	waypointMarkers: { BasePart }?,
@@ -159,6 +160,17 @@ function Shared.Init()
 					return
 				end
 
+				-- Shop detour dwell elapsed — switch back to Linear before the
+				-- next decision, so it resumes Auto-searching its way back to
+				-- the shop's own Transition Node (and then the Link back out)
+				-- instead of continuing to roam indefinitely.
+				if record.shopDwellUntil > 0 and workspace:GetServerTimeNow() >= record.shopDwellUntil then
+					record.shopDwellUntil = 0
+					if record.model:GetAttribute("BehaviorType") ~= "Linear" then
+						record.model:SetAttribute("BehaviorType", "Linear")
+					end
+				end
+
 				record.awaitingDecision = true
 				record.decisionRequestedAt = os.clock()
 				record.actor:SendMessage("Decide", {
@@ -171,6 +183,24 @@ function Shared.Init()
 					lastRestTime = record.lastRestTime,
 				})
 			end)
+		end
+	end))
+
+	-- If boarding closes while an NPC is still mid-walk *toward* Depart (not
+	-- yet standing on a Depart-zone node), turn it back instead of letting it
+	-- keep walking into a gate that's no longer open — anyone already
+	-- standing on a Depart node is past this and keeps going regardless (see
+	-- Linear.luau's unconditional Link-following once inside).
+	table.insert(_connections, Workspace:GetAttributeChangedSignal("BoardingOpen"):Connect(function()
+		if Workspace:GetAttribute("BoardingOpen") then return end
+		if not _nodesFolder then return end
+
+		for _, record in _activeNPCs do
+			if not record.targetNode then continue end
+			if NodeGraph.GetZone(record.targetNode, _nodesFolder :: Instance) ~= "Depart" then continue end
+			if record.currentNode and NodeGraph.GetZone(record.currentNode, _nodesFolder :: Instance) == "Depart" then continue end
+
+			Local.CancelDepartApproach(record)
 		end
 	end))
 
@@ -416,6 +446,7 @@ function Local.SpawnNPC(template: Model)
 		seatObject = nil,
 		lineDwellUntil = 0,
 		departArrivedAt = 0,
+		shopDwellUntil = 0,
 		pendingRepath = false,
 		pathBlockedConn = nil,
 		waypointMarkers = nil,
@@ -550,6 +581,24 @@ function Local.SnapToNearestNode(record: NPCRecord)
 	end
 end
 
+-- Aborts an in-flight walk toward a Depart-zone node without touching
+-- currentNode/lastNode (the NPC hasn't arrived anywhere — it's still
+-- physically between nodes). Just clears the movement state; the next
+-- Heartbeat tick naturally requests a fresh decision from wherever it
+-- currently stands, which — now that BoardingOpen is false — won't route
+-- back toward Depart.
+function Local.CancelDepartApproach(record: NPCRecord)
+	record.targetNode = nil
+	record.moveTargetPos = nil
+	record.waypoints = nil
+	record.waypointIndex = nil
+	record.moveStartedAt = 0
+	record.pendingRepath = false
+	record.prefetch = nil
+	Local.ClearWaypointMarkers(record)
+	Local.ClearPathBlockedConnection(record)
+end
+
 function Local.WalkTo(record: NPCRecord, node: BasePart)
 	record.lineDwellUntil = 0
 
@@ -574,6 +623,11 @@ end
 function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
 	local nodeType = NodeGraph.GetNodeType(forNode)
 	if nodeType == "seatnode" or nodeType == "linenode" then return end
+	-- A Transition Node's outcome can depend on state that only becomes true
+	-- exactly on arrival (e.g. a shop detour flipping BehaviorType to Wander
+	-- in OnArrive) — prefetching it risks consuming a decision computed
+	-- under the wrong behavior the instant it's reached.
+	if NodeGraph.IsTransitionNode(forNode) then return end
 
 	local previousLink = record.currentNode and NodeGraph.GetLink(record.currentNode)
 	local willArriveViaLink = previousLink ~= nil and previousLink == forNode
@@ -879,6 +933,22 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 
 	local previousLink = record.lastNode and NodeGraph.GetLink(record.lastNode)
 	record.arrivedViaLink = previousLink ~= nil and previousLink == node
+
+	-- A Transition Node linked to (and reached from) another Transition Node
+	-- is a shop detour hookup — dwell here roaming/sitting for a while
+	-- before heading back, instead of immediately following this node's own
+	-- Link straight back out.
+	local isShopDetourArrival = record.arrivedViaLink
+		and NodeGraph.IsTransitionNode(node)
+		and record.lastNode
+		and NodeGraph.IsTransitionNode(record.lastNode)
+
+	if isShopDetourArrival then
+		record.shopDwellUntil = workspace:GetServerTimeNow() + math.random(NPCConfig.SHOP_DWELL_MIN, NPCConfig.SHOP_DWELL_MAX)
+		if record.model:GetAttribute("BehaviorType") ~= "Wander" then
+			record.model:SetAttribute("BehaviorType", "Wander")
+		end
+	end
 
 	local isSeatNode = NodeGraph.GetNodeType(node) == "seatnode"
 	if isSeatNode then

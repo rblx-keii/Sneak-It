@@ -49,13 +49,21 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	local link = NodeGraph.GetLink(node)
 	local candidate: BasePart? = link
 
+	-- The only hop that's physically gated is the one that actually lands
+	-- inside Depart — every other Link, including every hop *within*
+	-- Depart's own chain once already inside, is unconditional. Checking
+	-- the current node's own zone (not just the link target's) is what
+	-- keeps this scoped to the entry hop only.
+	local enteringDepart = candidate
+		and NodeGraph.GetZone(node, ctx.nodesFolder) ~= "Depart"
+		and NodeGraph.GetZone(candidate, ctx.nodesFolder) == "Depart"
+
+	if enteringDepart and not workspace:GetAttribute("BoardingOpen") then
+		candidate = nil
+	end
+
 	if candidate then
-		-- Deliberately unconditional: a Link chain inside the Depart Folder
-		-- (gate entrance(s) -> ... -> dwell node) must keep advancing even
-		-- if BoardingOpen flips false mid-walk — the NPC is already past the
-		-- gate by the time it's standing on a linked node, so the
-		-- BoardingOpen gate below (which only governs *entering* Depart from
-		-- Platform) must never apply here.
+		-- Link-following.
 	elseif NodeGraph.GetZone(node, ctx.nodesFolder) == "Depart" then
 		-- True end of the Depart Folder's Link chain (no outgoing Link left).
 		-- Auto-searching zones={"Depart"} from here would be able to match
@@ -64,7 +72,25 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		-- just stop here instead.
 	else
 		local zone = NodeGraph.GetZone(node, ctx.nodesFolder)
-		local nextZone = nextBackboneZone(zone)
+		local zones = { zone }
+
+		-- A zone's Transition Node(s) are the mandatory checkpoint before its
+		-- Auto-search may consider anything in the next zone at all. Multiple
+		-- Transition Nodes are supported (e.g. two gate entrances side by
+		-- side) — whichever is nearest wins once close enough. A Transition
+		-- Node with no Link authored yet isn't usable — treat it the same as
+		-- not existing so NPCs don't get stranded walking up to a dead end.
+		local linkedTransitionNodes = {}
+		for _, transitionNode in NodeGraph.GetTransitionNodes(ctx.nodesFolder, zone) do
+			if NodeGraph.GetLink(transitionNode) then
+				table.insert(linkedTransitionNodes, transitionNode)
+			end
+		end
+		local firstTransition = linkedTransitionNodes[1]
+		local transitionLink = firstTransition and NodeGraph.GetLink(firstTransition)
+		local nextZone = if transitionLink
+			then NodeGraph.GetZone(transitionLink, ctx.nodesFolder)
+			else nextBackboneZone(zone)
 
 		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
 		local gateStage = workspace:GetAttribute("GateStage")
@@ -74,11 +100,10 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		-- there, not only once boarding has actually opened.
 		local planeArrived = gateStage == "Arrived" or gateStage == "Boarding"
 
-		if nextZone == "Depart" and not planeArrived then
-			nextZone = nil
-		end
-
-		local zones = if nextZone then { zone, nextZone } else { zone }
+		-- Depart is the only zone with a physical gate; every other
+		-- transition is always open once its Transition Node is reached.
+		local transitionGated = nextZone == "Depart"
+		local canApproachTransition = not transitionGated or planeArrived
 
 		local isCurrentlySeated = NodeGraph.GetNodeType(node) == "seatnode"
 		local skipNodeTypes = nil
@@ -86,66 +111,59 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			skipNodeTypes = { seatnode = true }
 		end
 
-		if zone == "Platform" and not planeArrived and not (skipNodeTypes and skipNodeTypes.seatnode) then
+		if transitionGated and not planeArrived and not (skipNodeTypes and skipNodeTypes.seatnode) then
 			-- No plane yet — sit and wait at a random open seat instead of
-			-- idly circulating the platform.
-			candidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, "Platform", NodeGraph.GetNodePosition(node), { node, ctx.lastNode })
+			-- idly circulating the zone.
+			candidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
+		end
+
+		if not candidate and #linkedTransitionNodes > 0 and canApproachTransition then
+			-- Stage 1: keep making progress within the zone toward its
+			-- Transition Node(s), ranked toward the first one as a
+			-- representative goal point — restricted to the current zone
+			-- itself so it doesn't jump straight into the next zone from
+			-- anywhere in this one.
+			candidate = NodeGraph.FindNearestNode(
+				ctx.nodesFolder,
+				node,
+				{ zone },
+				{ node, ctx.lastNode },
+				ignore,
+				if ctx.arrivedViaLink then node else nil,
+				skipNodeTypes,
+				NodeGraph.GetNodePosition(firstTransition :: BasePart)
+			)
+
+			if not candidate then
+				-- Stage 2: nothing in the zone is any closer to the
+				-- Transition Node(s) than we already are — pick whichever
+				-- one is actually nearest right now.
+				candidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
+			end
 		end
 
 		if not candidate then
-			if planeArrived and zone == "Platform" then
-				local departPos = NodeGraph.GetDepartPosition(ctx.nodesFolder)
+			-- Either no Transition Node has been authored for this zone yet,
+			-- or one exists but we're not allowed to approach it yet (gated)
+			-- — either way, fall back to ordinary same-zone wandering (plus
+			-- the next zone too, but only if there's no Transition Node
+			-- gatekeeping it) so movement doesn't stall completely.
+			local fallbackZones = if #linkedTransitionNodes == 0 and nextZone and (not transitionGated or planeArrived)
+				then { zone, nextZone }
+				else { zone }
+			local lastNodePos = ctx.lastNode and NodeGraph.GetNodePosition(ctx.lastNode) or nil
 
-				-- Stage 1: keep making progress across Platform toward the gate,
-				-- ranked toward Depart same as before — restricted to Platform
-				-- itself so it doesn't jump straight into the Depart Folder from
-				-- anywhere on the platform. Starts as soon as the plane has
-				-- arrived, even before the door is actually open.
-				candidate = NodeGraph.FindNearestNode(
-					ctx.nodesFolder,
-					NodeGraph.GetNodePosition(node),
-					{ "Platform" },
-					{ node, ctx.lastNode },
-					ignore,
-					if ctx.arrivedViaLink then node else nil,
-					skipNodeTypes,
-					departPos
-				)
-
-				if not candidate and boardingOpen then
-					-- Stage 2: no Platform node is any closer to Depart than we
-					-- already are — we're at the gate threshold. Only actually
-					-- cross into the Depart Folder once the door is genuinely
-					-- open (BoardingOpen), not merely once the plane arrived.
-					-- Pick whichever Depart Folder node is actually nearest to
-					-- us right now (plain proximity, not ranked toward a single
-					-- fixed point, so whichever gate node is genuinely closer
-					-- wins) so the NPC walks straight through the gate.
-					candidate = NodeGraph.FindNearestNode(
-						ctx.nodesFolder,
-						NodeGraph.GetNodePosition(node),
-						{ "Depart" },
-						{ node, ctx.lastNode },
-						ignore,
-						if ctx.arrivedViaLink then node else nil,
-						skipNodeTypes
-					)
-				end
-			else
-				local lastNodePos = ctx.lastNode and NodeGraph.GetNodePosition(ctx.lastNode) or nil
-
-				candidate = NodeGraph.FindNearestNode(
-					ctx.nodesFolder,
-					NodeGraph.GetNodePosition(node),
-					zones,
-					{ node, ctx.lastNode },
-					ignore,
-					if ctx.arrivedViaLink then node else nil,
-					skipNodeTypes,
-					nil,
-					lastNodePos
-				)
-			end
+			candidate = NodeGraph.FindNearestNode(
+				ctx.nodesFolder,
+				node,
+				fallbackZones,
+				{ node, ctx.lastNode },
+				ignore,
+				if ctx.arrivedViaLink then node else nil,
+				skipNodeTypes,
+				nil,
+				lastNodePos
+			)
 		end
 
 		if candidate and NodeGraph.GetNodeType(candidate) == "seatnode"
@@ -153,7 +171,7 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			if math.random() < NPCConfig.SEAT_RETRY_CHANCE then
 				candidate = NodeGraph.FindNearestNode(
 					ctx.nodesFolder,
-					NodeGraph.GetNodePosition(node),
+					node,
 					zones,
 					{ node, ctx.lastNode, candidate },
 					ignore,
@@ -165,7 +183,7 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 				skipSeats.seatnode = true
 				candidate = NodeGraph.FindNearestNode(
 					ctx.nodesFolder,
-					NodeGraph.GetNodePosition(node),
+					node,
 					zones,
 					{ node, ctx.lastNode },
 					ignore,

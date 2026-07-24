@@ -13,6 +13,7 @@ local SpawnService = require(script.Parent.SpawnService)
 local TeamService = require(script.Parent.TeamService)
 local DataService = require(script.Parent.DataService)
 local RewardService = require(script.Parent.RewardService)
+local NodeGraph = require(script.Parent.NpcService.NodeGraph)
 
 --|| Types
 export type RoundState = "Waiting" | "Intermission" | "MapLoading" | "Starting" | "InProgress" | "Ended"
@@ -329,6 +330,15 @@ function Local.HandleMapLoading(tid: number)
 		warn("[RoundStateService] Map load failed — returning to Intermission")
 		Shared.SetState("Intermission")
 		return
+	end
+
+	-- No NPCs have spawned yet (that happens on "Starting") and no players
+	-- are on the map yet (they spawn during "Starting" too) — the cleanest
+	-- possible window to compute the node graph's line-of-sight cache
+	-- against nothing but the static map geometry.
+	local nodesFolder = activeMap:FindFirstChild("Nodes")
+	if nodesFolder then
+		NodeGraph.PrefillLoSCache(nodesFolder)
 	end
 
 	if _stateId ~= tid then return end

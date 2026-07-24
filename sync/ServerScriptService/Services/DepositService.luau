@@ -65,9 +65,18 @@ end
 function Local.SetupZone(part: Instance)
 	if not part:IsA("BasePart") then return end
 
-	part.CollisionGroup = "DepositZone"
-
 	local zone = ZonePlus.new(part)
+
+	-- ZonePlus requires its own zone part to stay in the Default collision
+	-- group (it errors, and keeps re-validating on every future
+	-- CollisionGroupId change), so a collision-group exemption is off the
+	-- table. CanCollide=false alone isn't enough either — Workspace:Raycast
+	-- checks CanQuery, not CanCollide, so it'd still block NodeGraph's
+	-- line-of-sight raycasts. relocate() moves the part out of Workspace
+	-- entirely (into ZonePlus's shared WorldModel), so nothing in Workspace
+	-- — physics or raycasts — can touch it at all, while ZonePlus's own
+	-- enter/exit detection keeps working (it queries the WorldModel too).
+	zone:relocate()
 
 	zone.playerEntered:Connect(function(player: Player)
 		Local.StartDeposit(player)
@@ -85,10 +94,6 @@ function Local.RemoveZone(part: BasePart)
 	if zone then
 		zone:destroy()
 		_zones[part] = nil
-	end
-
-	if part.Parent then
-		part.CollisionGroup = "Default"
 	end
 end
 

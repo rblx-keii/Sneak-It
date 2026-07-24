@@ -49,6 +49,9 @@ NPCConfig.ZONE_ADJACENCY = {
 
 NPCConfig.LINEAR_ZONE_SEQUENCE = { "Lobby", "Concourse", "Platform", "Depart" }
 
+NPCConfig.SHOP_DWELL_MIN = 15 -- seconds an NPC roams/sits in a shop (a Transition Node linked to another Transition Node) before heading back
+NPCConfig.SHOP_DWELL_MAX = 30
+
 -- [[ Boarding (GateService integration) ]] --
 NPCConfig.BOARD_DWELL = 2 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
 NPCConfig.RESPAWN_DELAY_MIN = 5 -- seconds after a boarded NPC despawns before its replacement spawns, randomized in this range
