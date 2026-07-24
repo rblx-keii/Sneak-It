@@ -1,7 +1,3 @@
--- Drives the repeating airplane cycle for the InProgress state:
--- Arrived -> Boarding -> Departing -> Waiting -> loop. Purely attribute-driven
--- (Workspace.GateStage/GateTimeLeft/BoardingOpen), no Network remotes, so any
--- system can react without this service knowing about them.
 --|| Services
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -17,6 +13,7 @@ export type GateStage = "Arrived" | "Boarding" | "Departing" | "Waiting"
 local _connections: {RBXScriptConnection} = {}
 local _cycleId = 0
 
+local _doorModel: Model? = nil
 local _doorAnimator: Animator? = nil
 local _doorTracks: {[string]: AnimationTrack} = {}
 local _doorMarkerConnections: {RBXScriptConnection} = {}
@@ -33,11 +30,6 @@ local ATTR_STAGE = "GateStage"
 local ATTR_TIME_LEFT = "GateTimeLeft"
 local ATTR_BOARDING_OPEN = "BoardingOpen"
 
--- [[ Departing Door animation ]] --
--- Two looped Idle tracks (door held open/closed) and two one-shot Action
--- tracks (the swing), which hand off to the matching Idle via animation-event
--- markers (Open/Close) rather than the Action track's Stopped event, since
--- the Action clip keeps playing a short settle after the marker.
 local DOOR_ASSET_NAME = "DepartingDoor"
 local DOOR_ANIM_IDS = {
 	openIdle = 72890270209807,
@@ -48,6 +40,8 @@ local DOOR_ANIM_IDS = {
 local DOOR_OPEN_MARKER = "Open"
 local DOOR_CLOSE_MARKER = "Close"
 local DOOR_IDLE_FADE_TIME = 0.15
+local DOOR_COLLISION_GROUP_OPEN = "DoorOpen" -- registered in CharacterService — non-collidable with Default/Players/NPC
+local DOOR_COLLISION_GROUP_CLOSED = "Default"
 
 --|| MAIN ||--
 local Local = {}
@@ -77,12 +71,14 @@ end
 
 function Local.SetStage(stage: GateStage)
 	Workspace:SetAttribute(ATTR_STAGE, stage)
-	Workspace:SetAttribute(ATTR_BOARDING_OPEN, stage == "Boarding")
 
 	if stage == "Boarding" then
 		Local.OpenDoor()
-	elseif stage == "Departing" then
-		Local.CloseDoor()
+	else
+		Workspace:SetAttribute(ATTR_BOARDING_OPEN, false)
+		if stage == "Departing" then
+			Local.CloseDoor()
+		end
 	end
 end
 
@@ -100,6 +96,19 @@ function Local.TeardownDoor()
 	table.clear(_doorTracks)
 
 	_doorAnimator = nil
+	_doorModel = nil
+end
+
+-- Swings the door's actual collision, not just its visual animation — the
+-- swing itself doesn't clear the physical opening (see CharacterService's
+-- DoorOpen collision group registration for why).
+function Local.SetDoorCollisionGroup(groupName: string)
+	if not _doorModel then return end
+	for _, descendant in _doorModel:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.CollisionGroup = groupName
+		end
+	end
 end
 
 function Local.SetupDoor()
@@ -126,6 +135,7 @@ function Local.SetupDoor()
 		warn(`[GateService] "{DOOR_ASSET_NAME}" not found under {assets:GetFullName()} — door will not animate. Assets contains: {table.concat(childNames, ", ")}`)
 		return
 	end
+	_doorModel = doorModel :: Model
 
 	local controller = doorModel:FindFirstChildOfClass("AnimationController")
 	if not controller then
@@ -154,16 +164,21 @@ function Local.SetupDoor()
 	table.insert(_doorMarkerConnections, _doorTracks.openAction:GetMarkerReachedSignal(DOOR_OPEN_MARKER):Connect(function()
 		warn(`[GateService] openAction hit "{DOOR_OPEN_MARKER}" marker — swapping to openIdle`)
 		Local.SwapDoorIdle("openIdle")
+		Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_OPEN)
+
+		if Workspace:GetAttribute(ATTR_STAGE) == "Boarding" then
+			Workspace:SetAttribute(ATTR_BOARDING_OPEN, true)
+		end
 	end))
 
 	table.insert(_doorMarkerConnections, _doorTracks.closeAction:GetMarkerReachedSignal(DOOR_CLOSE_MARKER):Connect(function()
 		warn(`[GateService] closeAction hit "{DOOR_CLOSE_MARKER}" marker — swapping to closeIdle`)
 		Local.SwapDoorIdle("closeIdle")
+		Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_CLOSED)
 	end))
 
-	-- The cycle always starts on "Arrived" (gate closed) — snap straight to
-	-- the closed Idle rather than fading in from nothing.
 	_doorTracks.closeIdle:Play(0)
+	Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_CLOSED)
 
 	warn(`[GateService] door set up — model={doorModel:GetFullName()}, animator={animator:GetFullName()}, tracks loaded: openIdle, openAction, closeIdle, closeAction`)
 end

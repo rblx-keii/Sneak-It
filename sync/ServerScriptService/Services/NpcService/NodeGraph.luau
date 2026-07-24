@@ -1,19 +1,26 @@
--- Pure graph-reading/writing helpers over the Nodes folder's Instance tree —
--- deliberately stateless (no module-level Lua tables) since this module gets
--- required fresh inside every NPC's isolated Actor VM as well as the main
--- thread. Everything here reads/writes only Instances (Attributes,
--- ObjectValues, positions), never a central cache, so it behaves identically
--- regardless of which thread calls it.
-
 --|| Services
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
+local PathfindingService = game:GetService("PathfindingService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+--|| References
+local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
 
 local NodeGraph = {}
 
 --|| Constants
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
+RAYCAST_PARAMS.CollisionGroup = "NPC"
+
+local PATH_AGENT_PARAMS = {
+	AgentRadius = NPCConfig.PATH_AGENT_RADIUS,
+	AgentHeight = NPCConfig.PATH_AGENT_HEIGHT,
+	AgentCanJump = NPCConfig.PATH_AGENT_CAN_JUMP,
+	AgentCanClimb = NPCConfig.PATH_AGENT_CAN_CLIMB,
+	WaypointSpacing = NPCConfig.PATH_WAYPOINT_SPACING,
+}
 
 --|| Private Functions
 local function normalize(name: string): string
@@ -21,38 +28,22 @@ local function normalize(name: string): string
 end
 
 -- [[ Zone / node identity ]] --
-
--- Zone subfolders live directly under `nodesFolder` (e.g. "Lobby",
--- "Concourse", "Platform", "Cafe", "Souvenir", "Convenience"). The one
--- exception is the Depart Node, authored directly under `nodesFolder` itself
--- (not inside any zone subfolder) — its implicit zone is "Depart".
+-- Depart is now an ordinary zone subfolder (named exactly "Depart") like
+-- every other zone, holding however many gate/waiting-area nodes — no
+-- special-cased "direct child of nodesFolder" handling anymore.
 function NodeGraph.GetZone(node: BasePart, nodesFolder: Instance): string
 	local parent = node.Parent
-	if parent == nodesFolder then
-		return "Depart"
-	end
-
-	-- A "Slot Node"'s immediate parent is the "Line Node" BasePart it
-	-- belongs to (the Line Node itself is a physical slot too, and lives
-	-- directly in the zone folder) — go up one more level for its zone.
 	if parent and parent:IsA("BasePart") and normalize(parent.Name) == "linenode" then
 		parent = parent.Parent
 	end
 
-	return (parent and parent.Name) or "Depart"
+	return (parent and parent.Name) or "Unknown"
 end
 
 function NodeGraph.GetZoneFolder(nodesFolder: Instance, zoneName: string): Instance?
-	if zoneName == "Depart" then
-		return nodesFolder
-	end
 	return nodesFolder:FindFirstChild(zoneName)
 end
 
--- "node" (Basic/pass-through) | "linenode" (either a "Line Node" BasePart
--- itself — the first physical slot — or one of its "Slot Node" children, the
--- other physical slots) | normalized own name otherwise (e.g. a literal
--- "Depart Node" normalizes to "departnode").
 function NodeGraph.GetNodeType(node: BasePart): string
 	local parent = node.Parent
 	if parent and parent:IsA("BasePart") and normalize(parent.Name) == "linenode" and normalize(node.Name) == "slotnode" then
@@ -73,9 +64,6 @@ function NodeGraph.GetLink(node: BasePart): BasePart?
 	return nil
 end
 
--- Only ever authored on a Line Node group's main/first slot — points at the
--- separate staging point NPCs detour to before joining the line, rather than
--- approaching the queue from an arbitrary angle.
 function NodeGraph.GetEntryNode(node: BasePart): BasePart?
 	local entryValue = node:FindFirstChild("Entry")
 	if entryValue and entryValue:IsA("ObjectValue") and entryValue.Value and entryValue.Value:IsA("BasePart") then
@@ -84,9 +72,6 @@ function NodeGraph.GetEntryNode(node: BasePart): BasePart?
 	return nil
 end
 
--- Authored only on a "Seat Node" BasePart — points at the physical Seat
--- instance the NPC should actually sit in on arrival (see NpcService.Local.OnArrive),
--- rather than just standing at the node's position like any other node.
 function NodeGraph.GetSeatObject(node: BasePart): Seat?
 	local seatValue = node:FindFirstChild("SeatObject")
 	if seatValue and seatValue:IsA("ObjectValue") and seatValue.Value and seatValue.Value:IsA("Seat") then
@@ -103,10 +88,6 @@ function NodeGraph.GetNodePosition(node: BasePart): Vector3
 	return node.Position
 end
 
--- All nodes belonging to `zoneName`: ordinary BaseParts directly in the zone
--- folder, plus every "Slot Node" nested under any "Line Node" BasePart
--- within it (their own Parent is the Line Node, not the zone folder, so a
--- shallow scan alone wouldn't find them).
 function NodeGraph.EnumerateZoneNodes(nodesFolder: Instance, zoneName: string): { BasePart }
 	local result = {}
 	local folder = NodeGraph.GetZoneFolder(nodesFolder, zoneName)
@@ -129,8 +110,6 @@ function NodeGraph.EnumerateZoneNodes(nodesFolder: Instance, zoneName: string): 
 	return result
 end
 
--- Every node in the whole graph, regardless of zone — used for the one-time
--- "which node is nearest my spawn point" pick.
 function NodeGraph.EnumerateAllNodes(nodesFolder: Instance): { BasePart }
 	local result = {}
 	for _, child in nodesFolder:GetChildren() do
@@ -147,25 +126,25 @@ end
 
 -- [[ Movement helpers ]] --
 
--- A plain "Node" is just a general waypoint, not a precise mark — spread
--- arrivals across a small area so the crowd doesn't all funnel through the
--- exact same point. Every other node type keeps its canonical position.
-function NodeGraph.GetMovementTargetPosition(node: BasePart, spreadRadius: number): Vector3
+function NodeGraph.GetMovementTargetPosition(node: BasePart, spreadRadius: number, nodesFolder: Instance?): Vector3
 	local basePos = NodeGraph.GetNodePosition(node)
 	if NodeGraph.GetNodeType(node) ~= "node" then
 		return basePos
 	end
 
+	-- Depart Folder nodes sit in a narrow gate corridor — the normal spread
+	-- radius can land the target position inside a doorframe/wall and get
+	-- the NPC stuck. Clamp it down there.
+	local radius = spreadRadius
+	if nodesFolder and NodeGraph.GetZone(node, nodesFolder) == "Depart" then
+		radius = math.min(radius, NPCConfig.DEPART_NODE_SPREAD_RADIUS)
+	end
+
 	local angle = math.random() * math.pi * 2
-	local dist = math.random() * spreadRadius
+	local dist = math.random() * radius
 	return basePos + Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
 end
 
--- Callers running inside the brain Actor's parallel context must already be
--- synchronized before calling this (see ActorScript.server.luau) — both
--- mutating RaycastParams' properties and calling SetAttribute (used by
--- TryClaimSlot/ReleaseSlot below) require it, even for state this
--- Actor exclusively owns.
 function NodeGraph.HasClearLine(fromPos: Vector3, toPos: Vector3, ignore: { Instance? }): boolean
 	local direction = toPos - fromPos
 	if direction.Magnitude < 0.05 then return true end
@@ -175,28 +154,20 @@ function NodeGraph.HasClearLine(fromPos: Vector3, toPos: Vector3, ignore: { Inst
 	return result == nil
 end
 
+-- A straight-line raycast can pass or fail for reasons that have nothing to
+-- do with whether the navmesh can actually route an agent there (furniture
+-- gaps, agent radius clearance, etc.) — this asks PathfindingService itself,
+-- the same way the actual walk to the node will be computed.
+function NodeGraph.IsPathReachable(fromPos: Vector3, toPos: Vector3): boolean
+	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
+	local computeOk = pcall(function()
+		path:ComputeAsync(fromPos, toPos)
+	end)
+	return computeOk and path.Status == Enum.PathStatus.Success
+end
+
 -- [[ Auto-search ]] --
 
--- Nearest eligible node across the given zone pool. Excludes `exclude`d
--- parts, any Entry Node (those are only ever reached via the deliberate
--- pre-line detour, never picked as an ordinary fallback), and — when
--- `avoidLinkBackTo` is set (the caller just arrived here via a deterministic
--- Link hop) — any candidate whose own Link would immediately send the NPC
--- straight back, preventing a two-node oscillation.
---
--- `towardGoal`, when given, changes the ranking metric from "closest to
--- fromPos" to "closest to towardGoal" — and only among candidates strictly
--- closer to it than fromPos already is. A tightly-packed cluster of nodes
--- with no Links between them has no inherent direction, so plain
--- nearest-to-self search can bounce between the same few nodes forever;
--- ranking by progress toward a fixed goal instead guarantees it can't.
---
--- `awayFromPos`, when given instead (mutually exclusive with `towardGoal` in
--- practice — there's no fixed goal to rank toward yet), keeps plain
--- nearest-to-self ranking but rejects any candidate that isn't net farther
--- from `awayFromPos` than fromPos already is — a lighter no-backtracking
--- guarantee for when there's nothing to aim at other than "not where I just
--- came from."
 function NodeGraph.FindNearestNode(
 	nodesFolder: Instance,
 	fromPos: Vector3,
@@ -230,7 +201,9 @@ function NodeGraph.FindNearestNode(
 			if minDistFromAway and (pos - (awayFromPos :: Vector3)).Magnitude <= minDistFromAway then continue end
 
 			local distance = (pos - rankPos).Magnitude
-			if distance < bestDist and NodeGraph.HasClearLine(fromPos, pos, ignore) then
+
+			local reachable = if towardGoal then true else NodeGraph.HasClearLine(fromPos, pos, ignore)
+			if distance < bestDist and reachable then
 				bestDist = distance
 				best = node
 			end
@@ -240,8 +213,38 @@ function NodeGraph.FindNearestNode(
 	return best
 end
 
--- The canonical Depart Node's position, if one exists — Linear's backbone
--- always terminates here, used as the goal for FindNearestNode's towardGoal.
+function NodeGraph.FindRandomSeatNode(nodesFolder: Instance, zoneName: string, fromPos: Vector3, exclude: { BasePart? }): BasePart?
+	local excludeSet: { [BasePart]: boolean } = {}
+	for _, part in exclude do
+		if part then excludeSet[part] = true end
+	end
+
+	local candidates: { BasePart } = {}
+	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if excludeSet[node] then continue end
+		if NodeGraph.GetNodeType(node) ~= "seatnode" then continue end
+		if NodeGraph.IsOccupied(node) or NodeGraph.IsSeatReserved(node) then continue end
+		table.insert(candidates, node)
+	end
+
+	if #candidates == 0 then return nil end
+
+	local picked = candidates[math.random(1, #candidates)]
+
+	-- Verify PathfindingService can actually route there before committing —
+	-- without this a seat tucked behind furniture/obstructions could get
+	-- picked, movement would fail to reach it, and the stuck-timeout would
+	-- eventually force-arrive the NPC from wherever it got stuck, snapping
+	-- it onto the seat (Seat:Sit always welds to the seat's CFrame) from far
+	-- away. If unreachable, just skip sitting this decision — next tick will
+	-- roll again.
+	if not NodeGraph.IsPathReachable(fromPos, NodeGraph.GetNodePosition(picked)) then
+		return nil
+	end
+
+	return picked
+end
+
 function NodeGraph.GetDepartPosition(nodesFolder: Instance): Vector3?
 	local departNodes = NodeGraph.EnumerateZoneNodes(nodesFolder, "Depart")
 	if #departNodes == 0 then return nil end
@@ -265,13 +268,11 @@ function NodeGraph.IsOccupied(node: BasePart): boolean
 	return node:GetAttribute("Occupied") == true
 end
 
--- True only for a "Slot Node" child, not the Line Node BasePart itself.
 function NodeGraph.IsSlotNode(node: BasePart): boolean
 	local parent = node.Parent
 	return parent ~= nil and parent:IsA("BasePart") and normalize(parent.Name) == "linenode" and normalize(node.Name) == "slotnode"
 end
 
--- The Line Node BasePart `node`'s group belongs to (itself, if it already is one).
 function NodeGraph.GetLineGroup(node: BasePart): BasePart
 	if NodeGraph.IsSlotNode(node) then
 		return node.Parent :: BasePart
@@ -279,8 +280,6 @@ function NodeGraph.GetLineGroup(node: BasePart): BasePart
 	return node
 end
 
--- Recomputes and stamps `LineIsFull` on `lineNode` — true once it and every
--- one of its Slot Node children are Occupied. Call after any claim/release.
 function NodeGraph.UpdateLineFullAttribute(lineNode: BasePart)
 	local full = NodeGraph.IsOccupied(lineNode)
 	if full then
@@ -308,11 +307,6 @@ function NodeGraph.ReleaseSlot(node: BasePart)
 	NodeGraph.UpdateLineFullAttribute(NodeGraph.GetLineGroup(node))
 end
 
--- The open slot within `lineNode`'s own group (itself + its Slot Node
--- children) that's closest to the front — but only among slots strictly
--- closer to the front than `currentSlot` already is, so a queued NPC only
--- ever advances forward, never sideways/backward into a slot that happens to
--- be nearer its current position.
 function NodeGraph.FindNextSlotForward(lineNode: BasePart, currentSlot: BasePart): BasePart?
 	local linePos = NodeGraph.GetNodePosition(lineNode)
 	local currentDist = (NodeGraph.GetNodePosition(currentSlot) - linePos).Magnitude
@@ -338,8 +332,6 @@ function NodeGraph.FindNextSlotForward(lineNode: BasePart, currentSlot: BasePart
 	return best
 end
 
--- Every distinct Line Node group (main slot only, not its children) across
--- the given zones — for comparing crowding between multiple lines.
 function NodeGraph.EnumerateLineGroups(nodesFolder: Instance, zones: { string }): { BasePart }
 	local result = {}
 	for _, zone in zones do
@@ -353,18 +345,13 @@ function NodeGraph.EnumerateLineGroups(nodesFolder: Instance, zones: { string })
 end
 
 function NodeGraph.GetLineEnRouteCount(lineNode: BasePart): number
-	return lineNode:GetAttribute("EnRouteCount") or 0
+	return lineNode:GetAttribute("EnRouteCount") :: number or 0
 end
 
 function NodeGraph.AddLineEnRoute(lineNode: BasePart, delta: number)
 	lineNode:SetAttribute("EnRouteCount", math.max(NodeGraph.GetLineEnRouteCount(lineNode) + delta, 0))
 end
 
--- Everyone this line is "accounting for": physically Occupied slots, plus
--- NPCs already committed to walking toward it but not yet arrived (see
--- SetEnRouteLine) — comparing just Occupied alone would let far more NPCs
--- converge on the same nearest line than it actually has room for, since
--- none of them show up as Occupied until they physically arrive.
 function NodeGraph.GetLineLoad(lineNode: BasePart): number
 	local occupied = NodeGraph.IsOccupied(lineNode) and 1 or 0
 	for _, child in lineNode:GetChildren() do
@@ -375,9 +362,6 @@ function NodeGraph.GetLineLoad(lineNode: BasePart): number
 	return occupied + NodeGraph.GetLineEnRouteCount(lineNode)
 end
 
--- Which line, if any, `npc` has already committed to walking toward but
--- hasn't arrived at yet. An ObjectValue child rather than an Attribute since
--- Attributes can't hold Instance references.
 function NodeGraph.GetEnRouteLine(npc: Model): BasePart?
 	local value = npc:FindFirstChild("EnRouteLine")
 	if value and value:IsA("ObjectValue") and value.Value and value.Value:IsA("BasePart") then
@@ -386,9 +370,6 @@ function NodeGraph.GetEnRouteLine(npc: Model): BasePart?
 	return nil
 end
 
--- Moves `npc`'s commitment to `lineNode` (or clears it if nil), decrementing
--- whatever it was previously committed to and incrementing the new one —
--- keeps EnRouteCount accurate without callers having to track the diff.
 function NodeGraph.SetEnRouteLine(npc: Model, lineNode: BasePart?)
 	local previous = NodeGraph.GetEnRouteLine(npc)
 	if previous == lineNode then return end
@@ -411,22 +392,11 @@ end
 
 -- [[ Seat Node occupancy ]] --
 
--- Seat occupancy isn't our own bookkeeping like Line/Slot Nodes — it mirrors
--- the real Seat instance's Occupant, which the engine itself sets (covers
--- players sitting too, not just NPCs). Called once at round start per Seat
--- Node, plus live on every Occupant change (see NpcService.Local.WatchSeats).
 function NodeGraph.SyncSeatOccupiedAttribute(seatNode: BasePart)
 	local seat = NodeGraph.GetSeatObject(seatNode)
 	seatNode:SetAttribute("Occupied", seat ~= nil and seat.Occupant ~= nil)
 end
 
--- `Occupied` only becomes true once an NPC physically sits — the walk there
--- can take seconds, during which a second NPC's decision would still see the
--- seat as free. `Reserved` closes that gap: claimed the instant a decision
--- picks the seat (inside the same synchronized Actor call that makes
--- TryClaimSlot race-free — see ActorScript.server.luau), released once the
--- NPC actually sits (Occupied takes over as ground truth) or abandons the
--- attempt.
 function NodeGraph.IsSeatReserved(seatNode: BasePart): boolean
 	return seatNode:GetAttribute("Reserved") == true
 end
@@ -441,12 +411,6 @@ function NodeGraph.ReleaseSeatReservation(seatNode: BasePart)
 	seatNode:SetAttribute("Reserved", false)
 end
 
--- Redirects a freshly-resolved candidate to its Line Node's Entry Node
--- first, unless the NPC already came from that Entry Node (the deliberate
--- hop right after the detour) or is already inside the same line (ordinary
--- slot-to-slot progress). `Entry` is authored on the "Line Node" BasePart
--- itself (the first physical slot) — a "Slot Node" candidate resolves its
--- own Line Node via its Parent to find it.
 function NodeGraph.ResolveEntryRedirect(candidate: BasePart, currentNode: BasePart?): BasePart
 	if NodeGraph.GetNodeType(candidate) ~= "linenode" then return candidate end
 

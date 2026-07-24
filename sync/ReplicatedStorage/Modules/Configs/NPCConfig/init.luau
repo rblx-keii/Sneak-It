@@ -11,7 +11,12 @@ NPCConfig.OBSTRUCTION_BUFFER = 3 -- studs to stop short of a raycast-detected ob
 NPCConfig.ARRIVAL_TOLERANCE = 3 -- studs; how close counts as "reached" a node/waypoint
 NPCConfig.NODE_SEARCH_RADIUS = 150 -- Auto-search candidate radius (currently unused by distance cutoff, kept for tuning)
 NPCConfig.NODE_SPREAD_RADIUS = 10 -- studs; Basic ("Node") arrivals spread across this radius instead of one exact point
-NPCConfig.STUCK_TIMEOUT = 8 -- seconds an NPC can be mid-move before it's considered stuck and re-routed
+NPCConfig.DEPART_NODE_SPREAD_RADIUS = 1.5 -- studs; tighter cap on the above specifically for Depart Folder nodes (narrow gate corridor — the full spread can land inside a wall/doorframe)
+NPCConfig.STUCK_TIMEOUT = 8 -- seconds a single waypoint leg can run past its own expected duration before it's given up on and force-arrived
+NPCConfig.LEG_TIMEOUT_GRACE_MULTIPLIER = 1.5 -- a leg's expected duration (distance/WalkSpeed) times this before the nudge-recovery cycle kicks in at all
+NPCConfig.STUCK_NUDGE_DISTANCE = 0.4 -- studs to physically nudge the NPC toward its current waypoint each probe, when it isn't making real progress on its own
+NPCConfig.STUCK_NUDGE_CHECK_INTERVAL = 0.5 -- seconds between nudge-recovery progress probes
+NPCConfig.STUCK_PROGRESS_RATIO = 0.5 -- fraction of STUCK_NUDGE_DISTANCE that counts as "made real progress" since the last probe (skips nudging, extends the leg's budget instead)
 NPCConfig.PREFETCH_DRIFT_TOLERANCE = 10 -- studs; beyond this drift from a prefetched leg's assumed start, stale waypoints are discarded and repathed fresh
 NPCConfig.DECISION_TIMEOUT = 1.5 -- TEMP: lowered from 3 for faster feedback while debugging pathfinding — seconds to wait for the brain Actor's decision report before retrying (covers a lost/crashed report)
 NPCConfig.REST_COOLDOWN = 20 -- seconds after resting at a Seat Node before an NPC will consider sitting again (Seat Node candidates are skipped during Auto-search until this elapses)
@@ -19,7 +24,7 @@ NPCConfig.SEAT_REST_DURATION = 5 -- seconds an NPC must stay seated at a Seat No
 NPCConfig.SEAT_RETRY_CHANCE = 0.5 -- chance to keep looking for another open seat when the nearest one is occupied, instead of giving up and continuing on
 
 -- [[ Pathfinding ]] --
-NPCConfig.PATH_AGENT_RADIUS = 2.5
+NPCConfig.PATH_AGENT_RADIUS = 1.25
 NPCConfig.PATH_AGENT_HEIGHT = 5
 NPCConfig.PATH_AGENT_CAN_JUMP = false
 NPCConfig.PATH_AGENT_CAN_CLIMB = false
@@ -45,7 +50,9 @@ NPCConfig.ZONE_ADJACENCY = {
 NPCConfig.LINEAR_ZONE_SEQUENCE = { "Lobby", "Concourse", "Platform", "Depart" }
 
 -- [[ Boarding (GateService integration) ]] --
-NPCConfig.BOARD_DWELL = 3 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
+NPCConfig.BOARD_DWELL = 2 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
+NPCConfig.RESPAWN_DELAY_MIN = 5 -- seconds after a boarded NPC despawns before its replacement spawns, randomized in this range
+NPCConfig.RESPAWN_DELAY_MAX = 10
 
 -- [[ Assets ]] --
 NPCConfig.RIG_TEMPLATE_PATH = { "Assets", "Rig" } -- ReplicatedStorage.Assets.Rig

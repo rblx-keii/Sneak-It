@@ -1,6 +1,3 @@
--- The first Behavior module: no traits, no detours — just walks the fixed
--- backbone zone sequence (Lobby -> Concourse -> Platform -> Depart) straight
--- through, joining/advancing through Line Nodes along the way as needed.
 --|| Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -33,27 +30,16 @@ end
 
 --|| MAIN ||--
 
--- Returns the next node to walk to (nil = blocked/retry-later, e.g. waiting
--- on a full Line Node, or a genuine dead end at Depart — both just mean "no
--- target this tick") plus a debug-visible state label mirrored onto the
--- NPC's `AIState` attribute by the caller.
 function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	local node = ctx.currentNode
 	local ignore = { ctx.npc, ctx.npc.Parent }
 
-	local function debugWarn(message: string)
-		warn(`[NPC {ctx.npc:GetAttribute("UID") or ctx.npc.Name}] [Linear] {message}`)
-	end
-
-	-- Queued in a Slot Node: always shuffle forward within the same line
-	-- before considering anything else — never leapfrogs out to another node.
 	if NodeGraph.IsSlotNode(node) then
 		local lineGroup = NodeGraph.GetLineGroup(node)
 		local nextSlot = NodeGraph.FindNextSlotForward(lineGroup, node)
 
 		if nextSlot and NodeGraph.TryClaimSlot(nextSlot, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
 			NodeGraph.ReleaseSlot(node)
-			debugWarn(`advancing in line: {node.Name} -> {nextSlot.Name}`)
 			return nextSlot, "Queueing"
 		end
 
@@ -64,71 +50,107 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	local candidate: BasePart? = link
 
 	if candidate then
-		debugWarn(`{node.Name} has a Link -> {candidate.Name}`)
+		-- Deliberately unconditional: a Link chain inside the Depart Folder
+		-- (gate entrance(s) -> ... -> dwell node) must keep advancing even
+		-- if BoardingOpen flips false mid-walk — the NPC is already past the
+		-- gate by the time it's standing on a linked node, so the
+		-- BoardingOpen gate below (which only governs *entering* Depart from
+		-- Platform) must never apply here.
+	elseif NodeGraph.GetZone(node, ctx.nodesFolder) == "Depart" then
+		-- True end of the Depart Folder's Link chain (no outgoing Link left).
+		-- Auto-searching zones={"Depart"} from here would be able to match
+		-- one of the chain's own earlier nodes (e.g. a gate entrance) as
+		-- "nearest," walking the NPC backwards through the gate in a loop —
+		-- just stop here instead.
 	else
 		local zone = NodeGraph.GetZone(node, ctx.nodesFolder)
 		local nextZone = nextBackboneZone(zone)
 
-		-- Platform -> Depart is gated on boarding actually being open — an
-		-- NPC waiting on the platform shouldn't route toward the plane at
-		-- all until then, rather than walking over and idling at Depart.
-		if nextZone == "Depart" and not workspace:GetAttribute("BoardingOpen") then
+		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
+		local gateStage = workspace:GetAttribute("GateStage")
+		-- "Plane arrived" covers both the Arrived stage (gate still closed,
+		-- door not open yet) and Boarding (door open) — NPCs should start
+		-- making their way toward the gate as soon as the plane is physically
+		-- there, not only once boarding has actually opened.
+		local planeArrived = gateStage == "Arrived" or gateStage == "Boarding"
+
+		if nextZone == "Depart" and not planeArrived then
 			nextZone = nil
 		end
 
 		local zones = if nextZone then { zone, nextZone } else { zone }
 
-		debugWarn(`{node.Name} (zone {zone}) has no Link — Auto-searching zone(s) [{table.concat(zones, ", ")}]`)
-
-		-- Skip Seat Node candidates entirely while the NPC is still within its
-		-- rest cooldown, so a fresh decision doesn't just walk it right back to
-		-- another seat immediately after standing up. LastRestTime only
-		-- updates once the NPC actually stands (see NpcService.Local.WalkTo),
-		-- so it can't yet reflect a rest that's still in progress — being
-		-- currently seated IN a Seat Node counts as "within cooldown" too,
-		-- otherwise the very decision that stands the NPC up could target a
-		-- second Seat Node before LastRestTime ever gets updated.
 		local isCurrentlySeated = NodeGraph.GetNodeType(node) == "seatnode"
 		local skipNodeTypes = nil
 		if isCurrentlySeated or workspace:GetServerTimeNow() - ctx.lastRestTime < NPCConfig.REST_COOLDOWN then
 			skipNodeTypes = { seatnode = true }
 		end
 
-		-- While boarding's open, rank toward the Depart Node instead of
-		-- purely by proximity — plain nearest-to-self search has no sense of
-		-- progress, so a tightly-packed cluster of nodes with no Links
-		-- between them (e.g. right after a checkpoint) can end up bouncing
-		-- between the same few candidates indefinitely instead of moving on.
-		-- Otherwise there's no fixed goal to aim at yet (Depart isn't even
-		-- reachable — see the zone gating above), so fall back to plain
-		-- nearest-to-self, but still refuse anything that isn't net farther
-		-- from wherever the NPC just came from, for the same reason.
-		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
-		local departPos = if boardingOpen then NodeGraph.GetDepartPosition(ctx.nodesFolder) else nil
-		local lastNodePos = (not departPos) and ctx.lastNode and NodeGraph.GetNodePosition(ctx.lastNode) or nil
+		if zone == "Platform" and not planeArrived and not (skipNodeTypes and skipNodeTypes.seatnode) then
+			-- No plane yet — sit and wait at a random open seat instead of
+			-- idly circulating the platform.
+			candidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, "Platform", NodeGraph.GetNodePosition(node), { node, ctx.lastNode })
+		end
 
-		candidate = NodeGraph.FindNearestNode(
-			ctx.nodesFolder,
-			NodeGraph.GetNodePosition(node),
-			zones,
-			{ node, ctx.lastNode },
-			ignore,
-			if ctx.arrivedViaLink then node else nil,
-			skipNodeTypes,
-			departPos,
-			lastNodePos
-		)
+		if not candidate then
+			if planeArrived and zone == "Platform" then
+				local departPos = NodeGraph.GetDepartPosition(ctx.nodesFolder)
 
-		debugWarn(`Auto-search result: {candidate and candidate.Name or "NONE"}`)
+				-- Stage 1: keep making progress across Platform toward the gate,
+				-- ranked toward Depart same as before — restricted to Platform
+				-- itself so it doesn't jump straight into the Depart Folder from
+				-- anywhere on the platform. Starts as soon as the plane has
+				-- arrived, even before the door is actually open.
+				candidate = NodeGraph.FindNearestNode(
+					ctx.nodesFolder,
+					NodeGraph.GetNodePosition(node),
+					{ "Platform" },
+					{ node, ctx.lastNode },
+					ignore,
+					if ctx.arrivedViaLink then node else nil,
+					skipNodeTypes,
+					departPos
+				)
 
-		-- Landed on an already-occupied (or already-reserved by another NPC's
-		-- in-flight decision) Seat Node: roll whether to keep looking for a
-		-- different open seat, or give up on sitting and continue on toward
-		-- boarding instead.
+				if not candidate and boardingOpen then
+					-- Stage 2: no Platform node is any closer to Depart than we
+					-- already are — we're at the gate threshold. Only actually
+					-- cross into the Depart Folder once the door is genuinely
+					-- open (BoardingOpen), not merely once the plane arrived.
+					-- Pick whichever Depart Folder node is actually nearest to
+					-- us right now (plain proximity, not ranked toward a single
+					-- fixed point, so whichever gate node is genuinely closer
+					-- wins) so the NPC walks straight through the gate.
+					candidate = NodeGraph.FindNearestNode(
+						ctx.nodesFolder,
+						NodeGraph.GetNodePosition(node),
+						{ "Depart" },
+						{ node, ctx.lastNode },
+						ignore,
+						if ctx.arrivedViaLink then node else nil,
+						skipNodeTypes
+					)
+				end
+			else
+				local lastNodePos = ctx.lastNode and NodeGraph.GetNodePosition(ctx.lastNode) or nil
+
+				candidate = NodeGraph.FindNearestNode(
+					ctx.nodesFolder,
+					NodeGraph.GetNodePosition(node),
+					zones,
+					{ node, ctx.lastNode },
+					ignore,
+					if ctx.arrivedViaLink then node else nil,
+					skipNodeTypes,
+					nil,
+					lastNodePos
+				)
+			end
+		end
+
 		if candidate and NodeGraph.GetNodeType(candidate) == "seatnode"
 			and (NodeGraph.IsOccupied(candidate) or NodeGraph.IsSeatReserved(candidate)) then
 			if math.random() < NPCConfig.SEAT_RETRY_CHANCE then
-				debugWarn(`{candidate.Name} is occupied — still want to sit, looking for another seat`)
 				candidate = NodeGraph.FindNearestNode(
 					ctx.nodesFolder,
 					NodeGraph.GetNodePosition(node),
@@ -139,7 +161,6 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 					skipNodeTypes
 				)
 			else
-				debugWarn(`{candidate.Name} is occupied — giving up on sitting, continuing on`)
 				local skipSeats = skipNodeTypes or {}
 				skipSeats.seatnode = true
 				candidate = NodeGraph.FindNearestNode(
@@ -152,15 +173,8 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 					skipSeats
 				)
 			end
-
-			debugWarn(`re-search result: {candidate and candidate.Name or "NONE"}`)
 		end
 
-		-- Landed on a Line Node for the first time (not already staged at its
-		-- Entry Node, which is handled once it's actually there): compare it
-		-- against every other line group in range and prefer whichever is
-		-- least loaded, unless that one's meaningfully farther, in which case
-		-- roll whether to just wait at the nearer, busier one instead.
 		if candidate and NodeGraph.GetNodeType(candidate) == "linenode" and not NodeGraph.IsEntryNode(node) then
 			local nearestLine = NodeGraph.GetLineGroup(candidate)
 			local bestLine = nearestLine
@@ -182,10 +196,7 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 				local bestDist = (NodeGraph.GetNodePosition(bestLine) - originPos).Magnitude
 				local tooFar = (bestDist - nearestDist) > NPCConfig.LINE_PREFER_NEAREST_DISTANCE_THRESHOLD
 
-				if tooFar and math.random() < NPCConfig.LINE_PREFER_NEAREST_CHANCE then
-					debugWarn(`{bestLine.Name} is less crowded (load {bestLoad}) but too far — staying with nearest {nearestLine.Name}`)
-				else
-					debugWarn(`preferring less-crowded line {bestLine.Name} (load {bestLoad}) over nearest {nearestLine.Name}`)
+				if not (tooFar and math.random() < NPCConfig.LINE_PREFER_NEAREST_CHANCE) then
 					candidate = bestLine
 				end
 			end
@@ -198,31 +209,19 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		return nil, "Arrived"
 	end
 
-	local redirected = NodeGraph.ResolveEntryRedirect(candidate, node)
-	if redirected ~= candidate then
-		debugWarn(`redirecting to Entry Node {redirected.Name} before joining {candidate.Name}`)
-		candidate = redirected
-	end
+	candidate = NodeGraph.ResolveEntryRedirect(candidate, node)
 
 	if NodeGraph.GetNodeType(candidate) == "linenode" then
-		local claimed = NodeGraph.TryClaimSlot(candidate, NPCConfig.LINE_SLOT_PLAYER_RADIUS)
-		debugWarn(`line slot {candidate.Name} claim {if claimed then "SUCCEEDED" else "FAILED (occupied/nearby player)"}`)
-		if not claimed then
+		if not NodeGraph.TryClaimSlot(candidate, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
 			return nil, "Queueing" -- slot taken (by an NPC or a nearby player) — keep waiting where we are
 		end
 		NodeGraph.SetEnRouteLine(ctx.npc, nil) -- fulfilled — Occupied now accounts for this NPC instead
 	elseif NodeGraph.GetNodeType(candidate) == "seatnode" then
-		-- Reserve it now, inside this same synchronized decision — the actual
-		-- claim moment, closing the race window a second NPC's decision could
-		-- otherwise slip into while this one is still walking over.
 		if not NodeGraph.TryReserveSeat(candidate) then
 			return nil, "Queueing"
 		end
 	end
 
-	-- Only release the slot we're currently standing in once we've actually
-	-- secured somewhere to go — releasing earlier would let another NPC/
-	-- player claim it while we're still physically standing there.
 	if NodeGraph.GetNodeType(node) == "linenode" then
 		NodeGraph.ReleaseSlot(node)
 	end

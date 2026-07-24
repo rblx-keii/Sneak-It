@@ -1,6 +1,3 @@
--- Name-keyed dispatcher, same shape as MapInteractables/NPCNodes: every
--- sibling ModuleScript is required once and registered under its own file
--- name, then looked up by an NPC's `BehaviorType` attribute.
 local Behaviors = {}
 
 local registry: { [string]: any } = {}

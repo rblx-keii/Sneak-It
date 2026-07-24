@@ -26,6 +26,7 @@ function Shared.Init()
 	PhysicsService:RegisterCollisionGroup("ItemBasePart")
 	PhysicsService:RegisterCollisionGroup("RagdollLimb")
 	PhysicsService:RegisterCollisionGroup("NPC")
+	PhysicsService:RegisterCollisionGroup("DoorOpen")
 
 	PhysicsService:CollisionGroupSetCollidable("Players", "Players", false)
 	PhysicsService:CollisionGroupSetCollidable("Players", "ItemBasePart", false)
@@ -37,6 +38,16 @@ function Shared.Init()
 	-- push against each other — that's what was causing one to get shoved up
 	-- and "climb" onto another when the one ahead hadn't moved yet.
 	PhysicsService:CollisionGroupSetCollidable("NPC", "NPC", false)
+
+	-- Boarding gate door (see GateService): its parts get swapped into this
+	-- group only while it's actually physically open, so players and NPCs
+	-- walk straight through instead of colliding with a leaf whose swing
+	-- animation moves it visually but doesn't clear the collision otherwise.
+	-- Disabled against every group a person can actually be in, not just
+	-- Default — player characters live in "Players", NPCs in "NPC".
+	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "Default", false)
+	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "Players", false)
+	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "NPC", false)
 
 	_stopCharacterObserver = Observers.observeCharacter(function(player: Player, character: Model)
 		character:AddTag("Player")
