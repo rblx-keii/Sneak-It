@@ -18,10 +18,24 @@
       "Bash(\"/c/Users/Keii/.claude/plugins/cache/MadeByTokens-marketplace/brainstorm/1.1.1/scripts/end-session.sh\")",
       "PowerShell(argon build plugin.project.json --plugin -y 2>&1)",
       "PowerShell(Get-Item \"$env:LOCALAPPDATA\\\\Roblox\\\\Plugins\\\\Mapify.rbxm\" | Select-Object LastWriteTime; Get-Date)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(cygpath -w /tmp/skill_inspect)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/skill_inspect/roblox-dev/**)",
+      "Bash(wc -l \"C:\\\\Users\\\\Keii\\\\AppData\\\\Local\\\\Temp\\\\skill_inspect\\\\roblox-dev\\\\references\\\\templates.md\" \"C:\\\\Users\\\\Keii\\\\AppData\\\\Local\\\\Temp\\\\skill_inspect\\\\roblox-dev\\\\references\\\\network.md\" \"C:\\\\Users\\\\Keii\\\\AppData\\\\Local\\\\Temp\\\\skill_inspect\\\\roblox-dev\\\\references\\\\network-lite.md\" 2>&1)",
+      "Read(//c/Users/Keii/AppData/Local/Temp/skill_inspect/roblox-dev/references/**)",
+      "Bash(mkdir -p \".claude/skills\" && ls \".claude/skills\" 2>&1)",
+      "Bash(unzip -o \".claude/roblox-dev \\(1\\).skill\" -d \".claude/skills\")",
+      "Bash(rm -rf /tmp/skill_inspect)",
+      "WebSearch",
+      "WebFetch(domain:create.roblox.com)",
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\Keii\\.claude"
+      "C:\\Users\\Keii\\.claude",
+      "D:\\Commissions\\Games\\Airport Security!\\Template\\.claude",
+      "\\tmp"
     ]
   }
 }
