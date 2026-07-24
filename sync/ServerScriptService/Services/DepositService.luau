@@ -65,6 +65,8 @@ end
 function Local.SetupZone(part: Instance)
 	if not part:IsA("BasePart") then return end
 
+	part.CollisionGroup = "DepositZone"
+
 	local zone = ZonePlus.new(part)
 
 	zone.playerEntered:Connect(function(player: Player)
@@ -83,6 +85,10 @@ function Local.RemoveZone(part: BasePart)
 	if zone then
 		zone:destroy()
 		_zones[part] = nil
+	end
+
+	if part.Parent then
+		part.CollisionGroup = "Default"
 	end
 end
 

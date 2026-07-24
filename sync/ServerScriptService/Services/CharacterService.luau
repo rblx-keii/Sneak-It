@@ -27,6 +27,7 @@ function Shared.Init()
 	PhysicsService:RegisterCollisionGroup("RagdollLimb")
 	PhysicsService:RegisterCollisionGroup("NPC")
 	PhysicsService:RegisterCollisionGroup("DoorOpen")
+	PhysicsService:RegisterCollisionGroup("DepositZone")
 
 	PhysicsService:CollisionGroupSetCollidable("Players", "Players", false)
 	PhysicsService:CollisionGroupSetCollidable("Players", "ItemBasePart", false)
@@ -48,6 +49,11 @@ function Shared.Init()
 	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "Default", false)
 	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "Players", false)
 	PhysicsService:CollisionGroupSetCollidable("DoorOpen", "NPC", false)
+
+	-- DepositZone-tagged parts (see DepositService) shouldn't physically
+	-- block anyone walking through them — players or NPCs.
+	PhysicsService:CollisionGroupSetCollidable("DepositZone", "NPC", false)
+	PhysicsService:CollisionGroupSetCollidable("DepositZone", "Players", false)
 
 	_stopCharacterObserver = Observers.observeCharacter(function(player: Player, character: Model)
 		character:AddTag("Player")
