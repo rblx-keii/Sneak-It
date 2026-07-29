@@ -1,9 +1,9 @@
 --|| Services
-local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --|| References
+local Observers = require(ReplicatedStorage.Modules.Libs.Observers)
 local Network = require(ReplicatedStorage.Modules.Network)
 local ProximityPrompt = require(ReplicatedStorage.Modules.Shared.Classes.ProximityPrompt)
 
@@ -26,12 +26,13 @@ local Shared = {}
 
 -- [[ Startup ]] --
 function Shared.Init()
-	for _, npc in CollectionService:GetTagged(STEALABLE_TAG) do
-		Local.SetupPrompt(npc)
-	end
+	Observers.observeTag(STEALABLE_TAG, function(npc)
+		task.spawn(Local.SetupPrompt, npc)
 
-	table.insert(_tagConnections, CollectionService:GetInstanceAddedSignal(STEALABLE_TAG):Connect(Local.SetupPrompt))
-	table.insert(_tagConnections, CollectionService:GetInstanceRemovedSignal(STEALABLE_TAG):Connect(Local.TeardownPrompt))
+		return function()
+			task.spawn(Local.TeardownPrompt, npc)
+		end
+	end)
 
 	table.insert(_networkConnections, Network:BindEvent("Steal", "Result", function(data: { result: string, reason: string? })
 		Network:FireLocal("Steal", "ResultReceived", data)
@@ -47,7 +48,7 @@ function Local.SetupPrompt(npc: Instance)
 	if not npc:IsA("Model") then return end
 	if _activePrompts[npc] then return end
 
-	local hrp = npc.PrimaryPart or npc:FindFirstChild("HumanoidRootPart")
+	local hrp = npc:FindFirstChild("HumanoidRootPart") or npc:WaitForChild("HumanoidRootPart", 5)
 	if not hrp or not hrp:IsA("BasePart") then return end
 
 	local npcId = npc:GetAttribute("UID")

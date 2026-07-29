@@ -114,7 +114,7 @@ function Local.BroadcastAlert(npc: Model, kind: "Caught" | "Stolen")
 	local position = anchor and anchor.Position or npc:GetPivot().Position
 
 	for _, securityPlayer in Players:GetPlayers() do
-		if securityPlayer:GetAttribute("Team") == "Security" then
+		if securityPlayer.Team and securityPlayer.Team.Name == "TSA" then
 			Network:FireClient("Steal", securityPlayer, "Alarm", {
 				npcId = npc:GetAttribute("UID") or npc.Name,
 				position = position,
@@ -140,11 +140,10 @@ end
 function Local.TriggerSuccess(session: StealSession)
 	Local.EndSession(session)
 
-	local originCFrame = session.npc:GetPivot()
 	local droppedBag = ItemService.ForceDropItem(session.npc)
 
 	if droppedBag then
-		ItemService.PickupItem(session.player, droppedBag, originCFrame)
+		ItemService.ForcePickupItem(session.player, droppedBag)
 	end
 
 	Network:FireClient("Steal", session.player, "Result", { result = "Success" })
@@ -195,7 +194,7 @@ end
 function Shared.StartSteal(player: Player, npcModel: Model): boolean
 	if not npcModel or not npcModel.Parent then return false end
 
-	if ItemService.IsHoldingBag()(player) then return false end
+	if ItemService.IsHoldingBag(player) then return false end
 	if Local.activeSessions[player.UserId] then return false end
 	if Local.lockedNPCs[npcModel] then return false end
 

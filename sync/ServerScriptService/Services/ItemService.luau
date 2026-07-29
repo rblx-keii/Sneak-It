@@ -576,30 +576,7 @@ function Local.SetupThrowRagdoll(item: Model, thrower: Player, direction: Vector
 end
 
 -- [[ Public Functions ]] --
-function Shared.PickupItem(player: Player, item: Model, originCFrame: CFrame)
-	local character = player.Character
-	if not character then return end
-
-	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
-	if not hrp or not item.PrimaryPart then return end
-	if item.Parent == character or not item.Parent then return end
-
-	if not CollectionService:HasTag(item, INTERACT_TAG) then return end
-
-	local rayOrigin = originCFrame.Position
-	local itemPos = item:GetPivot().Position
-	local direction = itemPos - rayOrigin
-	local distance = direction.Magnitude
-
-	if distance > MAX_PICKUP_DISTANCE then return end
-
-	local rayParams = RaycastParams.new()
-	rayParams.FilterType = Enum.RaycastFilterType.Exclude
-	rayParams.FilterDescendantsInstances = { character, item }
-	if Workspace:Raycast(rayOrigin, direction.Unit * distance, rayParams) then return end
-
-	if (hrp.Position - itemPos).Magnitude > MAX_PICKUP_DISTANCE then return end
-
+function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: Model)
 	local pendingThrowCleanup = _activeThrowListeners[item]
 	if pendingThrowCleanup then
 		pendingThrowCleanup()
@@ -635,6 +612,45 @@ function Shared.PickupItem(player: Player, item: Model, originCFrame: CFrame)
 	Local.RecalculateContraband(character)
 
 	Local.SyncClient(player, "ItemPickup")
+end
+
+function Shared.PickupItem(player: Player, item: Model, originCFrame: CFrame)
+	local character = player.Character
+	if not character then return end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
+	if not hrp or not item.PrimaryPart then return end
+	if item.Parent == character or not item.Parent then return end
+
+	if not CollectionService:HasTag(item, INTERACT_TAG) then return end
+
+	local rayOrigin = originCFrame.Position
+	local itemPos = item:GetPivot().Position
+	local direction = itemPos - rayOrigin
+	local distance = direction.Magnitude
+
+	if distance > MAX_PICKUP_DISTANCE then return end
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = { character, item }
+	if Workspace:Raycast(rayOrigin, direction.Unit * distance, rayParams) then return end
+
+	if (hrp.Position - itemPos).Magnitude > MAX_PICKUP_DISTANCE then return end
+
+	Local.GrantItem(player, character, hrp, item)
+end
+
+function Shared.ForcePickupItem(player: Player, item: Model): boolean
+	local character = player.Character
+	if not character then return false end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
+	if not hrp or not item.PrimaryPart then return false end
+	if item.Parent == character or not item.Parent then return false end
+
+	Local.GrantItem(player, character, hrp, item)
+	return true
 end
 
 function Shared.PopBagItem(player: Player)

@@ -23,6 +23,7 @@ local TEAM_CONFIGS: {[string]: Color3} = {
 }
 
 local TEAM_NAMES: {TeamName} = { "TSA", "Smuggler" }
+local FORCE_TEAM_FOR_TESTING: TeamName? = "Smuggler"
 
 --|| MAIN ||--
 local Local = {}
@@ -71,6 +72,10 @@ function Shared.IsAfk(player: Player): boolean
 end
 
 function Local.PickBalancedTeam(): string
+	if FORCE_TEAM_FOR_TESTING then
+		return FORCE_TEAM_FOR_TESTING
+	end
+
 	local lowest: string? = nil
 	local tied: {string} = {}
 
@@ -135,7 +140,7 @@ function Shared.AssignTeams(players: {Player}): {[string]: {Player}}
 
 	local half = math.ceil(#shuffled / 2)
 	for i, player in shuffled do
-		local teamName = i <= half and TEAM_NAMES[1] or TEAM_NAMES[2]
+		local teamName = FORCE_TEAM_FOR_TESTING or (i <= half and TEAM_NAMES[1] or TEAM_NAMES[2])
 		Local.AssignPlayer(player, teamName)
 		table.insert(roster[teamName], player)
 	end

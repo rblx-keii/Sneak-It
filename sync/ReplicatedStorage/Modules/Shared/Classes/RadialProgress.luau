@@ -108,6 +108,7 @@ function RadialProgress.new(parentFrame: Frame, config: RadialProgressConfig?): 
 		ring.Size = UDim2.fromScale(2, 1)
 		ring.Position = ringPos
 		ring.BackgroundTransparency = 1
+		ring.Visible = false
 		ring.Parent = clip
 
 		local corner = Instance.new("UICorner")

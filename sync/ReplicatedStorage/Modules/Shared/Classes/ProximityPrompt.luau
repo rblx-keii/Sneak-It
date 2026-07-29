@@ -79,6 +79,7 @@ export type ClassType = typeof(setmetatable({} :: {
 	_isHolding: boolean,
 	_isVisible: boolean,
 	_isEnabled: boolean,
+	_isSuppressed: boolean, -- True while another prompt is being held
 	_currentProgress: number, -- Replaced _holdStart
 	_isCompleting: boolean, -- True while the completion punch anim is holding the ring at 100%
 
@@ -110,6 +111,17 @@ export type ClassType = typeof(setmetatable({} :: {
 	_PlayCompletionAnimation: (self: ClassType) -> (),
 }, ProximityPrompt))
 
+-- All live instances, so holding one prompt can suppress every other one on screen
+local _instances: {[ClassType]: true} = {}
+
+local function SetOthersSuppressed(activeSelf: ClassType, state: boolean)
+	for instance in _instances do
+		if instance ~= activeSelf then
+			instance._isSuppressed = state
+		end
+	end
+end
+
 -- [[ Private Helpers ]] --
 local function GetLocalHRP(): BasePart?
 	local character = LocalPlayer.Character
@@ -138,6 +150,7 @@ function ProximityPrompt.new(settings: PromptSettings): ClassType
 	self._isHolding = false
 	self._isVisible = false
 	self._isEnabled = settings.enabled
+	self._isSuppressed = false
 	self._currentProgress = 0
 	self._isCompleting = false
 	self._resetThread = nil
@@ -165,15 +178,19 @@ function ProximityPrompt.new(settings: PromptSettings): ClassType
 		Color = Color3.new(1, 1, 1),
 		Thickness = 0.05,
 	})
-	self._radialProgress:SetProgress(0)
+	
 	self._contentScale = contentFrame:FindFirstChildOfClass("UIScale")
-
+	
 	self._actionLabel.Text = settings.actionText
 	self._objectLabel.Text = settings.objectText
 	self._keyLabel.Text = settings.keyboardKeyCode.Name
 
+	self:_UpdateProgressBar(0)
+
 	self._BindInput(self)
 	self._StartHeartbeat(self)
+
+	_instances[self] = true
 
 	return self
 end
@@ -248,7 +265,7 @@ end
 function ProximityPrompt._OnHeartbeat(self: ClassType, dt: number)
 	local inRange = self._CheckDistance(self)
 
-	if inRange and self._isEnabled then
+	if inRange and self._isEnabled and not self._isSuppressed then
 		if not self._isVisible then
 			self._SetVisible(self, true)
 		end
@@ -326,6 +343,7 @@ function ProximityPrompt._StartHold(self: ClassType)
 
 	self._isHolding = true
 	self.HoldStarted:Fire()
+	SetOthersSuppressed(self, true)
 end
 
 function ProximityPrompt._StopHold(self: ClassType, completed: boolean)
@@ -333,6 +351,7 @@ function ProximityPrompt._StopHold(self: ClassType, completed: boolean)
 	self._isHolding = false
 
 	self.HoldEnded:Fire()
+	SetOthersSuppressed(self, false)
 
 	if completed then
 		self._PlayCompletionAnimation(self)
@@ -402,6 +421,8 @@ function ProximityPrompt.UpdateSettings(self: ClassType, newSettings: {[string]:
 end
 
 function ProximityPrompt.Destroy(self: ClassType)
+	_instances[self] = nil
+
 	if self._resetThread then
 		task.cancel(self._resetThread)
 		self._resetThread = nil

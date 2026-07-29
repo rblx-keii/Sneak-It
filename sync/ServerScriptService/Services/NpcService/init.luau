@@ -95,6 +95,7 @@ Local.decisionReportEvent = Instance.new("BindableEvent")
 --|| Constants
 local NPC_FOLDER_NAME = "NPCs"
 local DEBUG_MARKERS_FOLDER_NAME = "NPCDebugMarkers"
+local STEALABLE_NPC_TAG = "StealableNPC"
 
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
@@ -140,7 +141,7 @@ function Shared.Init()
 				task.spawn(function()
 					local ok, stillPending = pcall(Local.ProcessNPCTick, record)
 					if not ok then
-						warn(`[NpcService] NPC tick error for {record.uid}: {stillPending}`)
+						Local.Warn(`[NpcService] NPC tick error for {record.uid}: {stillPending}`)
 						record.busy = false
 					elseif not stillPending then
 						record.busy = false
@@ -286,6 +287,22 @@ function Local.IsHoldingBag(record: NPCRecord): boolean
 	return heldItem ~= nil and heldItem ~= ""
 end
 
+function Local.UpdateStealableTag(record: NPCRecord)
+	local heldItemName = record.model:GetAttribute("HeldItem")
+	local isStealable = false
+
+	if heldItemName and heldItemName ~= "" then
+		local heldModel = record.model:FindFirstChild(heldItemName)
+		isStealable = heldModel ~= nil and heldModel:GetAttribute("IsBag") == true
+	end
+
+	if isStealable then
+		CollectionService:AddTag(record.model, STEALABLE_NPC_TAG)
+	else
+		CollectionService:RemoveTag(record.model, STEALABLE_NPC_TAG)
+	end
+end
+
 -- [[ Private Functions — Round lifecycle ]] --
 function Local.OnRoundStateChange(newState: string)
 	if newState == "Starting" then
@@ -304,13 +321,13 @@ function Local.SpawnRound()
 
 	local activeMap = MapService.GetActiveMap()
 	if not activeMap then
-		warn("[NpcService] No active map — cannot build node graph")
+		Local.Warn("[NpcService] No active map — cannot build node graph")
 		return
 	end
 
 	local nodesFolder = activeMap:FindFirstChild("Nodes")
 	if not nodesFolder then
-		warn("[NpcService] Active map has no 'Nodes' Folder — NPCs will have nowhere to walk")
+		Local.Warn("[NpcService] Active map has no 'Nodes' Folder — NPCs will have nowhere to walk")
 		return
 	end
 	_nodesFolder = nodesFolder
@@ -390,7 +407,7 @@ function Local.GetRigTemplate(): Model?
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local rig = assets and assets:FindFirstChild("Rig")
 	if not rig or not rig:IsA("Model") then
-		warn("[NpcService] ReplicatedStorage.Assets.Rig not found or not a Model")
+		Local.Warn("[NpcService] ReplicatedStorage.Assets.Rig not found or not a Model")
 		return nil
 	end
 	return rig
@@ -429,14 +446,14 @@ function Local.GetSpawnCFrame(): CFrame
 		return CFrame.new(position) * (zone.CFrame - zone.CFrame.Position)
 	end
 
-	warn("[NpcService] Active map has no Spawns.NPC part — spawning at the world origin")
+	Local.Warn("[NpcService] Active map has no Spawns.NPC part — spawning at the world origin")
 	return CFrame.new()
 end
 
 function Local.GetActorScriptTemplate(): Script?
 	local template = script:FindFirstChild("ActorScript")
 	if not template or not template:IsA("Script") then
-		warn("[NpcService] ActorScript template not found")
+		Local.Warn("[NpcService] ActorScript template not found")
 		return nil
 	end
 	return template :: Script
@@ -476,7 +493,7 @@ function Local.SpawnNPC(template: Model)
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	local hrp = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not humanoid or not hrp then
-		warn("[NpcService] Rig template is missing a Humanoid/HumanoidRootPart")
+		Local.Warn("[NpcService] Rig template is missing a Humanoid/HumanoidRootPart")
 		model:Destroy()
 		return
 	end
@@ -506,7 +523,7 @@ function Local.SpawnNPC(template: Model)
 	model:SetAttribute("BehaviorType", "Linear")
 
 	local actor = Local.InjectActor(model)
-	warn(
+	Local.Warn(
 		`[NpcService] Spawned {uid} at {model:GetPivot().Position} (BehaviorType=Linear, Nodes={_nodesFolder and _nodesFolder:GetFullName() or "nil"}, unanchored {anchoredCount} part(s), PlatformStand={humanoid.PlatformStand}, Sit={humanoid.Sit}, state={humanoid:GetState().Name})`
 	)
 
@@ -562,6 +579,12 @@ function Local.SpawnNPC(template: Model)
 		connections,
 		model.Destroying:Once(function()
 			Local.CleanupNPC(model)
+		end)
+	)
+	table.insert(
+		connections,
+		model:GetAttributeChangedSignal("HeldItem"):Connect(function()
+			Local.UpdateStealableTag(record)
 		end)
 	)
 	_npcConnections[model] = connections
@@ -666,7 +689,21 @@ function Local.CleanupNPC(model: Model)
 	end
 end
 
+function Local.IsDebugEnabled(): boolean
+	return script:GetAttribute("Debug") == true
+end
+
+function Local.Warn(message: string)
+	if not Local.IsDebugEnabled() then
+		return
+	end
+	warn(message)
+end
+
 function Local.DebugWarn(record: NPCRecord, message: string)
+	if not Local.IsDebugEnabled() then
+		return
+	end
 	warn(`[NPC {record.uid}] {message}`)
 end
 
@@ -1536,7 +1573,7 @@ function Local.OnDecisionReported(npc: Model, nextNode: BasePart?, state: string
 	if nextNode then
 		local ok, err = pcall(Local.WalkTo, record, nextNode)
 		if not ok then
-			warn(`[NpcService] WalkTo error for {record.uid}: {err}`)
+			Local.Warn(`[NpcService] WalkTo error for {record.uid}: {err}`)
 		end
 	end
 
@@ -1570,6 +1607,16 @@ function Shared.GetNPCKind(npc: Model): NPCKind?
 		return "Crowd"
 	end
 	return nil
+end
+
+function Shared.ForceAlert(npc: Model)
+	local record = Local.FindRecordByModel(npc)
+	if not record then
+		return
+	end
+
+	Local.StopItemIdleAnimation(record)
+	record.pendingBagNode = nil
 end
 
 function Shared.Destroy()
