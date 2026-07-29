@@ -546,7 +546,10 @@ function Local.SpawnNPC(template: Model)
 		unseating = false,
 	}
 
-	Local.EquipStarterItem(record)
+	task.spawn(function()
+		RunService.Heartbeat:Wait()
+		Local.EquipStarterItem(record)
+	end)
 
 	local connections: { RBXScriptConnection } = {}
 	table.insert(

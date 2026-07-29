@@ -364,10 +364,13 @@ function Local.StoreInBag(bag: Model, item: Model): boolean
 	return true
 end
 
-function Local.WeldToHand(character: Model, item: Model)
+function Local.WeldToHand(character: Model, item: Model): boolean
 	local rightHand = character:FindFirstChild("RightHand") or character:FindFirstChild("Right Arm")
 	local primaryPart = item.PrimaryPart
-	if not rightHand or not primaryPart then return end
+	if not rightHand or not primaryPart then
+		warn(`[ItemService] WeldToHand({character:GetFullName()}, {item.Name}) — missing RightHand/PrimaryPart, skipping`)
+		return false
+	end
 
 	CollectionService:RemoveTag(item, INTERACT_TAG)
 
@@ -391,6 +394,29 @@ function Local.WeldToHand(character: Model, item: Model)
 	end
 
 	item.Parent = character
+	return true
+end
+
+function Local.SwapGripWeldToMotor(item: Model)
+	local weldsFolder = item:FindFirstChild("ItemWelds")
+	if not weldsFolder then
+		warn(`[ItemService] SwapGripWeldToMotor({item.Name}) — no ItemWelds folder, skipping`)
+		return
+	end
+
+	local gripWeld = weldsFolder:FindFirstChild("GripWeld") :: WeldConstraint?
+	if not gripWeld or not gripWeld.Part0 then
+		warn(`[ItemService] SwapGripWeldToMotor({item.Name}) — GripWeld missing or Part0 unset (gripWeld={gripWeld ~= nil}, Part0={gripWeld and gripWeld.Part0 ~= nil}), skipping`)
+		return
+	end
+
+	local motor = Instance.new("Motor6D")
+	motor.Name = "Handle_Motor"
+	motor.Part0 = gripWeld.Part0
+	motor.Part1 = gripWeld.Part1
+	motor.Parent = item
+
+	gripWeld.Part0 = nil
 end
 
 function Local.CloneItemTemplate(itemName: string): Model?
@@ -829,7 +855,13 @@ function Shared.EquipNPCItem(npcModel: Model, item: Model): boolean
 
 	Local.EnsureUID(item)
 	npcModel:SetAttribute("HeldItem", item.Name)
-	Local.WeldToHand(npcModel, item)
+
+	if not Local.WeldToHand(npcModel, item) then
+		npcModel:SetAttribute("HeldItem", "")
+		return false
+	end
+
+	Local.SwapGripWeldToMotor(item)
 	Local.RecalculateContraband(npcModel)
 
 	return true
