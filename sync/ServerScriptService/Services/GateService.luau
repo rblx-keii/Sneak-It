@@ -22,10 +22,10 @@ local _doorMarkerConnections: {RBXScriptConnection} = {}
 local isStudio = RunService:IsStudio()
 
 --|| Constants
-local ARRIVED_DURATION = isStudio and 10 or 15 -- plane taxis in, gate still closed
-local BOARDING_DURATION = isStudio and 15 or 45 -- gate open — BoardingOpen=true
-local DEPARTING_DURATION = isStudio and 10 or 15 -- gate just closed, plane taxis out
-local WAITING_DURATION = isStudio and 10 or 15 -- empty gate, next plane inbound
+local ARRIVED_DURATION = isStudio and 10 or 15
+local BOARDING_DURATION = isStudio and 15 or 45
+local DEPARTING_DURATION = isStudio and 10 or 15
+local WAITING_DURATION = isStudio and 10 or 15
 
 local ATTR_STAGE = "GateStage"
 local ATTR_TIME_LEFT = "GateTimeLeft"
@@ -41,7 +41,7 @@ local DOOR_ANIM_IDS = {
 local DOOR_OPEN_MARKER = "Open"
 local DOOR_CLOSE_MARKER = "Close"
 local DOOR_IDLE_FADE_TIME = 0.15
-local DOOR_COLLISION_GROUP_OPEN = "DoorOpen" -- registered in CharacterService — non-collidable with Default/Players/NPC
+local DOOR_COLLISION_GROUP_OPEN = "DoorOpen"
 local DOOR_COLLISION_GROUP_CLOSED = "Default"
 
 --|| MAIN ||--
@@ -100,9 +100,6 @@ function Local.TeardownDoor()
 	_doorModel = nil
 end
 
--- Swings the door's actual collision, not just its visual animation — the
--- swing itself doesn't clear the physical opening (see CharacterService's
--- DoorOpen collision group registration for why).
 function Local.SetDoorCollisionGroup(groupName: string)
 	if not _doorModel then return end
 	for _, descendant in _doorModel:GetDescendants() do
@@ -111,10 +108,6 @@ function Local.SetDoorCollisionGroup(groupName: string)
 		end
 	end
 
-	-- The door is the only thing in this map whose CollisionGroup swap
-	-- changes what NPC-group raycasts can see (see NodeGraph's RAYCAST_PARAMS)
-	-- — any cached line-of-sight result computed while it was in the other
-	-- state is now stale.
 	NodeGraph.InvalidateLoSCache()
 end
 

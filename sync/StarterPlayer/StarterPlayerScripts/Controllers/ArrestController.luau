@@ -133,7 +133,6 @@ function Local.RemovePrompt(character: Model)
 end
 
 function Local.WatchNPCs()
-	-- TODO: not yet implemented — NPC arrest prompts never populate
 end
 
 function Local.RefreshAllNPCPrompts()

@@ -166,7 +166,6 @@ end
 function Shared.ShowPrompt(key: Enum.KeyCode | Enum.UserInputType, action: string)
 	local formattedKey = Local.GetFormattedKey(key)
 
-	-- Auto-route to ChangeActionText if the prompt is already on screen!
 	if _activePrompts[formattedKey] then
 		Shared.ChangeActionText(key, action)
 		return

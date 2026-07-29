@@ -59,7 +59,7 @@ local DROP_FORCE = 15
 local INTERACT_TAG = "Interactable"
 local ITEMBASEPART_TAG = "ItemBasePart"
 
-local MIN_THROW_DOT_PRODUCT = 0.2 -- kept only for future use; no longer enforced server-side
+local MIN_THROW_DOT_PRODUCT = 0.2
 local RAGDOLL_THROW_WEIGHT = 1
 local RAGDOLL_IMPACT_FORCE_MULTIPLIER = 8
 local RAGDOLL_LISTEN_TIMEOUT = 5
@@ -393,10 +393,6 @@ function Local.WeldToHand(character: Model, item: Model)
 	item.Parent = character
 end
 
--- ItemsConfig keys (and every internal caller) use un-spaced PascalCase
--- (e.g. "DuffleBag"), but the actual template Models under Assets.Items are
--- authored with a space before each word (e.g. "Duffle Bag"). Try the spaced
--- form first, falling back to the literal name for any template that isn't.
 function Local.CloneItemTemplate(itemName: string): Model?
 	if not ItemTemplatesFolder then
 		warn("[ItemService] ReplicatedStorage.Assets.Items folder not found — cannot clone item template!")
@@ -762,10 +758,6 @@ function Shared.ForceDropItem(character: Model): Model?
 	return Local.ClearEquipped(character)
 end
 
--- Total contraband stars (Rating) carried by this item — the item's own
--- Rating if it's contraband itself, or the summed Rating of only the
--- contraband entries inside it if it's a bag. Non-contraband items/fillers
--- contribute 0.
 function Shared.GetContrabandRating(item: Model): number
 	if item:GetAttribute("IsContraband") then
 		return item:GetAttribute("Rating") or 0
@@ -789,8 +781,6 @@ function Shared.GetContrabandRating(item: Model): number
 	return 0
 end
 
--- Count of contraband items carried by this item — 1 if it's contraband
--- itself, or the number of contraband entries inside it if it's a bag.
 function Shared.GetContrabandItemCount(item: Model): number
 	if item:GetAttribute("IsContraband") then
 		return 1
@@ -813,10 +803,6 @@ function Shared.GetContrabandItemCount(item: Model): number
 	return 0
 end
 
--- Clones an item template, runs it through the same attribute/weld setup a
--- world-placed Interactable gets, and parents it into Workspace. Used by
--- NPCAIService to hand crowd NPCs a bag on spawn (and by the Conveyor node
--- when it needs a fresh item) without duplicating ItemsConfig's init logic.
 function Shared.SpawnItem(itemName: string, cframe: CFrame?): Model?
 	local item = Local.CloneItemTemplate(itemName)
 	if not item then return nil end

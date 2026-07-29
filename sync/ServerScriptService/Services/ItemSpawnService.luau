@@ -11,8 +11,8 @@ local ItemService = require(script.Parent.ItemService)
 --|| Types
 type SpawnPoint = {
 	part: BasePart,
-	items: { string }?, -- explicit allowed item names (normalized, no spaces), or nil for "any"
-	types: { string }, -- resolved ItemsType set, always at least one entry
+	items: { string }?,
+	types: { string },
 	currentItem: Model?,
 	watchConn: RBXScriptConnection?,
 	respawnThread: thread?,
@@ -63,7 +63,7 @@ function Local.OnRoundStateChange(newState: string)
 end
 
 function Local.SpawnRound()
-	Local.DespawnAll() -- safety net in case of an unclean previous round
+	Local.DespawnAll()
 
 	local activeMap = MapService.GetActiveMap()
 	if not activeMap then
@@ -106,11 +106,6 @@ function Local.DespawnAll()
 end
 
 -- [[ Private Functions — Spawn point setup ]] --
-
--- Attributes on each ItemSpawns part (per user spec):
---   Items      — comma-separated explicit item names allowed here. Empty/unset = "allow all items in ItemsType".
---   ItemsType  — comma-separated categories ("Chaos" | "Non-functional"). Empty/unset = "Non-functional" only.
--- Both may be set together — they build into one joined weighted candidate table.
 function Local.RegisterSpawnPoint(part: BasePart)
 	local itemsAttr = part:GetAttribute("Items")
 	local typeAttr = part:GetAttribute("ItemsType")
@@ -208,7 +203,7 @@ end
 
 -- [[ Private Functions — Spawn / respawn ]] --
 function Local.SpawnItemAt(spawnPoint: SpawnPoint)
-	if spawnPoint.currentItem then return end -- already occupied
+	if spawnPoint.currentItem then return end
 
 	local candidates = Local.BuildCandidates(spawnPoint)
 	if #candidates == 0 then
@@ -224,15 +219,13 @@ function Local.SpawnItemAt(spawnPoint: SpawnPoint)
 
 	spawnPoint.currentItem = item
 
-	-- Fires on pickup (reparented to a character) or destruction (reparented
-	-- to nil) alike — either way the spawn point is empty and due a respawn.
 	spawnPoint.watchConn = item:GetPropertyChangedSignal("Parent"):Connect(function()
 		Local.OnItemLeftSpawn(spawnPoint, item)
 	end)
 end
 
 function Local.OnItemLeftSpawn(spawnPoint: SpawnPoint, item: Model)
-	if spawnPoint.currentItem ~= item then return end -- stale/duplicate fire
+	if spawnPoint.currentItem ~= item then return end
 
 	spawnPoint.currentItem = nil
 

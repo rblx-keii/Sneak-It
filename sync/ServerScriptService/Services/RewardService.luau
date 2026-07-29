@@ -15,9 +15,6 @@ type RoundEarnings = { playtime: number, teamTask: number }
 local _playtimeThreads: { [Player]: thread } = {}
 local _connections: {RBXScriptConnection} = {}
 
--- This round's per-player earnings, broken down for the end-of-round rewards
--- screen. Reset when a player joins a round (Local.StartPlaytimeTracking),
--- read and cleared in Shared.GrantRoundRewards.
 local _roundEarnings: { [Player]: RoundEarnings } = {}
 
 --|| Constants
@@ -25,7 +22,7 @@ local WIN_REWARD = 50
 local LOSS_REWARD = 15
 local FIRST_WIN_OF_DAY_REWARD = 100
 local PLAYTIME_REWARD = 5
-local PLAYTIME_INTERVAL = 60 -- seconds
+local PLAYTIME_INTERVAL = 60
 
 --|| MAIN ||--
 local Local = {}
@@ -90,9 +87,6 @@ end
 
 -- [[ Public Functions ]] --
 
--- Called by ArrestService/DepositService when a player completes a
--- team-based task (a TSA arrest, a Smuggler deposit). Grants the coins and
--- tracks them toward this round's "Team Based Tasks Earned" total.
 function Shared.GrantTeamTaskReward(player: Player, amount: number)
 	if not DataService.IsDataLoaded(player) then return end
 
@@ -104,7 +98,6 @@ function Shared.GrantTeamTaskReward(player: Player, amount: number)
 	end
 end
 
--- Called by RoundService at round end
 function Shared.GrantRoundRewards(winningTeam: Team, participants: { [Player]: Team })
 	for player, team in participants do
 		if not DataService.IsDataLoaded(player) then continue end
@@ -137,7 +130,6 @@ function Shared.GrantRoundRewards(winningTeam: Team, participants: { [Player]: T
 			Local.GrantFirstWinOfDay(player)
 		end
 
-		-- Fire the round's earnings breakdown to the client for the rewards screen
 		Network:FireClient("Round", player, "RewardGranted", {
 			playtimeTokens = earnings.playtime,
 			teamTaskTokens = earnings.teamTask,

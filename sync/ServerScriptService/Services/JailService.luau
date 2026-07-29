@@ -19,15 +19,15 @@ type JailRecord = {
 }
 
 --|| Variables
-local _jailRecords: {[number]: JailRecord} = {} -- [userId] = JailRecord
+local _jailRecords: {[number]: JailRecord} = {}
 local _connections: {RBXScriptConnection} = {}
 
 --|| Constants
 local JAIL_DURATIONS = {
-	[1] = 15,  -- 1st offense
-	[2] = 25,  -- 2nd offense
-	[3] = 40,  -- 3rd offense
-	[4] = 60,  -- 4th+ offense (cap)
+	[1] = 15,
+	[2] = 25,
+	[3] = 40,
+	[4] = 60,
 }
 
 local TSA_MAX_STRIKES = 3
@@ -105,7 +105,6 @@ function Local.TeleportToJail(player: Player)
 	local jailModel = Local.GetJailModel()
 	if not jailModel then return end
 
-	-- Use model pivot as center, adjust Y so feet touch floor
 	local pivotCFrame = jailModel:GetPivot()
 	local modelSize = jailModel:GetExtentsSize()
 	local floorY = pivotCFrame.Position.Y - (modelSize.Y / 2)
@@ -122,7 +121,7 @@ function Local.RunJailCountdown(player: Player, duration: number)
 	if not record then return end
 
 	record.jailThread = task.delay(duration, function()
-		if not _jailRecords[player.UserId] then return end -- Player left mid-sentence
+		if not _jailRecords[player.UserId] then return end
 
 		record.isJailed = false
 		record.jailThread = nil
@@ -147,7 +146,6 @@ function Shared.JailPlayer(player: Player, reason: "Arrested" | "FalseArrest" | 
 	local record = Shared.GetRecord(player)
 	if not record then return end
 
-	-- Re-arrest resets the timer
 	if record.jailThread then
 		task.cancel(record.jailThread)
 		record.jailThread = nil

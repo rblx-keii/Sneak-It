@@ -28,9 +28,6 @@ local function normalize(name: string): string
 end
 
 -- [[ Zone / node identity ]] --
--- Depart is now an ordinary zone subfolder (named exactly "Depart") like
--- every other zone, holding however many gate/waiting-area nodes — no
--- special-cased "direct child of nodesFolder" handling anymore.
 function NodeGraph.GetZone(node: BasePart, nodesFolder: Instance): string
 	local parent = node.Parent
 	if parent and parent:IsA("BasePart") and normalize(parent.Name) == "linenode" then
@@ -56,10 +53,6 @@ function NodeGraph.IsEntryNode(node: BasePart): boolean
 	return normalize(node.Name) == "entrynode"
 end
 
--- A Transition Node lives under a zone's own Folder and is the mandatory
--- checkpoint an NPC must reach before that zone's Auto-search is allowed to
--- consider anything in the next zone — it carries a Link (like any other
--- linked node) pointing into whichever node/zone comes next.
 function NodeGraph.IsTransitionNode(node: BasePart): boolean
 	return normalize(node.Name) == "transitionnode"
 end
@@ -74,12 +67,36 @@ function NodeGraph.GetTransitionNodes(nodesFolder: Instance, zoneName: string): 
 	return result
 end
 
+function NodeGraph.IsConveyorNode(node: BasePart): boolean
+	return normalize(node.Name) == "conveyornode"
+end
+
+function NodeGraph.IsPickupNode(node: BasePart): boolean
+	return normalize(node.Name) == "pickupnode"
+end
+
 function NodeGraph.GetLink(node: BasePart): BasePart?
 	local linkValue = node:FindFirstChild("Link")
 	if linkValue and linkValue:IsA("ObjectValue") and linkValue.Value and linkValue.Value:IsA("BasePart") then
 		return linkValue.Value :: BasePart
 	end
 	return nil
+end
+
+function NodeGraph.GetPickupNode(node: BasePart): BasePart?
+	local pickupValue = node:FindFirstChild("Pickup")
+	if pickupValue and pickupValue:IsA("ObjectValue") and pickupValue.Value and pickupValue.Value:IsA("BasePart") then
+		return pickupValue.Value :: BasePart
+	end
+	return nil
+end
+
+function NodeGraph.GetSubNode(node: BasePart, subName: string): BasePart?
+	local subFolder = node:FindFirstChild("SubNodes")
+	if not subFolder then return nil end
+
+	local sub = subFolder:FindFirstChild(subName)
+	return sub and sub:IsA("BasePart") and sub or nil
 end
 
 function NodeGraph.GetEntryNode(node: BasePart): BasePart?
@@ -96,6 +113,16 @@ function NodeGraph.GetSeatObject(node: BasePart): Seat?
 		return seatValue.Value :: Seat
 	end
 	return nil
+end
+
+function NodeGraph.SetSeatObject(node: BasePart, seat: Seat)
+	local seatValue = node:FindFirstChild("SeatObject") :: ObjectValue?
+	if not seatValue then
+		seatValue = Instance.new("ObjectValue")
+		seatValue.Name = "SeatObject"
+		seatValue.Parent = node
+	end
+	(seatValue :: ObjectValue).Value = seat
 end
 
 function NodeGraph.GetNodePosition(node: BasePart): Vector3
@@ -129,6 +156,8 @@ function NodeGraph.EnumerateZoneNodes(nodesFolder: Instance, zoneName: string): 
 end
 
 function NodeGraph.EnumerateAllNodes(nodesFolder: Instance): { BasePart }
+	if not nodesFolder or not nodesFolder.Parent then return {} end
+
 	local result = {}
 	for _, child in nodesFolder:GetChildren() do
 		if child:IsA("BasePart") then
@@ -150,9 +179,6 @@ function NodeGraph.GetMovementTargetPosition(node: BasePart, spreadRadius: numbe
 		return basePos
 	end
 
-	-- Depart Folder nodes sit in a narrow gate corridor — the normal spread
-	-- radius can land the target position inside a doorframe/wall and get
-	-- the NPC stuck. Clamp it down there.
 	local radius = spreadRadius
 	if nodesFolder and NodeGraph.GetZone(node, nodesFolder) == "Depart" then
 		radius = math.min(radius, NPCConfig.DEPART_NODE_SPREAD_RADIUS)
@@ -172,16 +198,6 @@ function NodeGraph.HasClearLine(fromPos: Vector3, toPos: Vector3, ignore: { Inst
 	return result == nil
 end
 
--- Node-pair line-of-sight cache: Auto-search re-checks the same pairs of
--- nodes over and over (every decision, for every NPC), so this avoids
--- redundant raycasts for the common case where nothing nearby changed.
--- Persistent rather than time-limited — see PrefillLoSCache, which computes
--- the whole graph once during map load while no NPCs or players are around
--- to falsely block a ray, so what lands in the cache is the true static-
--- geometry answer. It's only ever invalidated by known geometry changes
--- (see GateService's door open/close, the only thing in this map with the
--- same effect on raycasts as on physics — see the CollisionGroup rationale
--- below), never by time.
 local _losCache: { [BasePart]: { [BasePart]: boolean } } = {}
 
 function NodeGraph.InvalidateLoSCache()
@@ -201,17 +217,11 @@ function NodeGraph.HasClearLineBetweenNodes(nodeA: BasePart, nodeB: BasePart, ig
 	_losCache[nodeA] = _losCache[nodeA] or {}
 	_losCache[nodeA][nodeB] = result
 	_losCache[nodeB] = _losCache[nodeB] or {}
-	_losCache[nodeB][nodeA] = result -- LoS is symmetric — one raycast covers both directions
+	_losCache[nodeB][nodeA] = result
 
 	return result
 end
 
--- Computes and caches every node-pair's line of sight up front, meant to run
--- during the round's map-loading phase — before any NPC has spawned and
--- before players are roaming the map — so the cache's initial (and, absent
--- an invalidation, only) computation reflects nothing but the static map
--- geometry, not a transient obstruction. O(n^2) in node count, but it's a
--- one-time load-time cost rather than a per-frame one.
 function NodeGraph.PrefillLoSCache(nodesFolder: Instance)
 	local nodes = NodeGraph.EnumerateAllNodes(nodesFolder)
 
@@ -222,10 +232,6 @@ function NodeGraph.PrefillLoSCache(nodesFolder: Instance)
 	end
 end
 
--- A straight-line raycast can pass or fail for reasons that have nothing to
--- do with whether the navmesh can actually route an agent there (furniture
--- gaps, agent radius clearance, etc.) — this asks PathfindingService itself,
--- the same way the actual walk to the node will be computed.
 function NodeGraph.IsPathReachable(fromPos: Vector3, toPos: Vector3): boolean
 	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
 	local computeOk = pcall(function()
@@ -234,14 +240,6 @@ function NodeGraph.IsPathReachable(fromPos: Vector3, toPos: Vector3): boolean
 	return computeOk and path.Status == Enum.PathStatus.Success
 end
 
--- PathfindingService can report Success while quietly snapping the goal to
--- the nearest walkable point, which can be several studs from a target
--- that's embedded in/behind solid geometry (e.g. a Seat Node marker placed
--- inside the chair mesh rather than on the floor beside it) — walking there
--- looks normal, but the final short-range snap (Seat:Sit always welds
--- exactly onto the seat) becomes a visible jump instead of an imperceptible
--- one. This additionally checks the path's last waypoint actually lands
--- within tolerance of the true target before trusting it.
 function NodeGraph.IsPreciselyReachable(fromPos: Vector3, toPos: Vector3, tolerance: number): boolean
 	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
 	local computeOk = pcall(function()
@@ -262,6 +260,37 @@ end
 
 -- [[ Auto-search ]] --
 
+function NodeGraph.GetNodesInZone(
+	nodesFolder: Instance,
+	zones: { string },
+	currentPos: Vector3,
+	exclusive: boolean,
+	filter: { string }
+): { BasePart }
+	local filterSet: { [string]: boolean } = {}
+	for _, nodeType in filter do
+		filterSet[nodeType] = true
+	end
+
+	local result: { BasePart } = {}
+	for _, zone in zones do
+		for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zone) do
+			if NodeGraph.IsEntryNode(node) then continue end
+
+			local matches = filterSet[NodeGraph.GetNodeType(node)] == true
+			if exclusive == matches then continue end
+
+			table.insert(result, node)
+		end
+	end
+
+	table.sort(result, function(a, b)
+		return (NodeGraph.GetNodePosition(a) - currentPos).Magnitude < (NodeGraph.GetNodePosition(b) - currentPos).Magnitude
+	end)
+
+	return result
+end
+
 function NodeGraph.FindNearestNode(
 	nodesFolder: Instance,
 	fromNode: BasePart,
@@ -280,9 +309,9 @@ function NodeGraph.FindNearestNode(
 		if part then excludeSet[part] = true end
 	end
 
-	local rankPos = towardGoal or fromPos
 	local best: BasePart? = nil
-	local bestDist = if towardGoal then (fromPos - towardGoal).Magnitude else math.huge
+	local bestDist = math.huge
+	local currentDistToGoal = towardGoal and (fromPos - towardGoal).Magnitude or nil
 	local minDistFromAway = awayFromPos and (fromPos - awayFromPos).Magnitude or nil
 
 	local function isCandidate(node: BasePart): boolean
@@ -303,14 +332,27 @@ function NodeGraph.FindNearestNode(
 			if not isCandidate(node) then continue end
 
 			local pos = NodeGraph.GetNodePosition(node)
-			local distance = (pos - rankPos).Magnitude
+
+			if towardGoal then
+				local distToGoal = (pos - (towardGoal :: Vector3)).Magnitude
+				if distToGoal >= (currentDistToGoal :: number) then continue end
+
+				local distFromMe = (pos - fromPos).Magnitude
+				if distFromMe < bestDist then
+					bestDist = distFromMe
+					best = node
+				end
+				continue
+			end
+
+			local distance = (pos - fromPos).Magnitude
 
 			if distance < nearestOverallDist then
 				nearestOverallDist = distance
 				nearestOverall = node
 			end
 
-			local reachable = if towardGoal then true else NodeGraph.HasClearLineBetweenNodes(fromNode, node, ignore)
+			local reachable = NodeGraph.HasClearLineBetweenNodes(fromNode, node, ignore)
 			if distance < bestDist and reachable then
 				bestDist = distance
 				best = node
@@ -322,32 +364,19 @@ function NodeGraph.FindNearestNode(
 		return best
 	end
 
-	-- Nothing directly visible, but a genuinely nearer candidate exists —
-	-- look for a single intermediate "bridge" node (from the same candidate
-	-- pool) that's visible from both here and the true nearest node, and
-	-- route through it instead of giving up entirely. Once actually standing
-	-- on the bridge node, the next decision will re-run this search and (by
-	-- construction) have direct line of sight to the real target.
+	local bridgeCandidates: { BasePart } = {}
 	for _, zone in zones do
 		for _, bridge in NodeGraph.EnumerateZoneNodes(nodesFolder, zone) do
 			if bridge == nearestOverall then continue end
 			if not isCandidate(bridge) then continue end
-
-			if NodeGraph.HasClearLineBetweenNodes(fromNode, bridge, ignore)
-				and NodeGraph.HasClearLineBetweenNodes(bridge, nearestOverall :: BasePart, ignore) then
-				return bridge
-			end
+			table.insert(bridgeCandidates, bridge)
 		end
 	end
 
-	return nil
+	return NodeGraph.FindLoSBridge(nodesFolder, fromNode, nearestOverall :: BasePart, ignore, bridgeCandidates)
 end
 
--- Plain nearest-neighbor among a zone's Transition Nodes (plural — a zone
--- may have more than one, e.g. two gate entrances side by side). Used once
--- nothing else in the zone is any closer, to pick whichever Transition Node
--- is actually nearest right now.
-function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: string, fromNode: BasePart, exclude: { BasePart? }, ignore: { Instance? }): BasePart?
+function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: string, fromNode: BasePart, exclude: { BasePart? }, ignore: { Instance? }, candidates: { BasePart }?): BasePart?
 	local excludeSet: { [BasePart]: boolean } = {}
 	for _, part in exclude do
 		if part then excludeSet[part] = true end
@@ -357,12 +386,37 @@ function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: st
 	local best: BasePart? = nil
 	local bestDist = math.huge
 
-	for _, node in NodeGraph.GetTransitionNodes(nodesFolder, zoneName) do
+	local pool = candidates or NodeGraph.GetTransitionNodes(nodesFolder, zoneName)
+
+	for _, node in pool do
 		if excludeSet[node] then continue end
-		if not NodeGraph.GetLink(node) then continue end -- unlinked — a dead end, not a usable crossing point
+		if not candidates and not NodeGraph.GetLink(node) then continue end
 
 		local dist = (NodeGraph.GetNodePosition(node) - fromPos).Magnitude
 		if dist < bestDist and NodeGraph.HasClearLineBetweenNodes(fromNode, node, ignore) then
+			bestDist = dist
+			best = node
+		end
+	end
+
+	return best
+end
+
+function NodeGraph.FindLoSBridge(nodesFolder: Instance, fromNode: BasePart, toNode: BasePart, ignore: { Instance? }, candidates: { BasePart }?): BasePart?
+	local toPos = NodeGraph.GetNodePosition(toNode)
+	local pool = candidates or NodeGraph.EnumerateAllNodes(nodesFolder)
+
+	local best: BasePart? = nil
+	local bestDist = math.huge
+
+	for _, node in pool do
+		if node == fromNode or node == toNode then continue end
+
+		local dist = (NodeGraph.GetNodePosition(node) - toPos).Magnitude
+		if dist >= bestDist then continue end
+
+		if NodeGraph.HasClearLineBetweenNodes(fromNode, node, ignore)
+			and NodeGraph.HasClearLineBetweenNodes(node, toNode, ignore) then
 			bestDist = dist
 			best = node
 		end
@@ -391,32 +445,53 @@ function NodeGraph.FindRandomSeatNode(nodesFolder: Instance, zoneName: string, f
 	local fromPos = NodeGraph.GetNodePosition(fromNode)
 	local seatPos = NodeGraph.GetNodePosition(picked)
 
-	-- Already visible from here, and PathfindingService can route precisely
-	-- there (a plain Success check isn't enough on its own — see
-	-- IsPreciselyReachable) — go straight to it. The final short Seat:Sit()
-	-- snap from this close is imperceptible.
 	if NodeGraph.HasClearLineBetweenNodes(fromNode, picked, ignore)
 		and NodeGraph.IsPreciselyReachable(fromPos, seatPos, NPCConfig.ARRIVAL_TOLERANCE) then
 		return picked
 	end
 
-	-- Not visible yet — walk there via a node that can see both here and the
-	-- seat (same bridging trick FindNearestNode uses for Auto-search)
-	-- instead of committing to one long-range leg straight to a seat we
-	-- can't even see from here. Once actually standing at the bridge, the
-	-- next decision re-rolls and — now much closer — likely finds this or
-	-- another seat within direct reach.
+	local bridgeCandidates: { BasePart } = {}
 	for _, bridge in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
 		if bridge == picked or bridge == fromNode then continue end
 		if excludeSet[bridge] then continue end
+		table.insert(bridgeCandidates, bridge)
+	end
 
-		if NodeGraph.HasClearLineBetweenNodes(fromNode, bridge, ignore)
-			and NodeGraph.HasClearLineBetweenNodes(bridge, picked, ignore) then
-			return bridge
+	return NodeGraph.FindLoSBridge(nodesFolder, fromNode, picked, ignore, bridgeCandidates)
+end
+
+function NodeGraph.FindNearestPickupNode(nodesFolder: Instance, zoneName: string, fromNode: BasePart, ignore: { Instance? }): BasePart?
+	local fromPos = NodeGraph.GetNodePosition(fromNode)
+	local candidates: { BasePart } = {}
+
+	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if NodeGraph.IsPickupNode(node) then
+			table.insert(candidates, node)
 		end
 	end
 
-	return nil
+	if #candidates == 0 then return nil end
+
+	table.sort(candidates, function(a, b)
+		return (NodeGraph.GetNodePosition(a) - fromPos).Magnitude < (NodeGraph.GetNodePosition(b) - fromPos).Magnitude
+	end)
+
+	for _, picked in candidates do
+		local pickedPos = NodeGraph.GetNodePosition(picked)
+		if NodeGraph.HasClearLineBetweenNodes(fromNode, picked, ignore)
+			and NodeGraph.IsPreciselyReachable(fromPos, pickedPos, NPCConfig.ARRIVAL_TOLERANCE) then
+			return picked
+		end
+	end
+
+	local nearest = candidates[1]
+	local bridgeCandidates: { BasePart } = {}
+	for _, bridge in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if bridge == nearest or bridge == fromNode then continue end
+		table.insert(bridgeCandidates, bridge)
+	end
+
+	return NodeGraph.FindLoSBridge(nodesFolder, fromNode, nearest, ignore, bridgeCandidates)
 end
 
 function NodeGraph.GetDepartPosition(nodesFolder: Instance): Vector3?
@@ -506,6 +581,29 @@ function NodeGraph.FindNextSlotForward(lineNode: BasePart, currentSlot: BasePart
 	return best
 end
 
+function NodeGraph.FindNearestAvailableSlot(lineNode: BasePart): BasePart?
+	local linePos = NodeGraph.GetNodePosition(lineNode)
+	local best, bestDist = nil, math.huge
+
+	local function consider(slot: BasePart)
+		if NodeGraph.IsOccupied(slot) then return end
+		local dist = (NodeGraph.GetNodePosition(slot) - linePos).Magnitude
+		if dist < bestDist then
+			bestDist = dist
+			best = slot
+		end
+	end
+
+	consider(lineNode)
+	for _, child in lineNode:GetChildren() do
+		if child:IsA("BasePart") and normalize(child.Name) == "slotnode" then
+			consider(child)
+		end
+	end
+
+	return best
+end
+
 function NodeGraph.EnumerateLineGroups(nodesFolder: Instance, zones: { string }): { BasePart }
 	local result = {}
 	for _, zone in zones do
@@ -564,6 +662,44 @@ function NodeGraph.SetEnRouteLine(npc: Model, lineNode: BasePart?)
 	value.Value = lineNode
 end
 
+-- [[ Transition Node load balancing ]] --
+
+function NodeGraph.GetTransitionEnRouteCount(transitionNode: BasePart): number
+	return transitionNode:GetAttribute("EnRouteCount") :: number or 0
+end
+
+function NodeGraph.AddTransitionEnRoute(transitionNode: BasePart, delta: number)
+	transitionNode:SetAttribute("EnRouteCount", math.max(NodeGraph.GetTransitionEnRouteCount(transitionNode) + delta, 0))
+end
+
+function NodeGraph.GetEnRouteTransition(npc: Model): BasePart?
+	local value = npc:FindFirstChild("EnRouteTransition")
+	if value and value:IsA("ObjectValue") and value.Value and value.Value:IsA("BasePart") then
+		return value.Value :: BasePart
+	end
+	return nil
+end
+
+function NodeGraph.SetEnRouteTransition(npc: Model, transitionNode: BasePart?)
+	local previous = NodeGraph.GetEnRouteTransition(npc)
+	if previous == transitionNode then return end
+
+	if previous then
+		NodeGraph.AddTransitionEnRoute(previous, -1)
+	end
+	if transitionNode then
+		NodeGraph.AddTransitionEnRoute(transitionNode, 1)
+	end
+
+	local value = npc:FindFirstChild("EnRouteTransition") :: ObjectValue?
+	if not value then
+		value = Instance.new("ObjectValue")
+		value.Name = "EnRouteTransition"
+		value.Parent = npc
+	end
+	value.Value = transitionNode
+end
+
 -- [[ Seat Node occupancy ]] --
 
 function NodeGraph.SyncSeatOccupiedAttribute(seatNode: BasePart)
@@ -583,6 +719,24 @@ end
 
 function NodeGraph.ReleaseSeatReservation(seatNode: BasePart)
 	seatNode:SetAttribute("Reserved", false)
+end
+
+function NodeGraph.GetLineNodeForEntry(nodesFolder: Instance, zoneName: string, entryNode: BasePart): BasePart?
+	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if NodeGraph.GetNodeType(node) == "linenode" and NodeGraph.GetEntryNode(node) == entryNode then
+			return node
+		end
+	end
+	return nil
+end
+
+function NodeGraph.GetConveyorNodeForTransition(nodesFolder: Instance, zoneName: string, transitionNode: BasePart): BasePart?
+	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if NodeGraph.IsConveyorNode(node) and NodeGraph.GetLink(node) == transitionNode then
+			return node
+		end
+	end
+	return nil
 end
 
 function NodeGraph.ResolveEntryRedirect(candidate: BasePart, currentNode: BasePart?): BasePart

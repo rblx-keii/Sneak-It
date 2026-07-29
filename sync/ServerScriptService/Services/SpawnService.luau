@@ -98,13 +98,13 @@ function Local.IsPositionClear(position: Vector3, halfSize: Vector3, characterTo
 		if Local.IsHitPartOfCharacter(hit) then
 			local hitCharacterModel = hit:FindFirstAncestorWhichIsA("Model")
 			if hitCharacterModel and Players:GetPlayerFromCharacter(hitCharacterModel) then
-				return false -- occupied by another player's character
+				return false
 			end
-			continue -- part of the spawning character itself (or an NPC), ignore
+			continue
 		end
 
 		if hit.CanCollide then
-			return false -- solid clutter/geometry blocking this spot
+			return false
 		end
 	end
 

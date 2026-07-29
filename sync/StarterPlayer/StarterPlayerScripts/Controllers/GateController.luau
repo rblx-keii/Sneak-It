@@ -1,7 +1,3 @@
--- Client mirror of GateService's Workspace attributes (GateStage/
--- GateTimeLeft/BoardingOpen) -- same read-only-attribute pattern as
--- RoundController, so Hud (or any future in-world signage/PA prop script)
--- goes through here instead of touching Workspace directly.
 --|| Services
 local Workspace = game:GetService("Workspace")
 

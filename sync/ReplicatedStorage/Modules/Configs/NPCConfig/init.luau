@@ -2,7 +2,9 @@
 local NPCConfig = {}
 
 -- [[ Population ]] --
-NPCConfig.MAX_NPCS = 10
+NPCConfig.MAX_NPCS = 30
+NPCConfig.DEFAULT_BAG_ITEM = "DuffleBag" -- item name in ItemsConfig / Assets.Items, given to crowd NPCs on spawn
+NPCConfig.BAG_SPAWN_CHANCE = 0.75 -- chance a Crowd NPC spawns already holding a bag, rolled once per spawn
 
 -- [[ Movement ]] --
 NPCConfig.WALK_SPEED = 14
@@ -22,13 +24,14 @@ NPCConfig.DECISION_TIMEOUT = 1.5 -- TEMP: lowered from 3 for faster feedback whi
 NPCConfig.REST_COOLDOWN = 20 -- seconds after resting at a Seat Node before an NPC will consider sitting again (Seat Node candidates are skipped during Auto-search until this elapses)
 NPCConfig.SEAT_REST_DURATION = 5 -- seconds an NPC must stay seated at a Seat Node before it will stand up and request its next decision
 NPCConfig.SEAT_RETRY_CHANCE = 0.5 -- chance to keep looking for another open seat when the nearest one is occupied, instead of giving up and continuing on
+NPCConfig.UNSEAT_MAX_ATTEMPTS = 10 -- retries for confirming a Seat's occupant actually released (Seat:Sit(nil)/Humanoid.Sit=false can lag a frame or more) before giving up
 
 -- [[ Pathfinding ]] --
 NPCConfig.PATH_AGENT_RADIUS = 1.25
 NPCConfig.PATH_AGENT_HEIGHT = 5
 NPCConfig.PATH_AGENT_CAN_JUMP = false
 NPCConfig.PATH_AGENT_CAN_CLIMB = false
-NPCConfig.PATH_WAYPOINT_SPACING = 4
+NPCConfig.PATH_WAYPOINT_SPACING = 25 -- studs; wide enough to avoid re-issuing Humanoid:MoveTo() every few studs (which visibly hitched the walk animation), but frequent enough that long straight-line legs don't clip through walls the navmesh only avoids at the corner waypoints
 
 -- [[ Line Node slots ]] --
 NPCConfig.LINE_SLOT_PLAYER_RADIUS = 7 -- studs; a live player standing this close to a slot counts as occupying it
@@ -53,9 +56,13 @@ NPCConfig.SHOP_DWELL_MIN = 15 -- seconds an NPC roams/sits in a shop (a Transiti
 NPCConfig.SHOP_DWELL_MAX = 30
 
 -- [[ Boarding (GateService integration) ]] --
-NPCConfig.BOARD_DWELL = 2 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
+NPCConfig.BOARD_DWELL = .5 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
 NPCConfig.RESPAWN_DELAY_MIN = 5 -- seconds after a boarded NPC despawns before its replacement spawns, randomized in this range
 NPCConfig.RESPAWN_DELAY_MAX = 10
+NPCConfig.BOARD_ROLL_CHANCE = 1 -- chance an NPC decides to board once the plane has arrived, rolled once per boarding window; the rest keep waiting for a later flight
+
+-- [[ Conveyor node (bag-in-transit) ]] --
+NPCConfig.BELT_TRAVEL_TIME = 3 -- seconds a dropped bag takes to visually ride from a Conveyor Node to its linked exit node
 
 -- [[ Assets ]] --
 NPCConfig.RIG_TEMPLATE_PATH = { "Assets", "Rig" } -- ReplicatedStorage.Assets.Rig

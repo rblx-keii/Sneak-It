@@ -41,8 +41,6 @@ function Shared.Init()
 	table.insert(_connections, Players.PlayerRemoving:Connect(Local.CancelDeposit))
 	table.insert(_connections, JailService.OnJailed:Connect(Local.CancelDeposit))
 
-	-- Cancel every in-flight deposit as soon as the boarding window closes,
-	-- rather than letting them silently fail once their timer runs out.
 	table.insert(_connections, Workspace:GetAttributeChangedSignal("BoardingOpen"):Connect(function()
 		if Workspace:GetAttribute("BoardingOpen") then return end
 
@@ -67,15 +65,6 @@ function Local.SetupZone(part: Instance)
 
 	local zone = ZonePlus.new(part)
 
-	-- ZonePlus requires its own zone part to stay in the Default collision
-	-- group (it errors, and keeps re-validating on every future
-	-- CollisionGroupId change), so a collision-group exemption is off the
-	-- table. CanCollide=false alone isn't enough either — Workspace:Raycast
-	-- checks CanQuery, not CanCollide, so it'd still block NodeGraph's
-	-- line-of-sight raycasts. relocate() moves the part out of Workspace
-	-- entirely (into ZonePlus's shared WorldModel), so nothing in Workspace
-	-- — physics or raycasts — can touch it at all, while ZonePlus's own
-	-- enter/exit detection keeps working (it queries the WorldModel too).
 	zone:relocate()
 
 	zone.playerEntered:Connect(function(player: Player)
@@ -141,7 +130,7 @@ function Local.CompleteDeposit(player: Player)
 	end
 
 	if RoundService.GetState() ~= "InProgress" then return end
-	if not Workspace:GetAttribute("BoardingOpen") then return end -- final guard; BoardingOpen watcher should already have cancelled this
+	if not Workspace:GetAttribute("BoardingOpen") then return end
 
 	local record = JailService.GetRecord(player)
 	if record and record.isJailed then return end

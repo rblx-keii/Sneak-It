@@ -45,7 +45,6 @@ Shared.OnDataReleased = ModuleUtils.signal.new()
 
 -- [[ Startup ]] --
 function Shared.Init()
-	-- Client requesting a full sync
 	Network:BindEvent("PlayerData", "Sync", function(player: Player)
 		local profile = _profiles[player]
 		if profile then
@@ -53,7 +52,6 @@ function Shared.Init()
 		end
 	end)
 
-	-- Client requesting an allowed update (settings, loadout, mobile layout)
 	local CLIENT_ALLOWED = {
 		"UpdateSettings",
 		"UpdateMobileLayout",
@@ -198,7 +196,6 @@ function Shared.UpdateData(player: Player, action: UpdateAction?)
 
 	Local.SyncLeaderstats(player, profile.Data)
 
-	-- Send action to client for local cache update; full data only on nil action
 	Network:FireClient("PlayerData", player, "Update", {
 		action = action,
 		data = action == nil and profile.Data or nil,

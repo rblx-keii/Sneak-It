@@ -17,10 +17,6 @@ export type Context = {
 }
 
 --|| Variables
--- Zone pairs Wander is currently allowed to cross between, seeded from the
--- map's fixed structural adjacency (NPCConfig.ZONE_ADJACENCY) and mutable at
--- runtime — e.g. GateService can close the Platform/Depart pair while the
--- gate is shut so a Wandering NPC can't step through it, then reopen it.
 local _zoneTransitions: { [string]: { [string]: boolean } } = {}
 
 local function setZoneTransition(zoneA: string, zoneB: string, allowed: boolean)
@@ -31,11 +27,6 @@ local function setZoneTransition(zoneA: string, zoneB: string, allowed: boolean)
 end
 
 for _, pair in NPCConfig.ZONE_ADJACENCY do
-	-- Depart is gate-only territory: the sole legal way in is Linear's
-	-- explicit two-stage Platform->Depart search (see Linear.luau), never a
-	-- Wander roll. Skipping this pair here doesn't block wandering *within*
-	-- Depart once already there (same-zone is always valid, see below) — it
-	-- only stops Wander from treating the gate itself as crossable.
 	if pair[1] == "Depart" or pair[2] == "Depart" then continue end
 	setZoneTransition(pair[1], pair[2], true)
 end
@@ -81,10 +72,6 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 		if other == node or other == ctx.lastNode then continue end
 		if NodeGraph.IsEntryNode(other) then continue end
 
-		-- Stay confined to the current zone unless the pair (currentZone,
-		-- other's zone) is a currently-open transition — crossing into it
-		-- re-anchors "current zone" to wherever it lives for the next
-		-- decision, so movement naturally stays confined there.
 		if not isZoneTransitionValid(currentZone, NodeGraph.GetZone(other, ctx.nodesFolder)) then
 			continue
 		end
@@ -101,7 +88,7 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 	end
 
 	if #candidates == 0 then
-		return nil, "Idle" -- nothing reachable this decision — retry next tick
+		return nil, "Idle"
 	end
 
 	local candidate = candidates[math.random(1, #candidates)]

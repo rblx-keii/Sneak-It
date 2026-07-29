@@ -22,8 +22,8 @@ local _droppedItems: {DroppedItem} = {}
 
 --|| Constants
 local ARREST_RANGE = 10
-local ITEM_DESPAWN_TIME = 10 -- seconds, TBD with client
-local ARREST_REWARD = 15 -- Terminal Tokens for a correct arrest
+local ITEM_DESPAWN_TIME = 10
+local ARREST_REWARD = 15
 
 local RAYCAST_PARAMS = RaycastParams.new()
 
@@ -60,8 +60,6 @@ end
 
 -- [[ Private Functions ]] --
 
--- Soft-require, same lazy pattern StealService uses to reach NpcService —
--- avoids a hard dependency on a service that may not exist/be loaded yet.
 function Local.GetNpcService(): any
 	local module = script.Parent:FindFirstChild("NpcService")
 	if not module then return nil end
@@ -128,9 +126,6 @@ function Shared.AttemptArrest(tsaPlayer: Player, targetPlayer: Player)
 	Network:FireClient("Arrest", targetPlayer, "Caught", { arrestedBy = tsaPlayer.UserId })
 end
 
--- Arresting a regular NPC is a false arrest (3-strike system); a Decoy is a
--- trap handled by NpcService.CaptureDecoy. Decoys aren't spawned yet, so
--- that branch is currently dormant.
 function Shared.AttemptArrestNPC(tsaPlayer: Player, npc: Model)
 	if TeamService.GetTeam(tsaPlayer) ~= "TSA" then return end
 	if JailService.IsJailed(tsaPlayer) then return end

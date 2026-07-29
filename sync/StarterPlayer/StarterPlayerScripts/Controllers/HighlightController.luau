@@ -16,7 +16,7 @@ type HighlightSession = {
 }
 
 --|| Variables
-local _activeSessions: {[number]: HighlightSession} = {} -- [targetUserId] = HighlightSession
+local _activeSessions: {[number]: HighlightSession} = {}
 local _networkConnections: {Network.Cleanup} = {}
 
 --|| Constants
@@ -24,9 +24,9 @@ local HIGHLIGHT_FILL_COLOR = Color3.fromRGB(255, 80, 80)
 local HIGHLIGHT_OUTLINE_COLOR = Color3.fromRGB(255, 30, 30)
 local HIGHLIGHT_FILL_TRANSPARENCY_VISIBLE = 0.4
 local HIGHLIGHT_FILL_TRANSPARENCY_HIDDEN = 1
-local PULSE_INTERVAL = 3        -- seconds between pulses
-local PULSE_FADE_IN_TIME = 0.3  -- seconds to fade in
-local PULSE_FADE_OUT_TIME = 0.5 -- seconds to fade out
+local PULSE_INTERVAL = 3
+local PULSE_FADE_IN_TIME = 0.3
+local PULSE_FADE_OUT_TIME = 0.5
 
 --|| MAIN ||--
 local Local = {}

@@ -22,6 +22,9 @@ type DecisionRequest = {
 	arrivedViaLink: boolean,
 	behaviorType: string,
 	lastRestTime: number,
+	willBoard: boolean?,
+	holdingBag: boolean?,
+	pendingBagNode: BasePart?,
 	prefetch: boolean?,
 }
 
@@ -44,6 +47,9 @@ actor:BindToMessageParallel("Decide", function(request: DecisionRequest)
 		lastNode = request.lastNode,
 		arrivedViaLink = request.arrivedViaLink,
 		lastRestTime = request.lastRestTime,
+		willBoard = request.willBoard,
+		holdingBag = request.holdingBag,
+		pendingBagNode = request.pendingBagNode,
 	})
 
 	reportEvent:Fire(request.npc, nextNode, state, request.prefetch)

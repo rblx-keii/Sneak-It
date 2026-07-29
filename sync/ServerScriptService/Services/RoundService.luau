@@ -26,18 +26,18 @@ local _stateId: number = 0
 local _matchParticipants: {Player} = {}
 local _quotaTotal: number = 0
 local _emptyTeamCheckId: {[TeamName]: number} = {}
-local _readyPlayers: {[Player]: boolean} = {} -- data-loaded players; source of truth over Players:GetPlayers()
+local _readyPlayers: {[Player]: boolean} = {}
 
 local _connections: {RBXScriptConnection} = {}
 
 local isStudio = RunService:IsStudio()
 
 --|| Constants
-local MIN_TOTAL_PLAYERS = isStudio and 1 or 2 -- TEMP: lowered from 2 for solo NPC AI testing, revert once done
+local MIN_TOTAL_PLAYERS = isStudio and 1 or 2
 local INTERMISSION_DURATION = isStudio and 5 or 10
 local STARTING_DURATION = isStudio and 5 or 20
-local ROUND_DURATION = isStudio and 120 or 600
-local ENDED_DISPLAY_DURATION = 10 -- time to let reward stats display/animate before cleanup
+local ROUND_DURATION = isStudio and math.huge or 600
+local ENDED_DISPLAY_DURATION = 10
 local EMPTY_TEAM_GRACE = 10
 local QUOTA_TARGET = 50
 
@@ -127,7 +127,7 @@ function Local.OnRequestJoin(player: Player)
 	if table.find(_matchParticipants, player) then return end
 
 	local teamName = TeamService.AssignSinglePlayer(player)
-	if not teamName then return end -- AFK
+	if not teamName then return end
 
 	table.insert(_matchParticipants, player)
 	RewardService.RoundEvents.OnParticipantJoined:Fire(player)
@@ -332,10 +332,6 @@ function Local.HandleMapLoading(tid: number)
 		return
 	end
 
-	-- No NPCs have spawned yet (that happens on "Starting") and no players
-	-- are on the map yet (they spawn during "Starting" too) — the cleanest
-	-- possible window to compute the node graph's line-of-sight cache
-	-- against nothing but the static map geometry.
 	local nodesFolder = activeMap:FindFirstChild("Nodes")
 	if nodesFolder then
 		NodeGraph.PrefillLoSCache(nodesFolder)

@@ -57,8 +57,6 @@ function Local.GetTeamPlayerCount(teamName: string): number
 	return team and #team:GetPlayers() or 0
 end
 
--- Sourced from profile.Data.afk, not a player attribute. Treats unloaded
--- data as not-AFK rather than excluding a player whose profile hasn't synced.
 function Local.IsAfk(player: Player): boolean
 	if not DataService.IsDataLoaded(player) then
 		return false
@@ -90,8 +88,6 @@ function Local.PickBalancedTeam(): string
 	return tied[math.random(1, #tied)]
 end
 
--- Sets player.Team and notifies the client. Does not spawn — spawning is
--- owned by RoundStateService/SpawnService once a map actually exists.
 function Local.AssignPlayer(player: Player, teamName: string)
 	local team = Teams:FindFirstChild(teamName)
 	if not team then
@@ -111,8 +107,6 @@ end
 
 -- [[ Public Functions ]] --
 
--- Reverts a player to no team (lobby/spectator). Notifies the client via the
--- same "Assigned" event so TeamController's local team state stays in sync.
 function Shared.SetNeutral(player: Player)
 	player.Team = nil :: any
 	_teamCache[player.UserId] = nil
@@ -120,8 +114,6 @@ function Shared.SetNeutral(player: Player)
 	Network:FireClient("Team", player, "Assigned", { teamName = nil })
 end
 
--- Fresh balanced split across TSA/Smuggler for a given player pool. AFK
--- players are filtered out and absent from the returned roster.
 function Shared.AssignTeams(players: {Player}): {[string]: {Player}}
 	local roster: {[string]: {Player}} = {}
 	for _, teamName in TEAM_NAMES do
@@ -151,8 +143,6 @@ function Shared.AssignTeams(players: {Player}): {[string]: {Player}}
 	return roster
 end
 
--- Balanced single-player assignment (e.g. a mid-round RequestJoin). Returns
--- nil and assigns nothing if the player is AFK.
 function Shared.AssignSinglePlayer(player: Player): string?
 	if Local.IsAfk(player) then
 		return nil

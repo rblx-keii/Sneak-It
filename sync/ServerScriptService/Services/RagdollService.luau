@@ -48,10 +48,6 @@ local Shared = {}
 -- [[ Signals ]] --
 Shared.OnPlayerRagdolled = ModuleUtils.signal.new() :: typeof(ModuleUtils.signal.new())
 
--- Fires for every ragdoll, Player or NPC rig alike (unlike OnPlayerRagdolled,
--- which only fires when the target resolves to an actual Player). Added so
--- NPCAIService has a single "violence witnessed" signal to react to without
--- needing to special-case NPC-on-NPC or player-on-NPC ragdolls separately.
 Shared.OnRagdolled = ModuleUtils.signal.new() :: typeof(ModuleUtils.signal.new())
 
 -- [[ Startup ]] --
@@ -70,8 +66,6 @@ end
 
 -- [[ Private Functions ]] --
 
--- Accepts either a Player (uses their Character) or a Model (an NPC rig / character model directly).
--- Returns the rig and, if there is one, the owning Player (for client networking).
 function Local.ResolveTarget(target: Player | Model): (Model?, Player?)
 	if typeof(target) == "Instance" then
 		if target:IsA("Player") then
@@ -163,10 +157,6 @@ function Local.RemoveBallSockets(ballSockets: { BallSocketConstraint }, attachme
 	end
 end
 
--- Switches every limb to RAGDOLL_COLLISION_GROUP and forces CanCollide on (ragdoll parts are
--- often CanCollide = false by default so they don't collide with anything pre-ragdoll), remembering
--- both original values so they can be restored later. Caller is responsible for registering the
--- group and its collision rules (e.g. collidable with "Default", not with itself, not with players).
 function Local.ApplyRagdollCollisionState(rig: Model): { [BasePart]: PartCollisionState }
 	local collisionStates: { [BasePart]: PartCollisionState } = {}
 
@@ -194,8 +184,6 @@ function Local.RestoreCollisionState(collisionStates: { [BasePart]: PartCollisio
 	end
 end
 
--- Pins network ownership to the server for the duration of the ragdoll, preventing
--- client/server physics desync (which can otherwise look like jittering).
 function Local.SetServerOwnership(rig: Model)
 	for _, part in rig:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -203,13 +191,11 @@ function Local.SetServerOwnership(rig: Model)
 				part:SetNetworkOwner(nil)
 			end)
 			if not ok then
-				-- part may not support manual ownership (e.g. anchored); ignore
 			end
 		end
 	end
 end
 
--- Hands network ownership back to the engine's automatic assignment.
 function Local.ResetOwnership(rig: Model)
 	for _, part in rig:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -264,7 +250,6 @@ function Local.WaitForSettle(rig: Model): boolean
 		task.wait(VELOCITY_POLL_INTERVAL)
 		elapsed += VELOCITY_POLL_INTERVAL
 
-		-- Bail if rig was destroyed or restored externally
 		if not rig or not rig.Parent then return false end
 
 		if root.AssemblyLinearVelocity.Magnitude < VELOCITY_SETTLE_THRESHOLD then
@@ -272,20 +257,18 @@ function Local.WaitForSettle(rig: Model): boolean
 		end
 	end
 
-	return true -- max time elapsed, proceed to restore
+	return true
 end
 
 function Local.RunRestoreTimer(rig: Model)
 	task.spawn(function()
 		Local.WaitForSettle(rig)
 
-		-- Check if already restored externally during settle wait
 		local state = _activeRagdolls[rig]
 		if not state or state.restored then return end
 
 		task.wait(SETTLE_WAIT_SECONDS)
 
-		-- Check again after the settle timer
 		state = _activeRagdolls[rig]
 		if not state or state.restored then return end
 
@@ -295,7 +278,6 @@ end
 
 -- [[ Public Functions ]] --
 
--- target can be a Player OR an NPC rig (Model with a Humanoid + PrimaryPart)
 function Shared.Ragdoll(target: Player | Model, hitPosition: Vector3, direction: Vector3, force: number)
 	local rig, player = Local.ResolveTarget(target)
 	if not rig then return end
@@ -331,7 +313,6 @@ function Shared.Ragdoll(target: Player | Model, hitPosition: Vector3, direction:
 		restored = false,
 	}
 
-	-- NPC rigs don't fire PlayerRemoving, so clean up if they get Destroy()'d mid-ragdoll
 	_destroyingConnections[rig] = rig.Destroying:Once(function()
 		Local.CleanupState(rig)
 	end)
@@ -356,8 +337,6 @@ function Shared.Restore(target: Player | Model)
 	Local.EnableMotors(state.motorStates)
 	Local.RestoreCollisionState(state.collisionStates)
 
-	-- NPCs have no owning client, so keep them server-pinned instead of
-	-- releasing to automatic ownership.
 	if state.player then
 		Local.ResetOwnership(rig)
 	else
@@ -380,7 +359,6 @@ function Shared.IsRagdolled(target: Player | Model): boolean
 	return _activeRagdolls[rig] ~= nil
 end
 
--- Backwards-compatible aliases in case other code still calls the old names
 Shared.RagdollPlayer = Shared.Ragdoll
 Shared.RestorePlayer = Shared.Restore
 

@@ -50,9 +50,6 @@ local Local = {}
 local Shared = {}
 
 -- [[ Signals ]] --
--- Fired with (itemName: string, itemModel: Model) when an item is equipped/unequipped.
--- ChaosItemController (and anything else needing equip lifecycle) listens to these
--- instead of duplicating the HeldItem attribute observation logic.
 Shared.OnItemEquipped = ModuleUtils.signal.new()
 Shared.OnItemUnequipped = ModuleUtils.signal.new()
 
@@ -166,7 +163,6 @@ function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: I
 		})
 	end)
 
-	-- Fallback safety check if track ends or interrupts without firing the marker
 	throwTrack.Stopped:Connect(function()
 		if markerConnection then
 			markerConnection:Disconnect()
@@ -194,7 +190,6 @@ function Local.OnUseInput(_name: string, state: Enum.UserInputState, _input: Inp
 	local camera = Workspace.CurrentCamera
 	if not camera then return Enum.ContextActionResult.Pass end
 
-	-- Aiming always uses camera CFrame, regardless of Free Look state
 	local cf = camera.CFrame
 
 	local itemModule = ItemsConfig.GetItem(_currentItem)

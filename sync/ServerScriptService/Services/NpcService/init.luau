@@ -1,4 +1,5 @@
 --|| Services
+local CollectionService = game:GetService("CollectionService")
 local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -6,10 +7,13 @@ local Workspace = game:GetService("Workspace")
 
 --|| References
 local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
+local ItemsConfig = require(ReplicatedStorage.Modules.Configs.ItemsConfig)
+local CharacterController = require(ReplicatedStorage.Modules.Shared.CharacterController)
 local NodeGraph = require(script.NodeGraph)
 
 local RoundService = require(script.Parent.RoundService)
 local MapService = require(script.Parent.MapService)
+local ItemService = require(script.Parent.ItemService)
 
 --|| Types
 
@@ -25,6 +29,15 @@ type Prefetch = {
 	moveTargetPos: Vector3?,
 	alreadyThere: boolean,
 	ready: boolean,
+}
+
+type BeltBagInfo = {
+	npcUID: string,
+	startPos: Vector3,
+	endPos: Vector3,
+	startTime: number,
+	travelTime: number,
+	arrived: boolean,
 }
 
 type NPCRecord = {
@@ -52,10 +65,15 @@ type NPCRecord = {
 	lineDwellUntil: number,
 	departArrivedAt: number,
 	shopDwellUntil: number,
-	pendingRepath: boolean,
+	willBoard: boolean?,
+	busy: boolean,
 	pathBlockedConn: RBXScriptConnection?,
 	waypointMarkers: { BasePart }?,
 	prefetch: Prefetch?,
+	pendingBagNode: BasePart?,
+	itemAnimTrack: AnimationTrack?,
+	baseAnimTracks: CharacterController.AnimationSet?,
+	unseating: boolean,
 }
 
 --|| Variables
@@ -66,6 +84,7 @@ local _npcsFolder: Folder? = nil
 local _nodesFolder: Instance? = nil
 local _nextUid = 0
 local _debugMarkersFolder: Folder? = nil
+local _beltBags: { [Model]: BeltBagInfo } = {}
 local _seatWatchConnections: { RBXScriptConnection } = {}
 
 local Local = {}
@@ -75,17 +94,10 @@ Local.decisionReportEvent = Instance.new("BindableEvent")
 
 --|| Constants
 local NPC_FOLDER_NAME = "NPCs"
-local DEBUG_MARKERS_FOLDER_NAME = "NPCDebugMarkers" -- TEMP: waypoint visualizer while debugging pathfinding
+local DEBUG_MARKERS_FOLDER_NAME = "NPCDebugMarkers"
 
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
--- Makes this raycast respect the same PhysicsService collision-group
--- exemptions NPCs actually walk under — a plain Raycast ignores
--- CollisionGroupSetCollidable entirely and only cares about CanCollide, so
--- without this, MoveDirect's obstruction check would still treat an open
--- door (still CanCollide=true, just non-collidable with "NPC" specifically —
--- see GateService/CharacterService's DoorOpen group) as a solid wall and
--- clip the goal short of it.
 RAYCAST_PARAMS.CollisionGroup = "NPC"
 
 local PATH_AGENT_PARAMS = {
@@ -103,106 +115,69 @@ function Shared.Init()
 	table.insert(_connections, RoundService.OnStateChange:Connect(Local.OnRoundStateChange))
 	table.insert(_connections, Local.decisionReportEvent.Event:Connect(Local.OnDecisionReported))
 
-	table.insert(_connections, RunService.Heartbeat:Connect(function(_dt: number)
-		if RoundService.GetState() ~= "InProgress" then return end
+	table.insert(
+		_connections,
+		RunService.Heartbeat:Connect(function(_dt: number)
+			if RoundService.GetState() ~= "InProgress" then
+				return
+			end
 
-		for _, record in _activeNPCs do
-			task.spawn(function()
-				if not record.actor.Parent then return end
-
-				if record.targetNode then
-					Local.CheckWaypointProgress(record)
-					return
+			for _, record in _activeNPCs do
+				if
+					record.busy
+					and record.awaitingDecision
+					and os.clock() - record.decisionRequestedAt > NPCConfig.DECISION_TIMEOUT
+				then
+					record.awaitingDecision = false
+					record.busy = false
 				end
 
-				if record.awaitingDecision then
-					if os.clock() - record.decisionRequestedAt > NPCConfig.DECISION_TIMEOUT then
-						record.awaitingDecision = false
-					else
-						return
+				if record.busy then
+					continue
+				end
+				record.busy = true
+
+				task.spawn(function()
+					local ok, stillPending = pcall(Local.ProcessNPCTick, record)
+					if not ok then
+						warn(`[NpcService] NPC tick error for {record.uid}: {stillPending}`)
+						record.busy = false
+					elseif not stillPending then
+						record.busy = false
 					end
+				end)
+			end
+		end)
+	)
+
+	table.insert(
+		_connections,
+		Workspace:GetAttributeChangedSignal("BoardingOpen"):Connect(function()
+			if Workspace:GetAttribute("BoardingOpen") then
+				return
+			end
+			if not _nodesFolder then
+				return
+			end
+
+			for _, record in _activeNPCs do
+				if not record.targetNode then
+					continue
+				end
+				if NodeGraph.GetZone(record.targetNode, _nodesFolder :: Instance) ~= "Depart" then
+					continue
+				end
+				if
+					record.currentNode
+					and NodeGraph.GetZone(record.currentNode, _nodesFolder :: Instance) == "Depart"
+				then
+					continue
 				end
 
-				if not record.currentNode then
-					Local.SnapToNearestNode(record)
-					return
-				end
-
-				if record.prefetch and record.prefetch.forNode == record.currentNode then
-					if record.prefetch.ready then
-						local prefetch = record.prefetch :: Prefetch
-						record.prefetch = nil
-						Local.ConsumePrefetch(record, prefetch)
-					end
-					return
-				end
-
-				if record.seatedAt > 0 and workspace:GetServerTimeNow() - record.seatedAt < NPCConfig.SEAT_REST_DURATION then
-					return
-				end
-
-				-- Lingering at the front Line Node: same hold-still gate as Seat Node rest.
-				if record.lineDwellUntil > 0 and workspace:GetServerTimeNow() < record.lineDwellUntil then
-					return
-				end
-
-				-- Waiting at the final Depart node: stays on Linear the whole
-				-- time (no behavior switch) — only intercept here once
-				-- actually eligible to board, otherwise fall through so it
-				-- keeps requesting fresh decisions (Linear naturally has
-				-- nowhere else to go from the terminal node and just stays
-				-- put) instead of freezing solid until the next cycle.
-				if record.departArrivedAt > 0
-					and Workspace:GetAttribute("BoardingOpen")
-					and workspace:GetServerTimeNow() - record.departArrivedAt >= NPCConfig.BOARD_DWELL then
-					-- task.defer(Local.CleanupNPC, record.model)
-					-- Local.ScheduleRespawn()
-					return
-				end
-
-				-- Shop detour dwell elapsed — switch back to Linear before the
-				-- next decision, so it resumes Auto-searching its way back to
-				-- the shop's own Transition Node (and then the Link back out)
-				-- instead of continuing to roam indefinitely.
-				if record.shopDwellUntil > 0 and workspace:GetServerTimeNow() >= record.shopDwellUntil then
-					record.shopDwellUntil = 0
-					if record.model:GetAttribute("BehaviorType") ~= "Linear" then
-						record.model:SetAttribute("BehaviorType", "Linear")
-					end
-				end
-
-				record.awaitingDecision = true
-				record.decisionRequestedAt = os.clock()
-				record.actor:SendMessage("Decide", {
-					npc = record.model,
-					nodesFolder = _nodesFolder,
-					currentNode = record.currentNode,
-					lastNode = record.lastNode,
-					arrivedViaLink = record.arrivedViaLink,
-					behaviorType = record.model:GetAttribute("BehaviorType") or "Linear",
-					lastRestTime = record.lastRestTime,
-				})
-			end)
-		end
-	end))
-
-	-- If boarding closes while an NPC is still mid-walk *toward* Depart (not
-	-- yet standing on a Depart-zone node), turn it back instead of letting it
-	-- keep walking into a gate that's no longer open — anyone already
-	-- standing on a Depart node is past this and keeps going regardless (see
-	-- Linear.luau's unconditional Link-following once inside).
-	table.insert(_connections, Workspace:GetAttributeChangedSignal("BoardingOpen"):Connect(function()
-		if Workspace:GetAttribute("BoardingOpen") then return end
-		if not _nodesFolder then return end
-
-		for _, record in _activeNPCs do
-			if not record.targetNode then continue end
-			if NodeGraph.GetZone(record.targetNode, _nodesFolder :: Instance) ~= "Depart" then continue end
-			if record.currentNode and NodeGraph.GetZone(record.currentNode, _nodesFolder :: Instance) == "Depart" then continue end
-
-			Local.CancelDepartApproach(record)
-		end
-	end))
+				Local.CancelDepartApproach(record)
+			end
+		end)
+	)
 
 	local currentState = RoundService.GetState()
 	if currentState == "Starting" or currentState == "InProgress" then
@@ -210,8 +185,105 @@ function Shared.Init()
 	end
 end
 
-function Shared.Start()
+function Shared.Start() end
 
+function Local.ProcessNPCTick(record: NPCRecord): boolean?
+	if not record.actor.Parent then
+		return
+	end
+
+	if record.seatedAt == 0 and Local.IsSeated(record) then
+		Local.Unseat(record)
+		return
+	end
+
+	if record.targetNode then
+		Local.CheckWaypointProgress(record)
+		return
+	end
+
+	if record.awaitingDecision then
+		return
+	end
+
+	if not record.currentNode then
+		Local.SnapToNearestNode(record)
+		return
+	end
+
+	if record.prefetch and record.prefetch.forNode == record.currentNode then
+		if record.prefetch.ready then
+			local prefetch = record.prefetch :: Prefetch
+			record.prefetch = nil
+			Local.ConsumePrefetch(record, prefetch)
+		end
+		return
+	end
+
+	if record.pendingBagNode and record.pendingBagNode == record.currentNode then
+		return
+	end
+
+	if record.seatedAt > 0 and workspace:GetServerTimeNow() - record.seatedAt < NPCConfig.SEAT_REST_DURATION then
+		return
+	end
+
+	if record.lineDwellUntil > 0 and workspace:GetServerTimeNow() < record.lineDwellUntil then
+		return
+	end
+
+	if
+		record.departArrivedAt > 0
+		and workspace:GetServerTimeNow() - record.departArrivedAt >= NPCConfig.BOARD_DWELL
+	then
+		task.defer(Local.CleanupNPC, record.model)
+		Local.ScheduleRespawn()
+		return
+	end
+
+	if record.shopDwellUntil > 0 and workspace:GetServerTimeNow() >= record.shopDwellUntil then
+		record.shopDwellUntil = 0
+		if record.model:GetAttribute("BehaviorType") ~= "Linear" then
+			record.model:SetAttribute("BehaviorType", "Linear")
+		end
+	end
+
+	Local.UpdateBoardingRoll(record)
+
+	record.awaitingDecision = true
+	record.decisionRequestedAt = os.clock()
+	record.actor:SendMessage("Decide", {
+		npc = record.model,
+		nodesFolder = _nodesFolder,
+		currentNode = record.currentNode,
+		lastNode = record.lastNode,
+		arrivedViaLink = record.arrivedViaLink,
+		behaviorType = record.model:GetAttribute("BehaviorType") or "Linear",
+		lastRestTime = record.lastRestTime,
+		willBoard = record.willBoard,
+		holdingBag = Local.IsHoldingBag(record),
+		pendingBagNode = record.pendingBagNode,
+	})
+	return true
+end
+
+function Local.UpdateBoardingRoll(record: NPCRecord)
+	local gateStage = Workspace:GetAttribute("GateStage")
+	local planeArrived = gateStage == "Arrived" or gateStage == "Boarding"
+
+	if not planeArrived then
+		record.willBoard = nil
+		return
+	end
+
+	if record.willBoard == nil then
+		record.willBoard = math.random() < NPCConfig.BOARD_ROLL_CHANCE
+	end
+end
+
+function Local.IsHoldingBag(record: NPCRecord): boolean
+	local heldItem = record.model:GetAttribute("HeldItem")
+	return heldItem ~= nil and heldItem ~= ""
 end
 
 -- [[ Private Functions — Round lifecycle ]] --
@@ -224,7 +296,7 @@ function Local.OnRoundStateChange(newState: string)
 end
 
 function Local.SpawnRound()
-	Local.DespawnAll() -- safety net in case of an unclean previous round
+	Local.DespawnAll()
 
 	_npcsFolder = Instance.new("Folder")
 	_npcsFolder.Name = NPC_FOLDER_NAME
@@ -246,7 +318,9 @@ function Local.SpawnRound()
 	Local.WatchSeats(nodesFolder)
 
 	local template = Local.GetRigTemplate()
-	if not template then return end
+	if not template then
+		return
+	end
 
 	for _ = 1, NPCConfig.MAX_NPCS do
 		Local.SpawnNPC(template)
@@ -267,17 +341,24 @@ end
 
 function Local.WatchSeats(nodesFolder: Instance)
 	for _, node in NodeGraph.EnumerateAllNodes(nodesFolder) do
-		if NodeGraph.GetNodeType(node) ~= "seatnode" then continue end
+		if NodeGraph.GetNodeType(node) ~= "seatnode" then
+			continue
+		end
 
 		NodeGraph.ReleaseSeatReservation(node)
 		NodeGraph.SyncSeatOccupiedAttribute(node)
 
 		local seat = NodeGraph.GetSeatObject(node)
-		if not seat then continue end
+		if not seat then
+			continue
+		end
 
-		table.insert(_seatWatchConnections, seat:GetPropertyChangedSignal("Occupant"):Connect(function()
-			NodeGraph.SyncSeatOccupiedAttribute(node)
-		end))
+		table.insert(
+			_seatWatchConnections,
+			seat:GetPropertyChangedSignal("Occupant"):Connect(function()
+				NodeGraph.SyncSeatOccupiedAttribute(node)
+			end)
+		)
 	end
 end
 
@@ -317,10 +398,14 @@ end
 
 function Local.GetSpawnZone(): BasePart?
 	local activeMap = MapService.GetActiveMap()
-	if not activeMap then return nil end
+	if not activeMap then
+		return nil
+	end
 
 	local spawnsFolder = activeMap:FindFirstChild("Spawns")
-	if not spawnsFolder then return nil end
+	if not spawnsFolder then
+		return nil
+	end
 
 	local zone = spawnsFolder:FindFirstChild("NPC")
 	return zone and zone:IsA("BasePart") and zone or nil
@@ -379,7 +464,9 @@ function Local.InjectActor(npc: Model): Actor
 end
 
 function Local.SpawnNPC(template: Model)
-	if not _npcsFolder then return end
+	if not _npcsFolder then
+		return
+	end
 
 	local model = template:Clone()
 	model.Name = "NPC"
@@ -410,17 +497,18 @@ function Local.SpawnNPC(template: Model)
 		end
 	end
 
-	-- Randomized per-NPC offset so the crowd doesn't move in lockstep.
 	humanoid.WalkSpeed = NPCConfig.WALK_SPEED + (math.random() * 2 - 1) * NPCConfig.WALK_SPEED_JITTER
 
 	_nextUid += 1
 	local uid = `NPC_{_nextUid}_{math.floor(workspace:GetServerTimeNow() * 1000)}`
 	model:SetAttribute("UID", uid)
 	model:SetAttribute("Kind", "Crowd")
-	model:SetAttribute("BehaviorType", "Linear") -- no trait rolling yet — every Crowd NPC uses the same Behavior module
+	model:SetAttribute("BehaviorType", "Linear")
 
 	local actor = Local.InjectActor(model)
-	warn(`[NpcService] Spawned {uid} at {model:GetPivot().Position} (BehaviorType=Linear, Nodes={_nodesFolder and _nodesFolder:GetFullName() or "nil"}, unanchored {anchoredCount} part(s), PlatformStand={humanoid.PlatformStand}, Sit={humanoid.Sit}, state={humanoid:GetState().Name})`)
+	warn(
+		`[NpcService] Spawned {uid} at {model:GetPivot().Position} (BehaviorType=Linear, Nodes={_nodesFolder and _nodesFolder:GetFullName() or "nil"}, unanchored {anchoredCount} part(s), PlatformStand={humanoid.PlatformStand}, Sit={humanoid.Sit}, state={humanoid:GetState().Name})`
+	)
 
 	local record: NPCRecord = {
 		model = model,
@@ -447,29 +535,93 @@ function Local.SpawnNPC(template: Model)
 		lineDwellUntil = 0,
 		departArrivedAt = 0,
 		shopDwellUntil = 0,
-		pendingRepath = false,
+		willBoard = nil,
+		busy = false,
 		pathBlockedConn = nil,
 		waypointMarkers = nil,
 		prefetch = nil,
+		pendingBagNode = nil,
+		itemAnimTrack = nil,
+		baseAnimTracks = CharacterController.Setup(humanoid),
+		unseating = false,
 	}
 
+	Local.EquipStarterItem(record)
+
 	local connections: { RBXScriptConnection } = {}
-	table.insert(connections, humanoid.Died:Connect(function()
-		Local.CleanupNPC(model)
-	end))
-	table.insert(connections, model.Destroying:Once(function()
-		Local.CleanupNPC(model)
-	end))
+	table.insert(
+		connections,
+		humanoid.Died:Connect(function()
+			Local.CleanupNPC(model)
+		end)
+	)
+	table.insert(
+		connections,
+		model.Destroying:Once(function()
+			Local.CleanupNPC(model)
+		end)
+	)
 	_npcConnections[model] = connections
 
 	table.insert(_activeNPCs, record)
 end
 
+function Local.EquipStarterItem(record: NPCRecord)
+	if math.random() >= NPCConfig.BAG_SPAWN_CHANCE then
+		return
+	end
+
+	local item = ItemService.SpawnItem(NPCConfig.DEFAULT_BAG_ITEM, record.hrp.CFrame)
+	if not item then
+		return
+	end
+
+	if ItemService.EquipNPCItem(record.model, item) then
+		Local.PlayItemIdleAnimation(record, item.Name)
+	else
+		item:Destroy()
+	end
+end
+
+function Local.PlayItemIdleAnimation(record: NPCRecord, itemName: string)
+	local itemModule = ItemsConfig.GetItem(itemName)
+	local animId = itemModule and itemModule.properties and itemModule.properties.idleAnimationId
+	if not animId or animId == 0 then
+		return
+	end
+
+	Local.StopItemIdleAnimation(record)
+
+	local animator = record.humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", record.humanoid)
+	local animation = Instance.new("Animation")
+	animation.AnimationId = `rbxassetid://{animId}`
+
+	local track = animator:LoadAnimation(animation)
+	track.Priority = Enum.AnimationPriority.Idle
+	track.Looped = true
+	track:Play(0.15)
+
+	record.itemAnimTrack = track
+end
+
+function Local.StopItemIdleAnimation(record: NPCRecord)
+	if not record.itemAnimTrack then
+		return
+	end
+
+	record.itemAnimTrack:Stop(0.15)
+	record.itemAnimTrack:Destroy()
+	record.itemAnimTrack = nil
+end
+
 function Local.ScheduleRespawn()
-	local delay = NPCConfig.RESPAWN_DELAY_MIN + math.random() * (NPCConfig.RESPAWN_DELAY_MAX - NPCConfig.RESPAWN_DELAY_MIN)
+	local delay = NPCConfig.RESPAWN_DELAY_MIN
+		+ math.random() * (NPCConfig.RESPAWN_DELAY_MAX - NPCConfig.RESPAWN_DELAY_MIN)
 
 	task.delay(delay, function()
-		if RoundService.GetState() ~= "InProgress" or not _npcsFolder then return end
+		if RoundService.GetState() ~= "InProgress" or not _npcsFolder then
+			return
+		end
 
 		local template = Local.GetRigTemplate()
 		if template then
@@ -493,12 +645,13 @@ function Local.CleanupNPC(model: Model)
 		if record.model == model then
 			Local.ClearWaypointMarkers(record)
 			Local.ClearPathBlockedConnection(record)
-			
+
 			if record.targetNode and NodeGraph.GetNodeType(record.targetNode) == "seatnode" then
 				NodeGraph.ReleaseSeatReservation(record.targetNode)
 			end
 
 			NodeGraph.SetEnRouteLine(model, nil)
+			NodeGraph.SetEnRouteTransition(model, nil)
 
 			table.remove(_activeNPCs, i)
 			break
@@ -524,9 +677,13 @@ function Local.GetDebugMarkersFolder(): Folder
 end
 
 function Local.ClearWaypointMarkers(record: NPCRecord)
-	if not record.waypointMarkers then return end
+	if not record.waypointMarkers then
+		return
+	end
 	for _, marker in record.waypointMarkers do
-		if marker.Parent then marker:Destroy() end
+		if marker.Parent then
+			marker:Destroy()
+		end
 	end
 	record.waypointMarkers = nil
 end
@@ -577,40 +734,115 @@ function Local.SnapToNearestNode(record: NPCRecord)
 	end
 
 	if best then
+		Local.DebugWarn(
+			record,
+			`snapped to {best.Name} ({startZone}), {math.floor(bestDist)} studs from spawn at {record.hrp.Position}`
+		)
 		Local.OnArrive(record, best)
 	end
 end
 
--- Aborts an in-flight walk toward a Depart-zone node without touching
--- currentNode/lastNode (the NPC hasn't arrived anywhere — it's still
--- physically between nodes). Just clears the movement state; the next
--- Heartbeat tick naturally requests a fresh decision from wherever it
--- currently stands, which — now that BoardingOpen is false — won't route
--- back toward Depart.
 function Local.CancelDepartApproach(record: NPCRecord)
 	record.targetNode = nil
 	record.moveTargetPos = nil
 	record.waypoints = nil
 	record.waypointIndex = nil
 	record.moveStartedAt = 0
-	record.pendingRepath = false
 	record.prefetch = nil
 	Local.ClearWaypointMarkers(record)
 	Local.ClearPathBlockedConnection(record)
 end
 
+function Local.IsSeated(record: NPCRecord): boolean
+	return record.humanoid.Sit or record.humanoid:GetState() == Enum.HumanoidStateType.Seated
+end
+
+function Local.ReplaceStuckSeat(record: NPCRecord)
+	local seatPart = record.humanoid.SeatPart
+	local staleSeat: Seat? = (seatPart and seatPart:IsA("Seat") and seatPart :: Seat) or record.seatObject
+	if not staleSeat or not staleSeat.Parent then
+		return
+	end
+
+	local replacement = staleSeat:Clone()
+	replacement.Parent = staleSeat.Parent
+
+	local seatNode = record.currentNode
+	if seatNode and NodeGraph.GetSeatObject(seatNode) == staleSeat then
+		NodeGraph.SetSeatObject(seatNode, replacement)
+		table.insert(
+			_seatWatchConnections,
+			replacement:GetPropertyChangedSignal("Occupant"):Connect(function()
+				NodeGraph.SyncSeatOccupiedAttribute(seatNode :: BasePart)
+			end)
+		)
+		NodeGraph.SyncSeatOccupiedAttribute(seatNode)
+	end
+
+	staleSeat:Destroy()
+	record.humanoid.Sit = false
+	record.humanoid.PlatformStand = false
+
+	Local.DebugWarn(
+		record,
+		`replaced a stuck Seat ({staleSeat.Name}) with a fresh clone after {NPCConfig.UNSEAT_MAX_ATTEMPTS} failed release attempts`
+	)
+end
+
+function Local.Unseat(record: NPCRecord)
+	if not record.seatObject and not Local.IsSeated(record) then
+		return
+	end
+
+	if record.unseating then
+		return
+	end
+	record.unseating = true
+
+	record.lastRestTime = workspace:GetServerTimeNow()
+	record.seatedAt = 0
+
+	task.spawn(function()
+		for _ = 1, NPCConfig.UNSEAT_MAX_ATTEMPTS do
+			if not record.humanoid.Parent then
+				record.seatObject = nil
+				record.unseating = false
+				return
+			end
+
+			if record.seatObject then
+				record.seatObject:Sit(nil :: any)
+			end
+			record.humanoid.Sit = false
+			record.humanoid.PlatformStand = false
+
+			if record.humanoid:GetState() == Enum.HumanoidStateType.Seated then
+				record.humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+
+			record.humanoid.Jump = true
+
+			if not Local.IsSeated(record) and record.humanoid.SeatPart == nil then
+				record.seatObject = nil
+				record.unseating = false
+				return
+			end
+
+			task.wait()
+		end
+
+		Local.ReplaceStuckSeat(record)
+		record.seatObject = nil
+		record.unseating = false
+	end)
+end
+
 function Local.WalkTo(record: NPCRecord, node: BasePart)
 	record.lineDwellUntil = 0
 
-	if record.seatObject then
-		record.seatObject:Sit(nil :: any)
-		record.seatObject = nil
-		record.lastRestTime = workspace:GetServerTimeNow()
-		record.seatedAt = 0
-	end
-	
-	if record.humanoid.Sit then
-		record.humanoid.Sit = false
+	if Local.IsSeated(record) then
+		Local.Unseat(record)
+		return
 	end
 
 	record.targetNode = node
@@ -621,13 +853,17 @@ end
 
 -- [[ Private Functions — Seamless leg prefetching ]] --
 function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
+	if not record.actor.Parent then
+		return
+	end
+
 	local nodeType = NodeGraph.GetNodeType(forNode)
-	if nodeType == "seatnode" or nodeType == "linenode" then return end
-	-- A Transition Node's outcome can depend on state that only becomes true
-	-- exactly on arrival (e.g. a shop detour flipping BehaviorType to Wander
-	-- in OnArrive) — prefetching it risks consuming a decision computed
-	-- under the wrong behavior the instant it's reached.
-	if NodeGraph.IsTransitionNode(forNode) then return end
+	if nodeType == "seatnode" or nodeType == "linenode" then
+		return
+	end
+	if NodeGraph.IsTransitionNode(forNode) then
+		return
+	end
 
 	local previousLink = record.currentNode and NodeGraph.GetLink(record.currentNode)
 	local willArriveViaLink = previousLink ~= nil and previousLink == forNode
@@ -645,6 +881,8 @@ function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
 	}
 	record.prefetch = prefetch
 
+	Local.UpdateBoardingRoll(record)
+
 	record.actor:SendMessage("Decide", {
 		npc = record.model,
 		nodesFolder = _nodesFolder,
@@ -653,20 +891,25 @@ function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
 		arrivedViaLink = willArriveViaLink,
 		behaviorType = record.model:GetAttribute("BehaviorType") or "Linear",
 		lastRestTime = record.lastRestTime,
+		willBoard = record.willBoard,
+		holdingBag = Local.IsHoldingBag(record),
+		pendingBagNode = record.pendingBagNode,
 		prefetch = true,
 	})
 end
 
 function Local.OnPrefetchDecided(record: NPCRecord, nextNode: BasePart?, state: string)
 	local prefetch = record.prefetch
-	if not prefetch or not prefetch.awaitingDecision then return end -- superseded/stale — drop it
+	if not prefetch or not prefetch.awaitingDecision then
+		return
+	end
 
 	prefetch.awaitingDecision = false
 	prefetch.nextNode = nextNode
 	prefetch.state = state
 
 	if not nextNode then
-		prefetch.ready = true -- dead end/queueing — nothing to path to
+		prefetch.ready = true
 		return
 	end
 
@@ -689,7 +932,7 @@ function Local.OnPrefetchDecided(record: NPCRecord, nextNode: BasePart?, state: 
 		prefetch.waypoints = path:GetWaypoints()
 		prefetch.path = path
 	else
-		prefetch.waypoints = nil -- falls back to a direct move at consume time
+		prefetch.waypoints = nil
 	end
 
 	prefetch.ready = true
@@ -699,15 +942,8 @@ function Local.ConsumePrefetch(record: NPCRecord, prefetch: Prefetch)
 	local nextNode = prefetch.nextNode
 	record.model:SetAttribute("AIState", prefetch.state)
 
-	if not nextNode then return end
-
-	if record.seatObject then
-		-- Shouldn't normally happen (RequestPrefetch skips Seat Node
-		-- destinations) — kept as a safety net.
-		record.seatObject:Sit(nil :: any)
-		record.seatObject = nil
-		record.lastRestTime = workspace:GetServerTimeNow()
-		record.seatedAt = 0
+	if not nextNode then
+		return
 	end
 
 	if prefetch.alreadyThere then
@@ -718,8 +954,6 @@ function Local.ConsumePrefetch(record: NPCRecord, prefetch: Prefetch)
 	record.targetNode = nextNode
 	record.moveTargetPos = prefetch.moveTargetPos
 
-	-- Prefetched waypoints assume forNode's canonical position as the start —
-	-- discard and repath if the NPC's real arrival drifted too far from that.
 	local assumedOrigin = NodeGraph.GetNodePosition(prefetch.forNode)
 	local drifted = (record.hrp.Position - assumedOrigin).Magnitude > NPCConfig.PREFETCH_DRIFT_TOLERANCE
 
@@ -735,7 +969,10 @@ function Local.ConsumePrefetch(record: NPCRecord, prefetch: Prefetch)
 		Local.MoveToWaypoint(record)
 	else
 		if drifted then
-			Local.DebugWarn(record, `prefetch drifted {math.floor((record.hrp.Position - assumedOrigin).Magnitude)} studs from assumed origin — recomputing fresh path instead of trusting stale waypoints`)
+			Local.DebugWarn(
+				record,
+				`prefetch drifted {math.floor((record.hrp.Position - assumedOrigin).Magnitude)} studs from assumed origin — recomputing fresh path instead of trusting stale waypoints`
+			)
 		end
 		record.waypoints = nil
 		record.waypointIndex = nil
@@ -748,11 +985,15 @@ end
 
 function Local.ComputePath(record: NPCRecord)
 	local node = record.targetNode
-	if not node then return end
+	if not node then
+		return
+	end
 
 	local humanoid = record.humanoid
 	local hrp = record.hrp
-	if humanoid.Health <= 0 or not hrp.Parent then return end
+	if humanoid.Health <= 0 or not hrp.Parent then
+		return
+	end
 
 	local goalPos = record.moveTargetPos or NodeGraph.GetNodePosition(node)
 	local origin = hrp.Position
@@ -770,10 +1011,8 @@ function Local.ComputePath(record: NPCRecord)
 	end)
 
 	if computeOk and path.Status == Enum.PathStatus.Success then
-		record.pendingRepath = false
 		local computedWaypoints = path:GetWaypoints()
 		record.waypoints = computedWaypoints
-		-- Waypoint 1 is always ~the NPC's current position — start from 2.
 		record.waypointIndex = if #computedWaypoints > 1 then 2 else 1
 		record.pathBlockedConn = path.Blocked:Connect(function(blockedWaypointIndex: number)
 			Local.OnPathBlocked(record, blockedWaypointIndex)
@@ -791,22 +1030,44 @@ function Local.ComputePath(record: NPCRecord)
 	local originZone = record.currentNode and NodeGraph.GetZone(record.currentNode, _nodesFolder :: Instance) or nil
 
 	if targetZone == "Depart" and originZone == "Platform" then
-		-- Gate crossing: a straight-line direct move here just walks the NPC
-		-- into the (still-solid) Gate Frame and gets it visibly stuck instead
-		-- of actually passing through. Keep asking PathfindingService instead
-		-- (retried from CheckStuck on the usual nudge-check cadence) until it
-		-- finds a real route, or the stuck-timeout forces arrival as a last
-		-- resort.
-		Local.DebugWarn(record, `ComputeAsync failed crossing Platform->Depart to {node.Name} (computeOk={computeOk}, status={if computeOk then tostring(path.Status) else "n/a"}) — retrying pathfinding instead of falling back to direct move`)
-		if not record.pendingRepath then
-			record.pendingRepath = true
-			Local.StartLeg(record, origin, goalPos)
-		end
+		Local.DebugWarn(
+			record,
+			`PathfindingService failed crossing Platform->Depart to {node.Name} (computeOk={computeOk}, status={if computeOk
+				then tostring(path.Status)
+				else "n/a"}) — using direct move`
+		)
+		Local.MoveDirect(record, origin, goalPos)
 		return
 	end
 
-	record.pendingRepath = false
-	Local.DebugWarn(record, `PathfindingService failed to {node.Name} (computeOk={computeOk}, status={if computeOk then tostring(path.Status) else "n/a"}) — falling back to direct move`)
+	if record.currentNode then
+		local ignore = { record.model, _npcsFolder }
+		local bridge = NodeGraph.FindLoSBridge(_nodesFolder :: Instance, record.currentNode, node, ignore)
+		if bridge then
+			local bridgeWaypoints: { PathWaypoint } = {
+				{ Position = NodeGraph.GetNodePosition(bridge), Action = Enum.PathWaypointAction.Walk } :: any,
+				{ Position = goalPos, Action = Enum.PathWaypointAction.Walk } :: any,
+			}
+			record.waypoints = bridgeWaypoints
+			record.waypointIndex = 1
+			Local.VisualizeWaypoints(record, bridgeWaypoints)
+			Local.DebugWarn(
+				record,
+				`PathfindingService failed to {node.Name} (computeOk={computeOk}, status={if computeOk
+					then tostring(path.Status)
+					else "n/a"}) — routing via LoS bridge {bridge.Name} instead of a raw direct move`
+			)
+			Local.MoveToWaypoint(record)
+			return
+		end
+	end
+
+	Local.DebugWarn(
+		record,
+		`PathfindingService failed to {node.Name} (computeOk={computeOk}, status={if computeOk
+			then tostring(path.Status)
+			else "n/a"}) — falling back to direct move`
+	)
 	Local.MoveDirect(record, origin, goalPos)
 end
 
@@ -818,9 +1079,15 @@ function Local.ClearPathBlockedConnection(record: NPCRecord)
 end
 
 function Local.OnPathBlocked(record: NPCRecord, blockedWaypointIndex: number)
-	if not record.model.Parent then return end
-	if not record.targetNode or not record.waypointIndex then return end
-	if blockedWaypointIndex < record.waypointIndex then return end -- already past that point
+	if not record.model.Parent then
+		return
+	end
+	if not record.targetNode or not record.waypointIndex then
+		return
+	end
+	if blockedWaypointIndex < record.waypointIndex then
+		return
+	end
 
 	Local.DebugWarn(record, `path blocked at waypoint {blockedWaypointIndex} — recomputing`)
 	Local.ComputePath(record)
@@ -834,14 +1101,22 @@ function Local.StartLeg(record: NPCRecord, originPos: Vector3, goalPos: Vector3)
 	record.lastProgressCheckAt = now
 end
 
+function Local.SetWalkTarget(record: NPCRecord, pos: Vector3)
+	record.humanoid.WalkToPoint = pos
+end
+
 function Local.MoveToWaypoint(record: NPCRecord)
 	local waypoints = record.waypoints
 	local index = record.waypointIndex
-	if not waypoints or not index then return end
+	if not waypoints or not index then
+		return
+	end
 
 	local waypoint = waypoints[index]
 	if not waypoint then
-		if record.targetNode then Local.OnArrive(record, record.targetNode) end
+		if record.targetNode then
+			Local.OnArrive(record, record.targetNode)
+		end
 		return
 	end
 
@@ -850,7 +1125,7 @@ function Local.MoveToWaypoint(record: NPCRecord)
 	end
 
 	Local.StartLeg(record, record.hrp.Position, waypoint.Position)
-	record.humanoid:MoveTo(waypoint.Position)
+	Local.SetWalkTarget(record, waypoint.Position)
 end
 function Local.MoveDirect(record: NPCRecord, origin: Vector3, goalPos: Vector3)
 	local toGoal = goalPos - origin
@@ -868,8 +1143,57 @@ function Local.MoveDirect(record: NPCRecord, origin: Vector3, goalPos: Vector3)
 	end
 
 	Local.StartLeg(record, origin, goal)
-	record.humanoid:MoveTo(goal)
-	Local.DebugWarn(record, `MoveTo issued (direct) -> {goal} (WalkSpeed={record.humanoid.WalkSpeed}, currently at {record.hrp.Position})`)
+	Local.SetWalkTarget(record, goal)
+	Local.DebugWarn(
+		record,
+		`WalkToPoint issued (direct) -> {goal} (WalkSpeed={record.humanoid.WalkSpeed}, currently at {record.hrp.Position})`
+	)
+end
+
+function Local.RetraceToPath(record: NPCRecord): boolean
+	local waypoints = record.waypoints
+	if not waypoints or #waypoints == 0 then
+		return false
+	end
+
+	local hrp = record.hrp
+	local nearestIndex = 1
+	local nearestDist = math.huge
+	for i, waypoint in waypoints do
+		local dist = (waypoint.Position - hrp.Position).Magnitude
+		if dist < nearestDist then
+			nearestDist = dist
+			nearestIndex = i
+		end
+	end
+
+	local nearestWaypoint = waypoints[nearestIndex]
+
+	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
+	local computeOk = pcall(function()
+		path:ComputeAsync(hrp.Position, nearestWaypoint.Position)
+	end)
+
+	if not computeOk or path.Status ~= Enum.PathStatus.Success then
+		return false
+	end
+
+	local retraceWaypoints = path:GetWaypoints()
+	local rejoined = table.clone(retraceWaypoints)
+	for i = nearestIndex + 1, #waypoints do
+		table.insert(rejoined, waypoints[i])
+	end
+
+	Local.ClearPathBlockedConnection(record)
+	record.waypoints = rejoined
+	record.waypointIndex = if #retraceWaypoints > 1 then 2 else 1
+	record.pathBlockedConn = path.Blocked:Connect(function(blockedWaypointIndex: number)
+		Local.OnPathBlocked(record, blockedWaypointIndex)
+	end)
+	Local.VisualizeWaypoints(record, rejoined)
+	Local.MoveToWaypoint(record)
+
+	return true
 end
 
 function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
@@ -882,7 +1206,10 @@ function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
 	end
 
 	if elapsed > NPCConfig.STUCK_TIMEOUT then
-		Local.DebugWarn(record, `stuck-timeout toward {record.targetNode.Name} (still {math.floor((hrp.Position - goalPos).Magnitude)} studs away) — forcing arrival`)
+		Local.DebugWarn(
+			record,
+			`stuck-timeout toward {record.targetNode.Name} (still {math.floor((hrp.Position - goalPos).Magnitude)} studs away) — forcing arrival`
+		)
 		Local.OnArrive(record, record.targetNode :: BasePart)
 		return
 	end
@@ -892,31 +1219,162 @@ function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
 	end
 	record.lastProgressCheckAt = now
 
-	if record.pendingRepath then
-		-- Gate-crossing leg with no route yet — keep asking PathfindingService
-		-- instead of nudging into solid geometry (see ComputePath).
-		Local.ComputePath(record)
-		return
-	end
-
 	local moved = (hrp.Position - record.lastProgressPos).Magnitude
 	local progressed = moved >= NPCConfig.STUCK_NUDGE_DISTANCE * NPCConfig.STUCK_PROGRESS_RATIO
 
 	record.lastProgressPos = hrp.Position
 
 	if progressed then
-		-- Real (if slow) progress — likely just a detour or crowd slowdown,
-		-- not actually stuck. Extend the budget instead of nudging.
 		record.moveStartedAt = now
 		record.legExpectedDuration = (goalPos - hrp.Position).Magnitude / math.max(record.humanoid.WalkSpeed, 1)
 		return
 	end
 
 	local toGoal = goalPos - hrp.Position
-	if toGoal.Magnitude < 0.05 then return end
+	if toGoal.Magnitude < 0.05 then
+		return
+	end
+
+	if not Local.RetraceToPath(record) then
+		Local.SetWalkTarget(record, goalPos)
+	end
 
 	hrp.CFrame += toGoal.Unit * NPCConfig.STUCK_NUDGE_DISTANCE
-	Local.DebugWarn(record, `no progress toward {record.targetNode.Name} — nudging {NPCConfig.STUCK_NUDGE_DISTANCE} studs toward goal`)
+	Local.DebugWarn(
+		record,
+		`no progress toward {record.targetNode.Name} — retracing to path and nudging {NPCConfig.STUCK_NUDGE_DISTANCE} studs toward goal`
+	)
+end
+
+-- [[ Private Functions — Conveyor node (bag-in-transit) ]] --
+function Local.StartConveyorTransit(record: NPCRecord, node: BasePart)
+	local heldItemName = record.model:GetAttribute("HeldItem")
+	local pickupNode = NodeGraph.GetPickupNode(node)
+
+	if not heldItemName or heldItemName == "" or not pickupNode then
+		return
+	end
+
+	local bag = ItemService.ForceDropItem(record.model)
+	if not bag or not bag.PrimaryPart then
+		return
+	end
+	Local.StopItemIdleAnimation(record)
+
+	local startSub = NodeGraph.GetSubNode(node, "Start")
+	local endSub = NodeGraph.GetSubNode(node, "End")
+	local startPos = startSub and NodeGraph.GetNodePosition(startSub) or NodeGraph.GetNodePosition(node)
+	local endPos = endSub and NodeGraph.GetNodePosition(endSub) or NodeGraph.GetNodePosition(pickupNode)
+
+	bag:SetAttribute("OwnerNPCUID", record.uid)
+	bag:SetAttribute("OnBelt", true)
+	bag:PivotTo(CFrame.new(startPos))
+
+	for _, part in bag:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+		end
+	end
+
+	local info: BeltBagInfo = {
+		npcUID = record.uid,
+		startPos = startPos,
+		endPos = endPos,
+		startTime = workspace:GetServerTimeNow(),
+		travelTime = NPCConfig.BELT_TRAVEL_TIME,
+		arrived = false,
+	}
+	_beltBags[bag] = info
+
+	bag.Destroying:Once(function()
+		_beltBags[bag] = nil
+	end)
+
+	Local.RunBeltTransit(bag, info)
+
+	record.pendingBagNode = pickupNode
+end
+
+function Local.RunBeltTransit(bag: Model, info: BeltBagInfo)
+	task.spawn(function()
+		while true do
+			if _beltBags[bag] ~= info then
+				return
+			end
+
+			if not bag.Parent or not CollectionService:HasTag(bag, "Interactable") then
+				_beltBags[bag] = nil
+				local owner = Local.FindRecordByUid(info.npcUID)
+				if owner then
+					owner.pendingBagNode = nil
+				end
+				return
+			end
+
+			local elapsed = workspace:GetServerTimeNow() - info.startTime
+			local alpha = math.clamp(elapsed / info.travelTime, 0, 1)
+			bag:PivotTo(CFrame.new(info.startPos:Lerp(info.endPos, alpha)))
+
+			if alpha >= 1 then
+				info.arrived = true
+				Local.CompleteBeltArrival(bag, info)
+				return
+			end
+
+			task.wait(0.1)
+		end
+	end)
+end
+
+function Local.CompleteBeltArrival(bag: Model, info: BeltBagInfo)
+	local record = Local.FindRecordByUid(info.npcUID)
+	if not record then
+		return
+	end
+	if record.pendingBagNode ~= record.currentNode then
+		return
+	end
+
+	_beltBags[bag] = nil
+	record.pendingBagNode = nil
+
+	if bag.Parent and CollectionService:HasTag(bag, "Interactable") then
+		bag:SetAttribute("OnBelt", nil)
+		if ItemService.EquipNPCItem(record.model, bag) then
+			Local.PlayItemIdleAnimation(record, bag.Name)
+		end
+	end
+end
+
+function Local.TryReclaimBag(record: NPCRecord)
+	local targetBag: Model? = nil
+	local targetInfo: BeltBagInfo? = nil
+
+	for bag, info in _beltBags do
+		if info.npcUID == record.uid then
+			targetBag, targetInfo = bag, info
+			break
+		end
+	end
+
+	if not targetBag or not targetInfo then
+		record.pendingBagNode = nil
+		return
+	end
+
+	if not targetInfo.arrived then
+		return
+	end
+
+	_beltBags[targetBag] = nil
+	record.pendingBagNode = nil
+
+	if targetBag.Parent and CollectionService:HasTag(targetBag, "Interactable") then
+		targetBag:SetAttribute("OnBelt", nil)
+		if ItemService.EquipNPCItem(record.model, targetBag) then
+			Local.PlayItemIdleAnimation(record, targetBag.Name)
+		end
+	end
 end
 
 function Local.OnArrive(record: NPCRecord, node: BasePart)
@@ -927,24 +1385,32 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 	record.waypoints = nil
 	record.waypointIndex = nil
 	record.moveStartedAt = 0
-	record.pendingRepath = false
 	Local.ClearWaypointMarkers(record)
 	Local.ClearPathBlockedConnection(record)
 
 	local previousLink = record.lastNode and NodeGraph.GetLink(record.lastNode)
 	record.arrivedViaLink = previousLink ~= nil and previousLink == node
 
-	-- A Transition Node linked to (and reached from) another Transition Node
-	-- is a shop detour hookup — dwell here roaming/sitting for a while
-	-- before heading back, instead of immediately following this node's own
-	-- Link straight back out.
+	if record.pendingBagNode == node then
+		Local.TryReclaimBag(record)
+	end
+
+	if NodeGraph.IsConveyorNode(node) then
+		Local.StartConveyorTransit(record, node)
+	end
+
+	if NodeGraph.IsTransitionNode(node) or NodeGraph.IsConveyorNode(node) then
+		NodeGraph.SetEnRouteTransition(record.model, nil)
+	end
+
 	local isShopDetourArrival = record.arrivedViaLink
 		and NodeGraph.IsTransitionNode(node)
 		and record.lastNode
 		and NodeGraph.IsTransitionNode(record.lastNode)
 
 	if isShopDetourArrival then
-		record.shopDwellUntil = workspace:GetServerTimeNow() + math.random(NPCConfig.SHOP_DWELL_MIN, NPCConfig.SHOP_DWELL_MAX)
+		record.shopDwellUntil = workspace:GetServerTimeNow()
+			+ math.random(NPCConfig.SHOP_DWELL_MIN, NPCConfig.SHOP_DWELL_MAX)
 		if record.model:GetAttribute("BehaviorType") ~= "Wander" then
 			record.model:SetAttribute("BehaviorType", "Wander")
 		end
@@ -953,7 +1419,7 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 	local isSeatNode = NodeGraph.GetNodeType(node) == "seatnode"
 	if isSeatNode then
 		record.seatedAt = workspace:GetServerTimeNow()
-		NodeGraph.ReleaseSeatReservation(node) -- Occupied (real Seat.Occupant) takes over as ground truth below
+		NodeGraph.ReleaseSeatReservation(node)
 
 		local seatObject = NodeGraph.GetSeatObject(node)
 		if seatObject then
@@ -964,15 +1430,10 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 	end
 
 	if NodeGraph.GetNodeType(node) == "linenode" and not NodeGraph.IsSlotNode(node) then
-		record.lineDwellUntil = workspace:GetServerTimeNow() + math.random(NPCConfig.LINE_DWELL_MIN, NPCConfig.LINE_DWELL_MAX)
+		record.lineDwellUntil = workspace:GetServerTimeNow()
+			+ math.random(NPCConfig.LINE_DWELL_MIN, NPCConfig.LINE_DWELL_MAX)
 	end
 
-	-- The Depart Folder now holds multiple nodes chained by Link (gate
-	-- entrance(s) -> ... -> final waiting/dwell node), so every one of them
-	-- reports zone "Depart" — only the true end of that chain (no outgoing
-	-- Link left) counts as "actually arrived," or the NPC would freeze the
-	-- instant it touched the first gate node instead of walking the rest of
-	-- the chain.
 	local isFinalDepartNode = NodeGraph.GetZone(node, _nodesFolder :: Instance) == "Depart"
 		and NodeGraph.GetLink(node) == nil
 
@@ -982,10 +1443,12 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 		record.departArrivedAt = 0
 	end
 
+	local waitingForBag = record.pendingBagNode == node
+
 	local prefetch = record.prefetch
 	if prefetch and prefetch.forNode == node then
-		if isSeatNode then
-			record.prefetch = nil -- discard; must rest before leaving regardless of readiness
+		if isSeatNode or waitingForBag then
+			record.prefetch = nil
 		elseif prefetch.ready then
 			record.prefetch = nil
 			Local.ConsumePrefetch(record, prefetch)
@@ -994,14 +1457,20 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 end
 
 function Local.CheckWaypointProgress(record: NPCRecord)
-	if not record.targetNode then return end
+	if not record.targetNode then
+		return
+	end
 
 	local hrp = record.hrp
-	if not hrp.Parent then return end
+	if not hrp.Parent then
+		return
+	end
 
 	if record.waypoints and record.waypointIndex then
 		local waypoint = record.waypoints[record.waypointIndex]
-		if not waypoint then return end
+		if not waypoint then
+			return
+		end
 
 		if (hrp.Position - waypoint.Position).Magnitude <= NPCConfig.ARRIVAL_TOLERANCE then
 			if record.waypointIndex == #record.waypoints then
@@ -1017,7 +1486,6 @@ function Local.CheckWaypointProgress(record: NPCRecord)
 		return
 	end
 
-	-- Direct-line fallback leg (no navmesh route was found for this move).
 	local goalPos = record.moveTargetPos or NodeGraph.GetNodePosition(record.targetNode :: BasePart)
 	local distance = (hrp.Position - goalPos).Magnitude
 
@@ -1039,9 +1507,20 @@ function Local.FindRecordByModel(npc: Model): NPCRecord?
 	return nil
 end
 
+function Local.FindRecordByUid(uid: string): NPCRecord?
+	for _, record in _activeNPCs do
+		if record.uid == uid then
+			return record
+		end
+	end
+	return nil
+end
+
 function Local.OnDecisionReported(npc: Model, nextNode: BasePart?, state: string, isPrefetch: boolean?)
 	local record = Local.FindRecordByModel(npc)
-	if not record then return end
+	if not record then
+		return
+	end
 
 	if isPrefetch then
 		Local.OnPrefetchDecided(record, nextNode, state)
@@ -1052,14 +1531,21 @@ function Local.OnDecisionReported(npc: Model, nextNode: BasePart?, state: string
 	npc:SetAttribute("AIState", state)
 
 	if nextNode then
-		Local.WalkTo(record, nextNode)
+		local ok, err = pcall(Local.WalkTo, record, nextNode)
+		if not ok then
+			warn(`[NpcService] WalkTo error for {record.uid}: {err}`)
+		end
 	end
+
+	record.busy = false
 end
 
 -- [[ Public Functions ]] --
 
 function Shared.FindNPCById(uid: string?): Model?
-	if not uid or uid == "" then return nil end
+	if not uid or uid == "" then
+		return nil
+	end
 
 	local record = nil
 	for _, r in _activeNPCs do

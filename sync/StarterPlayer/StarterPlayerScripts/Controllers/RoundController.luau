@@ -10,10 +10,10 @@ local ModuleUtils = require(ReplicatedStorage.Modules.Utils.ModuleUtils)
 export type RoundState = "Waiting" | "Intermission" | "MapLoading" | "Starting" | "InProgress" | "Ended"
 
 export type RewardBreakdown = {
-	playtimeTokens: number, -- Playtime Tokens Earned
-	teamTaskTokens: number, -- Team Based Tasks Earned (TSA arrests / Smuggler deposits)
-	baseReward: number, -- Base Win/Lose Token Reward
-	totalTokens: number, -- Total Tokens Earned
+	playtimeTokens: number,
+	teamTaskTokens: number,
+	baseReward: number,
+	totalTokens: number,
 	didWin: boolean,
 	team: string,
 }
@@ -63,12 +63,6 @@ function Shared.Init()
 		Shared.OnRewardGranted:Fire(data)
 	end))
 
-	-- Fired whenever the local player's team assignment changes -- covers the
-	-- normal round-start roster (TeamService.AssignTeams), a mid-round
-	-- RequestJoin (TeamService.AssignSinglePlayer), and the post-round reset
-	-- back to no team (TeamService.SetNeutral). This is the single reliable
-	-- "is the player currently playing" signal; the "Round"/"Join" event only
-	-- reaches late-connecting/mid-round joiners, not everyone.
 	table.insert(_networkConnections, Network:BindEvent("Team", "Assigned", function(data: { teamName: string? })
 		Local.SetPlaying(data.teamName ~= nil)
 	end))
@@ -102,8 +96,6 @@ function Shared.GetQuotaTotal(): number
 	return Workspace:GetAttribute(ATTR_QUOTA_TOTAL) or 0
 end
 
--- Requests to join the currently in-progress match as a latecomer. The
--- server no-ops this outside of "InProgress" (see RoundService.OnRequestJoin).
 function Shared.RequestJoin()
 	Network:FireServer("Round", "RequestJoin")
 end

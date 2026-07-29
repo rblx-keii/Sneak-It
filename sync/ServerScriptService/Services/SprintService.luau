@@ -13,12 +13,12 @@ local RagdollService = require(script.Parent.RagdollService)
 type RoundState = RoundService.RoundState
 
 --|| Variables
-local _sprinting: { [Player]: number } = {} -- [player] = WalkSpeed before boosting
+local _sprinting: { [Player]: number } = {}
 local _connections: { RBXScriptConnection } = {}
 local _networkConnections: { Network.Cleanup } = {}
 
 --|| Constants
-local SPRINT_WALKSPEED = 24 -- matches DoubleEspresso's boosted speed
+local SPRINT_WALKSPEED = 24
 
 --|| MAIN ||--
 local Local = {}

@@ -31,10 +31,6 @@ local PHASE_TEXT: { [RoundController.RoundState]: string } = {
 	Ended = "Round Over",
 }
 
--- Same wording as the "Airplane has arrived" / "Boarding Starts/Stops in Xs"
--- / "Airplane has left" cycle from mds/todo.md, collapsed onto GateService's
--- 4 real timed stages (the gate opening/closing are transitions between
--- these, not separate stages).
 local GATE_STAGE_TEXT: { [GateController.GateStage]: string } = {
 	Arrived = "Airplane has arrived — boarding in %ds",
 	Boarding = "Boarding now — closes in %ds",
@@ -92,7 +88,6 @@ function Local.UpdateVisibility()
 	local isPlaying = RoundController.IsPlaying()
 	local state = RoundController.GetState()
 
-	-- Fully hidden on "Ended" -- a dedicated rewards screen takes over for that window.
 	Hud.Enabled = state ~= "Ended"
 
 	sidebar.Visible = not isPlaying

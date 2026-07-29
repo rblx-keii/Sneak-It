@@ -17,7 +17,7 @@ local _lifecycleConnections: {RBXScriptConnection} = {}
 local Local = {}
 local Shared = {}
 
-Local.activeSessions = {} :: { [number]: StealSession } -- keyed by player.UserId
+Local.activeSessions = {} :: { [number]: StealSession }
 Local.lockedNPCs = {} :: { [Model]: StealSession }
 Local.retryCooldowns = {} :: { [Model]: number }
 
@@ -32,11 +32,11 @@ type StealSession = {
 
 --|| Constants
 local MAX_STEAL_DISTANCE = 8
-local DEFAULT_STEAL_THRESHOLD = 3 -- seconds, used if the NPC has no StealThreshold attribute
-local COMPLETION_TOLERANCE = 0.5 -- seconds of slack allowed for network latency when validating a Complete
-local TIMEOUT_BUFFER = 1.5 -- seconds past threshold before an unfinished session auto-fails
+local DEFAULT_STEAL_THRESHOLD = 3
+local COMPLETION_TOLERANCE = 0.5
+local TIMEOUT_BUFFER = 1.5
 local WATCH_TICK_RATE = 0.25
-local RETRY_COOLDOWN = 5 -- seconds before the same NPC can be targeted again after a result
+local RETRY_COOLDOWN = 5
 
 local NPC_FOLDER_NAME = "NPCs"
 
