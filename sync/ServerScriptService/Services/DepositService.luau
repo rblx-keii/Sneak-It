@@ -5,7 +5,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 --|| References
-local ZonePlus = require(ReplicatedStorage.Modules.Libs.ZonePlus)
 local RoundService = require(script.Parent.RoundService)
 local JailService = require(script.Parent.JailService)
 local SpawnService = require(script.Parent.SpawnService)
@@ -15,14 +14,15 @@ local TeamService = require(script.Parent.TeamService)
 local RewardService = require(script.Parent.RewardService)
 
 --|| Variables
-local _zones: {[BasePart]: ZonePlus.ZoneType} = {}
+local _zoneConnections: {[BasePart]: RBXScriptConnection} = {}
 local _depositThreads: {[Player]: thread} = {}
 local _depositConnections: {[Player]: RBXScriptConnection} = {}
 local _connections: {RBXScriptConnection} = {}
 
 --|| Constants
-local DEPOSIT_TIME = 5
+local RESPAWN_DELAY = 0.5
 local DEPOSIT_ZONE_TAG = "DepositZone"
+local DEPOSIT_COLLISION_GROUP = "DepositZone"
 local TOKENS_PER_STAR = 3
 
 --|| MAIN ||--
@@ -62,52 +62,31 @@ end
 -- [[ Private Functions ]] --
 function Local.SetupZone(part: Instance)
 	if not part:IsA("BasePart") then return end
+	if _zoneConnections[part] then return end
 
-	local zone = ZonePlus.new(part)
+	part.CollisionGroup = DEPOSIT_COLLISION_GROUP
+	part.CanCollide = false -- PhysicsService group-level non-collidability also suppresses Touched, so the "doesn't block movement" behavior has to come from CanCollide instead
 
-	zone:relocate()
-
-	zone.playerEntered:Connect(function(player: Player)
-		Local.StartDeposit(player)
+	_zoneConnections[part] = part.Touched:Connect(function(hit: BasePart)
+		local character = hit.Parent
+		local player = character and Players:GetPlayerFromCharacter(character)
+		if player then
+			Local.TryDeposit(player)
+		end
 	end)
-
-	zone.playerExited:Connect(function(player: Player)
-		Local.CancelDeposit(player)
-	end)
-
-	_zones[part] = zone
 end
 
 function Local.RemoveZone(part: BasePart)
-	local zone = _zones[part]
-	if zone then
-		zone:destroy()
-		_zones[part] = nil
+	local conn = _zoneConnections[part]
+	if conn then
+		conn:Disconnect()
+		_zoneConnections[part] = nil
 	end
-end
 
-function Local.StartDeposit(player: Player)
-	if RoundService.GetState() ~= "InProgress" then return end
-	if not Workspace:GetAttribute("BoardingOpen") then return end
-
-	local character = player.Character
-	if not character then return end
-
-	if not character:GetAttribute("HasContraband") then return end
-	if character:GetAttribute("Disabled") then return end
-	if TeamService.GetTeam(player) ~= "Smuggler" then return end
-
-	Local.CancelDeposit(player)
-
-	_depositConnections[player] = character:GetAttributeChangedSignal("Disabled"):Connect(function()
-		if character:GetAttribute("Disabled") then
-			Local.CancelDeposit(player)
-		end
-	end)
-
-	_depositThreads[player] = task.delay(DEPOSIT_TIME, function()
-		Local.CompleteDeposit(player)
-	end)
+	if part.Parent then
+		part.CollisionGroup = "Default"
+		part.CanCollide = true
+	end
 end
 
 function Local.CancelDeposit(player: Player)
@@ -122,13 +101,7 @@ function Local.CancelDeposit(player: Player)
 	end
 end
 
-function Local.CompleteDeposit(player: Player)
-	_depositThreads[player] = nil
-	if _depositConnections[player] then
-		_depositConnections[player]:Disconnect()
-		_depositConnections[player] = nil
-	end
-
+function Local.TryDeposit(player: Player)
 	if RoundService.GetState() ~= "InProgress" then return end
 	if not Workspace:GetAttribute("BoardingOpen") then return end
 
@@ -148,6 +121,7 @@ function Local.CompleteDeposit(player: Player)
 	local heldItem = character:FindFirstChild(heldItemName)
 	if not heldItem or not heldItem:IsA("Model") then return end
 
+	-- Reaching this zone already means every checkpoint upstream was bypassed — deposit is instant, only the respawn is delayed.
 	local starsDeposited = ItemService.GetContrabandRating(heldItem)
 	local itemsDeposited = ItemService.GetContrabandItemCount(heldItem)
 
@@ -169,7 +143,30 @@ function Local.CompleteDeposit(player: Player)
 		})
 	end
 
-	SpawnService.SpawnPlayer(player, player.Team and player.Team.Name or "Smuggler")
+	Local.ScheduleRespawn(player, character)
+end
+
+function Local.ScheduleRespawn(player: Player, character: Model)
+	Local.CancelDeposit(player)
+
+	_depositConnections[player] = character:GetAttributeChangedSignal("Disabled"):Connect(function()
+		if character:GetAttribute("Disabled") then
+			Local.CancelDeposit(player)
+		end
+	end)
+
+	_depositThreads[player] = task.delay(RESPAWN_DELAY, function()
+		_depositThreads[player] = nil
+		if _depositConnections[player] then
+			_depositConnections[player]:Disconnect()
+			_depositConnections[player] = nil
+		end
+
+		local record = JailService.GetRecord(player)
+		if record and record.isJailed then return end
+
+		SpawnService.SpawnPlayer(player, player.Team and player.Team.Name or "Smuggler")
+	end)
 end
 
 -- [[ Public Functions ]] --
@@ -184,10 +181,10 @@ function Shared.Destroy()
 	end
 	table.clear(_depositConnections)
 
-	for part, zone in _zones do
-		zone:destroy()
+	for _, conn in _zoneConnections do
+		conn:Disconnect()
 	end
-	table.clear(_zones)
+	table.clear(_zoneConnections)
 
 	for _, conn in _connections do
 		conn:Disconnect()

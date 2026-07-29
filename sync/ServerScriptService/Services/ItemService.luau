@@ -386,28 +386,33 @@ function Local.WeldToHand(character: Model, item: Model): boolean
 	item:PivotTo((rightHand :: BasePart).CFrame * CFrame.new(0, -0.5, 0))
 
 	local weldsFolder = item:FindFirstChild("ItemWelds")
-	if weldsFolder then
-		local gripWeld = weldsFolder:FindFirstChild("GripWeld") :: WeldConstraint
-		if gripWeld then
-			gripWeld.Part0 = rightHand :: BasePart
-		end
+	local gripWeld = weldsFolder and (weldsFolder:FindFirstChild("GripWeld") :: WeldConstraint?)
+	if gripWeld then
+		gripWeld.Part0 = rightHand :: BasePart
+	else
+		warn(`[ItemService] WeldToHand({character:GetFullName()}, {item.Name}) — no GripWeld found (ItemWelds folder={weldsFolder ~= nil}), item will be parented unwelded`)
 	end
 
 	item.Parent = character
 	return true
 end
 
-function Local.SwapGripWeldToMotor(item: Model)
+function Local.SwapGripWeldToMotor(item: Model): boolean
+	local existingMotor = item:FindFirstChild("Handle_Motor")
+	if existingMotor then
+		existingMotor:Destroy()
+	end
+
 	local weldsFolder = item:FindFirstChild("ItemWelds")
 	if not weldsFolder then
 		warn(`[ItemService] SwapGripWeldToMotor({item.Name}) — no ItemWelds folder, skipping`)
-		return
+		return false
 	end
 
 	local gripWeld = weldsFolder:FindFirstChild("GripWeld") :: WeldConstraint?
 	if not gripWeld or not gripWeld.Part0 then
 		warn(`[ItemService] SwapGripWeldToMotor({item.Name}) — GripWeld missing or Part0 unset (gripWeld={gripWeld ~= nil}, Part0={gripWeld and gripWeld.Part0 ~= nil}), skipping`)
-		return
+		return false
 	end
 
 	local motor = Instance.new("Motor6D")
@@ -417,6 +422,7 @@ function Local.SwapGripWeldToMotor(item: Model)
 	motor.Parent = item
 
 	gripWeld.Part0 = nil
+	return true
 end
 
 function Local.CloneItemTemplate(itemName: string): Model?
@@ -877,7 +883,10 @@ function Shared.EquipNPCItem(npcModel: Model, item: Model): boolean
 		return false
 	end
 
-	Local.SwapGripWeldToMotor(item)
+	if not Local.SwapGripWeldToMotor(item) then
+		warn(`[ItemService] EquipNPCItem({npcModel.Name}, {item.Name}) — Motor6D swap failed, item will stay weld-only`)
+	end
+
 	Local.RecalculateContraband(npcModel)
 
 	return true

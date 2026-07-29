@@ -60,6 +60,7 @@ ProximityPrompt.__index = ProximityPrompt
 export type ClassType = typeof(setmetatable({} :: {
 	-- || Properties
 	_settings: PromptSettings,
+	_instanceId: number,
 
 	-- Signals
 	Triggered: typeof(ModuleUtils.signal.new()),
@@ -114,6 +115,9 @@ export type ClassType = typeof(setmetatable({} :: {
 -- All live instances, so holding one prompt can suppress every other one on screen
 local _instances: {[ClassType]: true} = {}
 
+-- Guarantees a unique CAS action name per instance — settings.name alone can collide (e.g. sibling parts sharing a name), silently stealing the CAS binding from an earlier prompt.
+local _nextInstanceId = 0
+
 local function SetOthersSuppressed(activeSelf: ClassType, state: boolean)
 	for instance in _instances do
 		if instance ~= activeSelf then
@@ -145,6 +149,9 @@ end
 --/ Constructs and returns a new ProximityPrompt instance
 function ProximityPrompt.new(settings: PromptSettings): ClassType
 	local self = setmetatable({} :: any, ProximityPrompt) :: ClassType
+
+	_nextInstanceId += 1
+	self._instanceId = _nextInstanceId
 
 	self._settings = settings
 	self._isHolding = false
@@ -197,7 +204,7 @@ end
 
 -- [[ Private Methods ]] --
 function ProximityPrompt._GetActionName(self: ClassType): string
-	return CAS_ACTION_PREFIX .. self._settings.name
+	return `{CAS_ACTION_PREFIX}{self._settings.name}_{self._instanceId}`
 end
 
 function ProximityPrompt._BindInput(self: ClassType)

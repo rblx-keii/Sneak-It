@@ -38,7 +38,8 @@ item.properties = {
 
 item.attributes = {
 	Rating = 2.0,
-	Weight = 1.5
+	Weight = 1.5,
+	IsContraband = true,
 }
 
 item.usable = true
