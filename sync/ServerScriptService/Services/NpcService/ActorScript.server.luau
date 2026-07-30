@@ -25,6 +25,7 @@ type DecisionRequest = {
 	willBoard: boolean?,
 	holdingBag: boolean?,
 	pendingBagNode: BasePart?,
+	confineZone: string?,
 	prefetch: boolean?,
 }
 
@@ -50,6 +51,7 @@ actor:BindToMessageParallel("Decide", function(request: DecisionRequest)
 		willBoard = request.willBoard,
 		holdingBag = request.holdingBag,
 		pendingBagNode = request.pendingBagNode,
+		confineZone = request.confineZone,
 	})
 
 	reportEvent:Fire(request.npc, nextNode, state, request.prefetch)

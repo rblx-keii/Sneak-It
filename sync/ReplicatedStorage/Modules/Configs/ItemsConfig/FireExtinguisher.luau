@@ -55,6 +55,7 @@ item.properties = {
 item.attributes = {
 	Rating = 4.0,
 	Weight = 3.5, -- full-tank weight; drains toward properties.emptyWeight as foam depletes
+	IsContraband = true,
 }
 
 item.usable = true

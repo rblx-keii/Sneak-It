@@ -14,6 +14,7 @@ export type Context = {
 	lastNode: BasePart?,
 	arrivedViaLink: boolean,
 	lastRestTime: number,
+	confineZone: string?, -- when set, candidates are restricted to this zone instead of the normal zone-adjacency table
 }
 
 --|| Variables
@@ -72,7 +73,10 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 		if other == node or other == ctx.lastNode then continue end
 		if NodeGraph.IsEntryNode(other) then continue end
 
-		if not isZoneTransitionValid(currentZone, NodeGraph.GetZone(other, ctx.nodesFolder)) then
+		local otherZone = NodeGraph.GetZone(other, ctx.nodesFolder)
+		if ctx.confineZone then
+			if otherZone ~= ctx.confineZone then continue end
+		elseif not isZoneTransitionValid(currentZone, otherZone) then
 			continue
 		end
 

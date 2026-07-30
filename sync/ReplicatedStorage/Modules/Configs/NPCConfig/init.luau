@@ -25,6 +25,8 @@ NPCConfig.REST_COOLDOWN = 20 -- seconds after resting at a Seat Node before an N
 NPCConfig.SEAT_REST_DURATION = 5 -- seconds an NPC must stay seated at a Seat Node before it will stand up and request its next decision
 NPCConfig.SEAT_RETRY_CHANCE = 0.5 -- chance to keep looking for another open seat when the nearest one is occupied, instead of giving up and continuing on
 NPCConfig.UNSEAT_MAX_ATTEMPTS = 10 -- retries for confirming a Seat's occupant actually released (Seat:Sit(nil)/Humanoid.Sit=false can lag a frame or more) before giving up
+NPCConfig.SEAT_STAND_CLEAR_DISTANCE = 4 -- studs a just-stood NPC walks straight out from the seat (along the Seat's LookVector) before taking a real decision, so it doesn't cut across neighboring seats
+NPCConfig.SEAT_STAND_CLEAR_TIMEOUT = 3 -- seconds to wait for that clear-walk to finish before giving up and moving on anyway
 
 -- [[ Pathfinding ]] --
 NPCConfig.PATH_AGENT_RADIUS = 1.25
@@ -54,6 +56,15 @@ NPCConfig.LINEAR_ZONE_SEQUENCE = { "Lobby", "Concourse", "Platform", "Depart" }
 
 NPCConfig.SHOP_DWELL_MIN = 15 -- seconds an NPC roams/sits in a shop (a Transition Node linked to another Transition Node) before heading back
 NPCConfig.SHOP_DWELL_MAX = 30
+
+-- [[ Concourse Loitering ]] --
+NPCConfig.CONCOURSE_LOITER_CHANCE = 0.55 -- chance a Concourse "Node" arrival detours into a shop/wander/seat/forward-anyway roll instead of always progressing toward Platform, rolled once per Concourse visit
+-- Sub-roll weights once the above succeeds — must sum to 1. Remainder after Shop+Wander+Seat is "keep heading toward the next zone anyway".
+NPCConfig.CONCOURSE_LOITER_SHOP_WEIGHT = 0.35
+NPCConfig.CONCOURSE_LOITER_WANDER_WEIGHT = 0.25
+NPCConfig.CONCOURSE_LOITER_SEAT_WEIGHT = 0.25
+NPCConfig.CONCOURSE_WANDER_MIN = 25 -- seconds spent wandering Concourse-only when the loiter roll picks "wander" (or falls back to it from a failed shop/seat search)
+NPCConfig.CONCOURSE_WANDER_MAX = 45
 
 -- [[ Boarding (GateService integration) ]] --
 NPCConfig.BOARD_DWELL = .5 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")

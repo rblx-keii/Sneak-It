@@ -64,7 +64,7 @@ type NPCRecord = {
 	seatObject: Seat?,
 	lineDwellUntil: number,
 	departArrivedAt: number,
-	shopDwellUntil: number,
+	wanderDwellUntil: number,
 	willBoard: boolean?,
 	busy: boolean,
 	pathBlockedConn: RBXScriptConnection?,
@@ -193,6 +193,12 @@ function Local.ProcessNPCTick(record: NPCRecord): boolean?
 		return
 	end
 
+	-- Covers the full Unseat sequence (standing up AND the WalkClearOfSeat step that follows it)
+	-- so a real decision can't get requested mid-stand-up and race the seat-clearing walk.
+	if record.unseating then
+		return
+	end
+
 	if record.seatedAt == 0 and Local.IsSeated(record) then
 		Local.Unseat(record)
 		return
@@ -242,11 +248,12 @@ function Local.ProcessNPCTick(record: NPCRecord): boolean?
 		return
 	end
 
-	if record.shopDwellUntil > 0 and workspace:GetServerTimeNow() >= record.shopDwellUntil then
-		record.shopDwellUntil = 0
+	if record.wanderDwellUntil > 0 and workspace:GetServerTimeNow() >= record.wanderDwellUntil then
+		record.wanderDwellUntil = 0
 		if record.model:GetAttribute("BehaviorType") ~= "Linear" then
 			record.model:SetAttribute("BehaviorType", "Linear")
 		end
+		record.model:SetAttribute("WanderConfineZone", nil)
 	end
 
 	Local.UpdateBoardingRoll(record)
@@ -264,6 +271,7 @@ function Local.ProcessNPCTick(record: NPCRecord): boolean?
 		willBoard = record.willBoard,
 		holdingBag = Local.IsHoldingBag(record),
 		pendingBagNode = record.pendingBagNode,
+		confineZone = Local.GetWanderConfineZone(record),
 	})
 	return true
 end
@@ -285,6 +293,10 @@ end
 function Local.IsHoldingBag(record: NPCRecord): boolean
 	local heldItem = record.model:GetAttribute("HeldItem")
 	return heldItem ~= nil and heldItem ~= ""
+end
+
+function Local.GetWanderConfineZone(record: NPCRecord): string?
+	return record.model:GetAttribute("WanderConfineZone")
 end
 
 function Local.UpdateStealableTag(record: NPCRecord)
@@ -551,7 +563,7 @@ function Local.SpawnNPC(template: Model)
 		seatObject = nil,
 		lineDwellUntil = 0,
 		departArrivedAt = 0,
-		shopDwellUntil = 0,
+		wanderDwellUntil = 0,
 		willBoard = nil,
 		busy = false,
 		pathBlockedConn = nil,
@@ -829,6 +841,27 @@ function Local.ReplaceStuckSeat(record: NPCRecord)
 	)
 end
 
+-- Walks straight out from a just-vacated seat along its LookVector before any real decision is
+-- made, so the NPC doesn't immediately cut sideways across a row of neighboring seats to reach
+-- its next target. Blocking (called from within the Unseat coroutine, gated by record.unseating).
+function Local.WalkClearOfSeat(record: NPCRecord, seat: Seat?)
+	if not seat or not seat.Parent then
+		return
+	end
+
+	local clearPos = seat.Position + seat.CFrame.LookVector * NPCConfig.SEAT_STAND_CLEAR_DISTANCE
+	Local.SetWalkTarget(record, clearPos)
+
+	local deadline = os.clock() + NPCConfig.SEAT_STAND_CLEAR_TIMEOUT
+	while
+		record.humanoid.Parent
+		and (record.hrp.Position - clearPos).Magnitude > NPCConfig.ARRIVAL_TOLERANCE
+		and os.clock() < deadline
+	do
+		task.wait()
+	end
+end
+
 function Local.Unseat(record: NPCRecord)
 	if not record.seatObject and not Local.IsSeated(record) then
 		return
@@ -841,6 +874,8 @@ function Local.Unseat(record: NPCRecord)
 
 	record.lastRestTime = workspace:GetServerTimeNow()
 	record.seatedAt = 0
+
+	local seatToLeave = record.seatObject
 
 	task.spawn(function()
 		for _ = 1, NPCConfig.UNSEAT_MAX_ATTEMPTS do
@@ -863,6 +898,7 @@ function Local.Unseat(record: NPCRecord)
 			record.humanoid.Jump = true
 
 			if not Local.IsSeated(record) and record.humanoid.SeatPart == nil then
+				Local.WalkClearOfSeat(record, seatToLeave)
 				record.seatObject = nil
 				record.unseating = false
 				return
@@ -934,6 +970,7 @@ function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
 		willBoard = record.willBoard,
 		holdingBag = Local.IsHoldingBag(record),
 		pendingBagNode = record.pendingBagNode,
+		confineZone = Local.GetWanderConfineZone(record),
 		prefetch = true,
 	})
 end
@@ -1449,11 +1486,29 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 		and NodeGraph.IsTransitionNode(record.lastNode)
 
 	if isShopDetourArrival then
-		record.shopDwellUntil = workspace:GetServerTimeNow()
+		record.wanderDwellUntil = workspace:GetServerTimeNow()
 			+ math.random(NPCConfig.SHOP_DWELL_MIN, NPCConfig.SHOP_DWELL_MAX)
 		if record.model:GetAttribute("BehaviorType") ~= "Wander" then
 			record.model:SetAttribute("BehaviorType", "Wander")
 		end
+	end
+
+	-- Concourse Loitering's "wander" outcome (Linear.luau flags this on the NPC rather than
+	-- setting record fields directly — behaviors run on the parallel Actor and can only touch
+	-- Instance attributes, never the private NPCRecord table).
+	local startedConcourseWander = record.model:GetAttribute("PendingConcourseLoiterWander") == true
+	if startedConcourseWander then
+		record.model:SetAttribute("PendingConcourseLoiterWander", nil)
+		record.model:SetAttribute("WanderConfineZone", "Concourse")
+		record.wanderDwellUntil = workspace:GetServerTimeNow()
+			+ math.random(NPCConfig.CONCOURSE_WANDER_MIN, NPCConfig.CONCOURSE_WANDER_MAX)
+		if record.model:GetAttribute("BehaviorType") ~= "Wander" then
+			record.model:SetAttribute("BehaviorType", "Wander")
+		end
+	end
+
+	if NodeGraph.GetZone(node, _nodesFolder :: Instance) ~= "Concourse" then
+		record.model:SetAttribute("ConcourseLoiterRolled", nil)
 	end
 
 	local isSeatNode = NodeGraph.GetNodeType(node) == "seatnode"
@@ -1487,7 +1542,10 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 
 	local prefetch = record.prefetch
 	if prefetch and prefetch.forNode == node then
-		if isSeatNode or waitingForBag then
+		-- A prefetch computed before this arrival's BehaviorType/WanderConfineZone flip is stale —
+		-- it was decided under the old mode and can't be trusted (e.g. a Linear-computed hop that
+		-- ignores the Wander confinement that only just took effect). Discard and force a fresh ask.
+		if isSeatNode or waitingForBag or isShopDetourArrival or startedConcourseWander then
 			record.prefetch = nil
 		elseif prefetch.ready then
 			record.prefetch = nil

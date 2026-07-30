@@ -50,6 +50,7 @@ item.attributes = {
 	Weight = 4.5,
 	MaxWeight = 15,
 	IsBag = false,
+	IsContraband = true,
 }
 
 item.usable = true

@@ -48,6 +48,7 @@ item.attributes = {
 	Weight = 1.0,
 	MaxWeight = nil,
 	IsBag = false,
+	IsContraband = true,
 }
 
 item.usable = true

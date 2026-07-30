@@ -151,6 +151,9 @@ function Local.InitializeItem(instance: Instance)
 		end
 	end
 
+	-- Force this explicitly (rather than only setting it when present in the config) so a stale IsContraband=true baked onto the Studio template can't survive on an item whose config doesn't declare it.
+	instance:SetAttribute("IsContraband", itemConfig ~= nil and itemConfig.attributes.IsContraband == true)
+
 	local weldsFolder = Instance.new("Folder")
 	weldsFolder.Name = "ItemWelds"
 	weldsFolder.Parent = instance
@@ -582,7 +585,7 @@ function Local.SetupThrowRagdoll(item: Model, thrower: Player, direction: Vector
 end
 
 -- [[ Public Functions ]] --
-function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: Model)
+function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: Model): boolean
 	local pendingThrowCleanup = _activeThrowListeners[item]
 	if pendingThrowCleanup then
 		pendingThrowCleanup()
@@ -593,15 +596,20 @@ function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: 
 		local heldModel = character:FindFirstChild(currentHeld)
 
 		if heldModel and heldModel:GetAttribute("IsBag") then
+			if item:GetAttribute("IsBag") then
+				warn(`[ItemService] GrantItem({player.Name}, {item.Name}) — already holding bag "{currentHeld}", can't nest a bag inside a bag; item stays dropped in the world`)
+				return false
+			end
+
 			local success = Local.StoreInBag(heldModel, item)
 
 			Local.RecalculateContraband(character)
 
 			Local.SyncClient(player, "ItemPickup")
 			if not success then
-				warn(`[ItemService] {player.Name}'s bag is too heavy to hold {item.Name}!`)
+				warn(`[ItemService] GrantItem({player.Name}, {item.Name}) — bag "{currentHeld}" is too heavy to hold it`)
 			end
-			return
+			return success
 		end
 
 		local droppedItem = Local.ClearEquipped(character)
@@ -618,33 +626,34 @@ function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: 
 	Local.RecalculateContraband(character)
 
 	Local.SyncClient(player, "ItemPickup")
+	return true
 end
 
-function Shared.PickupItem(player: Player, item: Model, originCFrame: CFrame)
+function Shared.PickupItem(player: Player, item: Model, originCFrame: CFrame): boolean
 	local character = player.Character
-	if not character then return end
+	if not character then return false end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
-	if not hrp or not item.PrimaryPart then return end
-	if item.Parent == character or not item.Parent then return end
+	if not hrp or not item.PrimaryPart then return false end
+	if item.Parent == character or not item.Parent then return false end
 
-	if not CollectionService:HasTag(item, INTERACT_TAG) then return end
+	if not CollectionService:HasTag(item, INTERACT_TAG) then return false end
 
 	local rayOrigin = originCFrame.Position
 	local itemPos = item:GetPivot().Position
 	local direction = itemPos - rayOrigin
 	local distance = direction.Magnitude
 
-	if distance > MAX_PICKUP_DISTANCE then return end
+	if distance > MAX_PICKUP_DISTANCE then return false end
 
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = { character, item }
-	if Workspace:Raycast(rayOrigin, direction.Unit * distance, rayParams) then return end
+	if Workspace:Raycast(rayOrigin, direction.Unit * distance, rayParams) then return false end
 
-	if (hrp.Position - itemPos).Magnitude > MAX_PICKUP_DISTANCE then return end
+	if (hrp.Position - itemPos).Magnitude > MAX_PICKUP_DISTANCE then return false end
 
-	Local.GrantItem(player, character, hrp, item)
+	return Local.GrantItem(player, character, hrp, item)
 end
 
 function Shared.ForcePickupItem(player: Player, item: Model): boolean
@@ -655,8 +664,7 @@ function Shared.ForcePickupItem(player: Player, item: Model): boolean
 	if not hrp or not item.PrimaryPart then return false end
 	if item.Parent == character or not item.Parent then return false end
 
-	Local.GrantItem(player, character, hrp, item)
-	return true
+	return Local.GrantItem(player, character, hrp, item)
 end
 
 function Shared.PopBagItem(player: Player)

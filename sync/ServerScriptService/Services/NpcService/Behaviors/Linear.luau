@@ -31,6 +31,37 @@ local function nextBackboneZone(zone: string): string?
 	return nil
 end
 
+-- Linked Transition Nodes in a zone, split by where they actually lead: "forward" ones continue
+-- the Lobby->Concourse->Platform->Depart backbone, "shop" ones detour into a side zone. Blending
+-- both into one load-balancing pool used to silently divert backbone traffic into shops with no
+-- real decision behind it — Concourse Loitering is that decision.
+local function buildTransitionPools(nodesFolder: Instance, zone: string, nextZone: string?): (
+	{ BasePart },
+	{ BasePart },
+	{ [string]: { BasePart } }
+)
+	local forwardTransitions = {}
+	local forwardCheckpoints = {}
+	local shopTransitionsByZone: { [string]: { BasePart } } = {}
+
+	for _, transitionNode in NodeGraph.GetTransitionNodes(nodesFolder, zone) do
+		local link = NodeGraph.GetLink(transitionNode)
+		if not link then continue end
+
+		local linkZone = NodeGraph.GetZone(link, nodesFolder)
+		if linkZone == nextZone then
+			table.insert(forwardTransitions, transitionNode)
+			local conveyor = NodeGraph.GetConveyorNodeForTransition(nodesFolder, zone, transitionNode)
+			table.insert(forwardCheckpoints, conveyor or transitionNode)
+		else
+			shopTransitionsByZone[linkZone] = shopTransitionsByZone[linkZone] or {}
+			table.insert(shopTransitionsByZone[linkZone], transitionNode)
+		end
+	end
+
+	return forwardTransitions, forwardCheckpoints, shopTransitionsByZone
+end
+
 --|| MAIN ||--
 
 function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
@@ -59,45 +90,92 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		candidate = NodeGraph.GetLink(node)
 	end
 
+	local zone = NodeGraph.GetZone(node, ctx.nodesFolder)
+
 	local enteringDepart = candidate
-		and NodeGraph.GetZone(node, ctx.nodesFolder) ~= "Depart"
+		and zone ~= "Depart"
 		and NodeGraph.GetZone(candidate, ctx.nodesFolder) == "Depart"
 
 	if enteringDepart and not workspace:GetAttribute("BoardingOpen") then
 		candidate = nil
 	end
 
-	if candidate then
-	elseif NodeGraph.GetZone(node, ctx.nodesFolder) == "Depart" then
-	else
-		local zone = NodeGraph.GetZone(node, ctx.nodesFolder)
-		local zones = { zone }
+	-- Concourse Loitering: once per visit, a Concourse NPC may detour into a shop, wander the
+	-- Concourse floor itself, or sit down, instead of always making straight-line progress toward
+	-- Platform — bag-holders included, since this is crowd flavor (the belt-riding bag is just a
+	-- visual prop, not the player Smuggler/TSA game) and can afford to take the scenic route.
+	-- Evaluated here — before the Link-based dispatch below — because a "Node" with an authored
+	-- fixed Link (used to shape the walking path through Concourse) would otherwise always win
+	-- outright and the roll would never get a chance to fire. Rolled once via the
+	-- ConcourseLoiterRolled attribute (cleared in NpcService.OnArrive on leaving Concourse).
+	if zone == "Concourse"
+		and NodeGraph.GetNodeType(node) == "node"
+		and not ctx.npc:GetAttribute("ConcourseLoiterRolled")
+	then
+		ctx.npc:SetAttribute("ConcourseLoiterRolled", true)
 
-		local linkedTransitionNodes = {}
-		local checkpointNodes = {}
-		for _, transitionNode in NodeGraph.GetTransitionNodes(ctx.nodesFolder, zone) do
-			if NodeGraph.GetLink(transitionNode) then
-				table.insert(linkedTransitionNodes, transitionNode)
-				local conveyor = NodeGraph.GetConveyorNodeForTransition(ctx.nodesFolder, zone, transitionNode)
-				table.insert(checkpointNodes, conveyor or transitionNode)
+		if math.random() < NPCConfig.CONCOURSE_LOITER_CHANCE then
+			local loiterCandidate: BasePart? = nil
+			local roll = math.random()
+
+			local shopThreshold = NPCConfig.CONCOURSE_LOITER_SHOP_WEIGHT
+			local wanderThreshold = shopThreshold + NPCConfig.CONCOURSE_LOITER_WANDER_WEIGHT
+			local seatThreshold = wanderThreshold + NPCConfig.CONCOURSE_LOITER_SEAT_WEIGHT
+			-- roll >= seatThreshold falls into the remaining slice: keep heading toward the next zone anyway
+
+			local wantsWander = false
+
+			if roll < shopThreshold then
+				local _, _, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextBackboneZone(zone))
+				local shopZones = {}
+				for shopZone in shopTransitionsByZone do
+					table.insert(shopZones, shopZone)
+				end
+
+				if #shopZones > 0 then
+					local pickedPool = shopTransitionsByZone[shopZones[math.random(1, #shopZones)]]
+					loiterCandidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, pickedPool)
+				end
+				wantsWander = not loiterCandidate
+			elseif roll < wanderThreshold then
+				wantsWander = true
+			elseif roll < seatThreshold then
+				loiterCandidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
+				wantsWander = not loiterCandidate
+			end
+			-- else: Forward — no override, the existing Link/forward-progress dispatch wins as usual
+
+			if wantsWander then
+				loiterCandidate = NodeGraph.FindNearestNode(ctx.nodesFolder, node, { zone }, { node, ctx.lastNode }, ignore)
+				if loiterCandidate then
+					ctx.npc:SetAttribute("PendingConcourseLoiterWander", true)
+				end
+			end
+
+			if loiterCandidate then
+				candidate = loiterCandidate
 			end
 		end
+	end
+
+	if candidate then
+	elseif zone == "Depart" then
+	else
+		local zones = { zone }
+		local nextZone = nextBackboneZone(zone)
+		local forwardTransitions, forwardCheckpoints, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextZone)
 
 		local chosenIndex = 1
 		local chosenLoad = math.huge
-		for i, transitionNode in linkedTransitionNodes do
+		for i, transitionNode in forwardTransitions do
 			local load = NodeGraph.GetTransitionEnRouteCount(transitionNode)
 			if load < chosenLoad then
 				chosenLoad = load
 				chosenIndex = i
 			end
 		end
-		local chosenTransition = linkedTransitionNodes[chosenIndex]
-		local chosenCheckpoint = checkpointNodes[chosenIndex]
-		local transitionLink = chosenTransition and NodeGraph.GetLink(chosenTransition)
-		local nextZone = if transitionLink
-			then NodeGraph.GetZone(transitionLink, ctx.nodesFolder)
-			else nextBackboneZone(zone)
+		local chosenTransition = forwardTransitions[chosenIndex]
+		local chosenCheckpoint = forwardCheckpoints[chosenIndex]
 
 		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
 		local gateStage = workspace:GetAttribute("GateStage")
@@ -167,11 +245,11 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			candidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
 		end
 
-		if not candidate and #linkedTransitionNodes > 0 and canApproachTransition then
+		if not candidate and #forwardTransitions > 0 and canApproachTransition then
 			NodeGraph.SetEnRouteTransition(ctx.npc, chosenTransition)
 
 			local progressExclude = { node, ctx.lastNode }
-			for _, checkpoint in checkpointNodes do
+			for _, checkpoint in forwardCheckpoints do
 				table.insert(progressExclude, checkpoint)
 			end
 
@@ -187,12 +265,12 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			)
 
 			if not candidate then
-				candidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, checkpointNodes)
+				candidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, forwardCheckpoints)
 			end
 		end
 
 		if not candidate then
-			local fallbackZones = if #linkedTransitionNodes == 0 and nextZone and canApproachTransition
+			local fallbackZones = if #forwardTransitions == 0 and nextZone and canApproachTransition
 				then { zone, nextZone }
 				else { zone }
 			local lastNodePos = ctx.lastNode and NodeGraph.GetNodePosition(ctx.lastNode) or nil

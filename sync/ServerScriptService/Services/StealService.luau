@@ -143,7 +143,12 @@ function Local.TriggerSuccess(session: StealSession)
 	local droppedBag = ItemService.ForceDropItem(session.npc)
 
 	if droppedBag then
-		ItemService.ForcePickupItem(session.player, droppedBag)
+		local equipped = ItemService.ForcePickupItem(session.player, droppedBag)
+		if not equipped then
+			warn(`[StealService] TriggerSuccess({session.player.Name}) — stolen bag "{droppedBag.Name}" from {session.npc.Name} failed to equip, left on the ground still tagged Interactable`)
+		end
+	else
+		warn(`[StealService] TriggerSuccess({session.player.Name}) — ForceDropItem on {session.npc.Name} returned nil, nothing to hand over`)
 	end
 
 	Network:FireClient("Steal", session.player, "Result", { result = "Success" })
