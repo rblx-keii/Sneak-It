@@ -67,6 +67,10 @@ local RAGDOLL_LISTEN_TIMEOUT = 5
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
 
+local SPAWN_DROP_HEIGHT = 5 -- studs above the target CFrame the surface blockcast starts from
+local SPAWN_MAX_DROP = 50 -- studs the blockcast searches downward before giving up
+local SPAWN_CAST_THICKNESS = 0.2 -- studs; kept thin since only the footprint (X/Z) needs to match the item
+
 --|| MAIN ||--
 local Local = {}
 local Shared = {}
@@ -623,6 +627,11 @@ function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: 
 	character:SetAttribute("HeldItem", item.Name)
 	Local.WeldToHand(character, item)
 
+	-- Swapped here server-side so Handle_Motor exists before HeldItem even replicates to the client
+	if not Local.SwapGripWeldToMotor(item) then
+		warn(`[ItemService] GrantItem({player.Name}, {item.Name}) — Motor6D swap failed, item will stay weld-only`)
+	end
+
 	Local.RecalculateContraband(character)
 
 	Local.SyncClient(player, "ItemPickup")
@@ -859,6 +868,23 @@ function Shared.GetContrabandItemCount(item: Model): number
 	return 0
 end
 
+-- Blockcasts the item's own footprint straight down so it lands flush on whatever surface is there
+function Local.PlaceItemOnSurface(item: Model, cframe: CFrame): CFrame
+	local extentsSize = item:GetExtentsSize()
+
+	local castParams = RaycastParams.new()
+	castParams.FilterType = Enum.RaycastFilterType.Exclude
+	castParams.FilterDescendantsInstances = { item }
+
+	local origin = cframe.Position + Vector3.new(0, SPAWN_DROP_HEIGHT, 0)
+	local castSize = Vector3.new(math.max(extentsSize.X, 0.1), SPAWN_CAST_THICKNESS, math.max(extentsSize.Z, 0.1))
+
+	local result = Workspace:Blockcast(CFrame.new(origin), castSize, Vector3.new(0, -SPAWN_MAX_DROP, 0), castParams)
+	local surfaceY = if result then result.Position.Y else cframe.Position.Y
+
+	return (cframe - cframe.Position) + Vector3.new(cframe.Position.X, surfaceY + extentsSize.Y / 2, cframe.Position.Z)
+end
+
 function Shared.SpawnItem(itemName: string, cframe: CFrame?): Model?
 	local item = Local.CloneItemTemplate(itemName)
 	if not item then return nil end
@@ -867,7 +893,7 @@ function Shared.SpawnItem(itemName: string, cframe: CFrame?): Model?
 	Local.InitializeItem(item)
 
 	if cframe then
-		item:PivotTo(cframe)
+		item:PivotTo(Local.PlaceItemOnSurface(item, cframe))
 	end
 
 	item.Parent = Workspace

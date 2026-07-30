@@ -101,6 +101,10 @@ local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
 RAYCAST_PARAMS.CollisionGroup = "NPC"
 
+local SPAWN_RAYCAST_TOP_BUFFER = 10 -- studs above the Spawns.NPC part's top the floor raycast starts from
+local SPAWN_RAYCAST_MAX_DISTANCE = 200
+local SPAWN_FALLBACK_HIP_HEIGHT = 2 -- used only if the rig's own Humanoid.HipHeight reads 0
+
 local PATH_AGENT_PARAMS = {
 	AgentRadius = NPCConfig.PATH_AGENT_RADIUS,
 	AgentHeight = NPCConfig.PATH_AGENT_HEIGHT,
@@ -451,15 +455,37 @@ function Local.GetRandomPositionInPart(part: BasePart): Vector3
 	return part.Position + worldOffset
 end
 
-function Local.GetSpawnCFrame(): CFrame
+function Local.RaycastSpawnFloor(xzPosition: Vector3, zoneTop: number): Vector3?
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = if _npcsFolder then { _npcsFolder } else {}
+
+	local origin = Vector3.new(xzPosition.X, zoneTop + SPAWN_RAYCAST_TOP_BUFFER, xzPosition.Z)
+	local result = Workspace:Raycast(origin, Vector3.new(0, -SPAWN_RAYCAST_MAX_DISTANCE, 0), params)
+	return result and result.Position or nil
+end
+
+-- Raycasts down to the actual floor instead of trusting the zone part's own center height, same convention SpawnService uses for players
+function Local.GetSpawnCFrame(humanoid: Humanoid, hrp: BasePart): CFrame
 	local zone = Local.GetSpawnZone()
-	if zone then
-		local position = Local.GetRandomPositionInPart(zone)
-		return CFrame.new(position) * (zone.CFrame - zone.CFrame.Position)
+	if not zone then
+		Local.Warn("[NpcService] Active map has no Spawns.NPC part — spawning at the world origin")
+		return CFrame.new()
 	end
 
-	Local.Warn("[NpcService] Active map has no Spawns.NPC part — spawning at the world origin")
-	return CFrame.new()
+	local xz = Local.GetRandomPositionInPart(zone)
+	local zoneTop = zone.Position.Y + zone.Size.Y / 2
+	local floorPos = Local.RaycastSpawnFloor(xz, zoneTop)
+
+	local hipHeight = humanoid.HipHeight
+	if hipHeight == 0 then
+		hipHeight = SPAWN_FALLBACK_HIP_HEIGHT
+	end
+
+	local groundY = if floorPos then floorPos.Y else zone.Position.Y
+	local position = Vector3.new(xz.X, groundY + hipHeight + hrp.Size.Y / 2, xz.Z)
+
+	return CFrame.new(position) * (zone.CFrame - zone.CFrame.Position)
 end
 
 function Local.GetActorScriptTemplate(): Script?
@@ -499,8 +525,6 @@ function Local.SpawnNPC(template: Model)
 
 	local model = template:Clone()
 	model.Name = "NPC"
-	model:PivotTo(Local.GetSpawnCFrame())
-	model.Parent = _npcsFolder
 
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	local hrp = model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -509,6 +533,9 @@ function Local.SpawnNPC(template: Model)
 		model:Destroy()
 		return
 	end
+
+	model:PivotTo(Local.GetSpawnCFrame(humanoid, hrp))
+	model.Parent = _npcsFolder
 
 	local anchoredCount = 0
 	for _, part in model:GetDescendants() do

@@ -111,6 +111,13 @@ function Local.IsPositionClear(position: Vector3, halfSize: Vector3, characterTo
 	return true
 end
 
+-- Measured from the live bounding box rather than Humanoid.HipHeight, which can read stale right after CharacterAdded
+function Local.GetRootToFeetOffset(character: Model, hrp: BasePart): number
+	local boundsCFrame, boundsSize = character:GetBoundingBox()
+	local feetY = boundsCFrame.Position.Y - boundsSize.Y / 2
+	return hrp.Position.Y - feetY
+end
+
 function Local.ResolveSpawnCFrame(spawnZone: BasePart, character: Model): CFrame
 	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
@@ -122,11 +129,7 @@ function Local.ResolveSpawnCFrame(spawnZone: BasePart, character: Model): CFrame
 
 	local hrpHalfSize = hrp.Size / 2
 	local zoneTop = spawnZone.Position.Y + (spawnZone.Size.Y / 2)
-
-	local hipHeight = humanoid.HipHeight
-	if hipHeight == 0 then
-		hipHeight = 2.0
-	end
+	local rootToFeetOffset = Local.GetRootToFeetOffset(character, hrp)
 
 	for attempt = 1, MAX_SPAWN_ATTEMPTS do
 		local candidateXZ = Local.GetRandomXZInPart(spawnZone)
@@ -135,7 +138,7 @@ function Local.ResolveSpawnCFrame(spawnZone: BasePart, character: Model): CFrame
 		if floorHit then
 			local candidatePos = Vector3.new(
 				floorHit.X,
-				floorHit.Y + hipHeight + hrpHalfSize.Y,
+				floorHit.Y + rootToFeetOffset,
 				floorHit.Z
 			)
 
@@ -151,8 +154,8 @@ function Local.ResolveSpawnCFrame(spawnZone: BasePart, character: Model): CFrame
 
 	local centerFloor = Local.RaycastFloor(spawnZone.Position, zoneTop, { character })
 	local fallbackY = if centerFloor
-		then centerFloor.Y + hipHeight + hrpHalfSize.Y
-		else zoneTop + hipHeight + hrpHalfSize.Y
+		then centerFloor.Y + rootToFeetOffset
+		else zoneTop + rootToFeetOffset
 
 	return CFrame.new(spawnZone.Position.X, fallbackY, spawnZone.Position.Z)
 end
