@@ -31,6 +31,51 @@ local function nextBackboneZone(zone: string): string?
 	return nil
 end
 
+-- Shop zones (Cafe/Souvenir/Convenience) branch off the backbone and have no "next" of their
+-- own in LINEAR_ZONE_SEQUENCE — once a shop-dwell expires back to Linear, this is what lets
+-- GetNextTarget find its way back out via whichever zone it's adjacent to (always Concourse).
+local function resolveNextZone(zone: string): string?
+	local backboneNext = nextBackboneZone(zone)
+	if backboneNext then
+		return backboneNext
+	end
+
+	for _, pair in NPCConfig.ZONE_ADJACENCY do
+		if pair[1] == zone then
+			return pair[2]
+		elseif pair[2] == zone then
+			return pair[1]
+		end
+	end
+	return nil
+end
+
+-- Weighted pick among the canonical shop zones — flat by default (NPCConfig.SHOP_PICK_WEIGHTS),
+-- boosted toward Cafe for Caffeinated NPCs. Picked up front so a shop-detour roll commits to one
+-- destination rather than implicitly favoring whichever shop iterates first/nearest.
+local function pickShopZone(npc: Model): string
+	local weights: { [string]: number } = {}
+	local total = 0
+
+	for _, shopZone in NPCConfig.SHOP_ZONES do
+		local weight = NPCConfig.SHOP_PICK_WEIGHTS[shopZone] or 1
+		if shopZone == "Cafe" and npc:GetAttribute("Caffeinated") == true then
+			weight *= NPCConfig.CAFFEINATED_CAFE_WEIGHT_MULTIPLIER
+		end
+		weights[shopZone] = weight
+		total += weight
+	end
+
+	local roll = math.random() * total
+	for _, shopZone in NPCConfig.SHOP_ZONES do
+		roll -= weights[shopZone]
+		if roll <= 0 then
+			return shopZone
+		end
+	end
+	return NPCConfig.SHOP_ZONES[#NPCConfig.SHOP_ZONES]
+end
+
 -- Linked Transition Nodes in a zone, split by where they actually lead: "forward" ones continue
 -- the Lobby->Concourse->Platform->Depart backbone, "shop" ones detour into a side zone. Blending
 -- both into one load-balancing pool used to silently divert backbone traffic into shops with no
@@ -127,13 +172,9 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 
 			if roll < shopThreshold then
 				local _, _, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextBackboneZone(zone))
-				local shopZones = {}
-				for shopZone in shopTransitionsByZone do
-					table.insert(shopZones, shopZone)
-				end
+				local pickedPool = shopTransitionsByZone[pickShopZone(ctx.npc)]
 
-				if #shopZones > 0 then
-					local pickedPool = shopTransitionsByZone[shopZones[math.random(1, #shopZones)]]
+				if pickedPool then
 					loiterCandidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, pickedPool)
 				end
 				wantsWander = not loiterCandidate
@@ -162,7 +203,7 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	elseif zone == "Depart" then
 	else
 		local zones = { zone }
-		local nextZone = nextBackboneZone(zone)
+		local nextZone = resolveNextZone(zone)
 		local forwardTransitions, forwardCheckpoints, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextZone)
 
 		local chosenIndex = 1

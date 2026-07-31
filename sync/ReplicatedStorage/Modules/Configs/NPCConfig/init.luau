@@ -14,9 +14,12 @@ NPCConfig.ARRIVAL_TOLERANCE = 3 -- studs; how close counts as "reached" a node/w
 NPCConfig.NODE_SEARCH_RADIUS = 150 -- Auto-search candidate radius (currently unused by distance cutoff, kept for tuning)
 NPCConfig.NODE_SPREAD_RADIUS = 10 -- studs; Basic ("Node") arrivals spread across this radius instead of one exact point
 NPCConfig.DEPART_NODE_SPREAD_RADIUS = 1.5 -- studs; tighter cap on the above specifically for Depart Folder nodes (narrow gate corridor — the full spread can land inside a wall/doorframe)
-NPCConfig.STUCK_TIMEOUT = 8 -- seconds a single waypoint leg can run past its own expected duration before it's given up on and force-arrived
+NPCConfig.STUCK_TIMEOUT = 15 -- seconds a single waypoint leg can run past its own expected duration before it's given up on and rerouted to a different node entirely
 NPCConfig.LEG_TIMEOUT_GRACE_MULTIPLIER = 1.5 -- a leg's expected duration (distance/WalkSpeed) times this before the nudge-recovery cycle kicks in at all
-NPCConfig.STUCK_NUDGE_DISTANCE = 0.4 -- studs to physically nudge the NPC toward its current waypoint each probe, when it isn't making real progress on its own
+NPCConfig.STUCK_NUDGE_DISTANCE = 0.4 -- studs to nudge the NPC toward its current waypoint on the first stuck attempt (also the STUCK_PROGRESS_RATIO baseline)
+NPCConfig.STUCK_NUDGE_BACK_DISTANCE = 1 -- studs stepped backward (away from current facing) when a back+side recovery nudge fires, to clear corner/edge snags a straight-toward-goal push can't
+NPCConfig.STUCK_NUDGE_SIDE_DISTANCE = 1 -- studs stepped sideways, toward whichever side is closer to the goal, alongside the backward step
+NPCConfig.STUCK_BACKSIDE_NUDGE_COOLDOWN = 2 -- seconds between back+side nudges; only considered once a plain toward-goal nudge alone has failed to make progress
 NPCConfig.STUCK_NUDGE_CHECK_INTERVAL = 0.5 -- seconds between nudge-recovery progress probes
 NPCConfig.STUCK_PROGRESS_RATIO = 0.5 -- fraction of STUCK_NUDGE_DISTANCE that counts as "made real progress" since the last probe (skips nudging, extends the leg's budget instead)
 NPCConfig.PREFETCH_DRIFT_TOLERANCE = 10 -- studs; beyond this drift from a prefetched leg's assumed start, stale waypoints are discarded and repathed fresh
@@ -29,11 +32,11 @@ NPCConfig.SEAT_STAND_CLEAR_DISTANCE = 4 -- studs a just-stood NPC walks straight
 NPCConfig.SEAT_STAND_CLEAR_TIMEOUT = 3 -- seconds to wait for that clear-walk to finish before giving up and moving on anyway
 
 -- [[ Pathfinding ]] --
-NPCConfig.PATH_AGENT_RADIUS = 1.25
+NPCConfig.PATH_AGENT_RADIUS = 2.5
 NPCConfig.PATH_AGENT_HEIGHT = 5
 NPCConfig.PATH_AGENT_CAN_JUMP = false
 NPCConfig.PATH_AGENT_CAN_CLIMB = false
-NPCConfig.PATH_WAYPOINT_SPACING = 25 -- studs; wide enough to avoid re-issuing Humanoid:MoveTo() every few studs (which visibly hitched the walk animation), but frequent enough that long straight-line legs don't clip through walls the navmesh only avoids at the corner waypoints
+NPCConfig.PATH_WAYPOINT_SPACING = 15 -- studs; wide enough to avoid re-issuing Humanoid:MoveTo() every few studs (which visibly hitched the walk animation), but frequent enough that long straight-line legs don't clip through walls the navmesh only avoids at the corner waypoints
 
 -- [[ Line Node slots ]] --
 NPCConfig.LINE_SLOT_PLAYER_RADIUS = 7 -- studs; a live player standing this close to a slot counts as occupying it
@@ -53,9 +56,13 @@ NPCConfig.ZONE_ADJACENCY = {
 }
 
 NPCConfig.LINEAR_ZONE_SEQUENCE = { "Lobby", "Concourse", "Platform", "Depart" }
+NPCConfig.SHOP_ZONES = { "Cafe", "Souvenir", "Convenience" } -- zones that confine Wander to themselves and track live NPC occupancy
 
 NPCConfig.SHOP_DWELL_MIN = 15 -- seconds an NPC roams/sits in a shop (a Transition Node linked to another Transition Node) before heading back
 NPCConfig.SHOP_DWELL_MAX = 30
+
+NPCConfig.SHOP_PICK_WEIGHTS = { Cafe = 1, Souvenir = 1, Convenience = 1 } -- flat by default; pre-picked once per shop-detour roll
+NPCConfig.CAFFEINATED_CAFE_WEIGHT_MULTIPLIER = 3 -- Caffeinated NPCs are this many times likelier to pick Cafe over the other two shops
 
 -- [[ Concourse Loitering ]] --
 NPCConfig.CONCOURSE_LOITER_CHANCE = 0.55 -- chance a Concourse "Node" arrival detours into a shop/wander/seat/forward-anyway roll instead of always progressing toward Platform, rolled once per Concourse visit

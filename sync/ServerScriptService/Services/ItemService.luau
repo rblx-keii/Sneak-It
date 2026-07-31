@@ -122,10 +122,10 @@ function Shared.Init()
 		Local.ClearEquipped(character)
 	end)
 
-	RagdollService.OnPlayerRagdolled:Connect(function(player: Player)
-		local character = player.Character
-		if not character then return end
-		Local.ClearEquipped(character)
+	-- OnRagdolled (not OnPlayerRagdolled) so a held item drops for NPCs too, not just players —
+	-- ClearEquipped already no-ops the player-only network sync internally when there isn't one.
+	RagdollService.OnRagdolled:Connect(function(rig: Model)
+		Local.ClearEquipped(rig)
 	end)
 end
 

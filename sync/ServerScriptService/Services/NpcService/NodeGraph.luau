@@ -700,6 +700,48 @@ function NodeGraph.SetEnRouteTransition(npc: Model, transitionNode: BasePart?)
 	value.Value = transitionNode
 end
 
+-- [[ Shop zone occupancy ]] --
+
+function NodeGraph.IsShopZone(zoneName: string): boolean
+	return table.find(NPCConfig.SHOP_ZONES, zoneName) ~= nil
+end
+
+function NodeGraph.GetShopNPCCount(zoneFolder: Instance): number
+	return zoneFolder:GetAttribute("NPCCount") :: number or 0
+end
+
+function NodeGraph.AddShopNPC(zoneFolder: Instance, delta: number)
+	zoneFolder:SetAttribute("NPCCount", math.max(NodeGraph.GetShopNPCCount(zoneFolder) + delta, 0))
+end
+
+function NodeGraph.GetNPCShopZone(npc: Model): Instance?
+	local value = npc:FindFirstChild("ShopZone")
+	if value and value:IsA("ObjectValue") then
+		return value.Value
+	end
+	return nil
+end
+
+function NodeGraph.SetNPCShopZone(npc: Model, zoneFolder: Instance?)
+	local previous = NodeGraph.GetNPCShopZone(npc)
+	if previous == zoneFolder then return end
+
+	if previous then
+		NodeGraph.AddShopNPC(previous, -1)
+	end
+	if zoneFolder then
+		NodeGraph.AddShopNPC(zoneFolder, 1)
+	end
+
+	local value = npc:FindFirstChild("ShopZone") :: ObjectValue?
+	if not value then
+		value = Instance.new("ObjectValue")
+		value.Name = "ShopZone"
+		value.Parent = npc
+	end
+	value.Value = zoneFolder
+end
+
 -- [[ Seat Node occupancy ]] --
 
 function NodeGraph.SyncSeatOccupiedAttribute(seatNode: BasePart)

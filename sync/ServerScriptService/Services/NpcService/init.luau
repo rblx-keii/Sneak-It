@@ -56,6 +56,8 @@ type NPCRecord = {
 	legExpectedDuration: number,
 	lastProgressPos: Vector3,
 	lastProgressCheckAt: number,
+	stuckNudgeAttempts: number,
+	lastBackSideNudgeAt: number,
 	arrivedViaLink: boolean,
 	awaitingDecision: boolean,
 	decisionRequestedAt: number,
@@ -582,6 +584,8 @@ function Local.SpawnNPC(template: Model)
 		legExpectedDuration = 0,
 		lastProgressPos = hrp.Position,
 		lastProgressCheckAt = 0,
+		stuckNudgeAttempts = 0,
+		lastBackSideNudgeAt = 0,
 		arrivedViaLink = false,
 		awaitingDecision = false,
 		decisionRequestedAt = 0,
@@ -717,6 +721,7 @@ function Local.CleanupNPC(model: Model)
 
 			NodeGraph.SetEnRouteLine(model, nil)
 			NodeGraph.SetEnRouteTransition(model, nil)
+			NodeGraph.SetNPCShopZone(model, nil)
 
 			table.remove(_activeNPCs, i)
 			break
@@ -1310,11 +1315,37 @@ function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
 	end
 
 	if elapsed > NPCConfig.STUCK_TIMEOUT then
-		Local.DebugWarn(
-			record,
-			`stuck-timeout toward {record.targetNode.Name} (still {math.floor((hrp.Position - goalPos).Magnitude)} studs away) — forcing arrival`
-		)
-		Local.OnArrive(record, record.targetNode :: BasePart)
+		local stuckNode = record.targetNode :: BasePart
+		local originNode = record.currentNode
+		local rerouteNode = originNode
+			and NodeGraph.FindNearestNode(
+				_nodesFolder :: Instance,
+				originNode,
+				{ NodeGraph.GetZone(originNode, _nodesFolder :: Instance) },
+				{ stuckNode, record.lastNode },
+				{ record.model, _npcsFolder },
+				nil,
+				{ seatnode = true, linenode = true }
+			)
+
+		if rerouteNode then
+			Local.DebugWarn(
+				record,
+				`stuck-timeout toward {stuckNode.Name} (still {math.floor((hrp.Position - goalPos).Magnitude)} studs away) — rerouting to {rerouteNode.Name} instead`
+			)
+			record.targetNode = rerouteNode
+			record.moveTargetPos = nil
+			record.waypoints = nil
+			record.waypointIndex = nil
+			record.stuckNudgeAttempts = 0
+			Local.ComputePath(record)
+		else
+			Local.DebugWarn(
+				record,
+				`stuck-timeout toward {stuckNode.Name} (still {math.floor((hrp.Position - goalPos).Magnitude)} studs away), no reroute candidate nearby — forcing arrival`
+			)
+			Local.OnArrive(record, stuckNode)
+		end
 		return
 	end
 
@@ -1331,6 +1362,7 @@ function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
 	if progressed then
 		record.moveStartedAt = now
 		record.legExpectedDuration = (goalPos - hrp.Position).Magnitude / math.max(record.humanoid.WalkSpeed, 1)
+		record.stuckNudgeAttempts = 0
 		return
 	end
 
@@ -1343,11 +1375,32 @@ function Local.CheckStuck(record: NPCRecord, goalPos: Vector3)
 		Local.SetWalkTarget(record, goalPos)
 	end
 
-	hrp.CFrame += toGoal.Unit * NPCConfig.STUCK_NUDGE_DISTANCE
-	Local.DebugWarn(
-		record,
-		`no progress toward {record.targetNode.Name} — retracing to path and nudging {NPCConfig.STUCK_NUDGE_DISTANCE} studs toward goal`
-	)
+	record.stuckNudgeAttempts += 1
+
+	-- A plain nudge toward the goal is tried first — cheap, and usually enough on its own. Only
+	-- once that alone keeps failing to make progress (attempt 2+) do we escalate to a back+side
+	-- step, since a straight push just wedges them harder into whatever's snagging them (a table
+	-- corner, a chair leg). The escalation has its own longer cooldown so it doesn't fire on
+	-- every 0.5s check once triggered — it needs room to actually clear the obstruction.
+	if record.stuckNudgeAttempts > 1 and now - record.lastBackSideNudgeAt >= NPCConfig.STUCK_BACKSIDE_NUDGE_COOLDOWN then
+		record.lastBackSideNudgeAt = now
+
+		local backDir = -hrp.CFrame.LookVector
+		local rightDir = hrp.CFrame.RightVector
+		local sideDir = if rightDir:Dot(toGoal.Unit) >= 0 then rightDir else -rightDir
+
+		hrp.CFrame += backDir * NPCConfig.STUCK_NUDGE_BACK_DISTANCE + sideDir * NPCConfig.STUCK_NUDGE_SIDE_DISTANCE
+		Local.DebugWarn(
+			record,
+			`no progress toward {record.targetNode.Name} — front nudge alone hasn't worked, stepping back+side to clear the obstruction`
+		)
+	else
+		hrp.CFrame += toGoal.Unit * NPCConfig.STUCK_NUDGE_DISTANCE
+		Local.DebugWarn(
+			record,
+			`no progress toward {record.targetNode.Name} — retracing to path and nudging {NPCConfig.STUCK_NUDGE_DISTANCE} studs toward goal`
+		)
+	end
 end
 
 -- [[ Private Functions — Conveyor node (bag-in-transit) ]] --
@@ -1489,6 +1542,7 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 	record.waypoints = nil
 	record.waypointIndex = nil
 	record.moveStartedAt = 0
+	record.stuckNudgeAttempts = 0
 	Local.ClearWaypointMarkers(record)
 	Local.ClearPathBlockedConnection(record)
 
@@ -1507,7 +1561,14 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 		NodeGraph.SetEnRouteTransition(record.model, nil)
 	end
 
-	local isShopDetourArrival = record.arrivedViaLink
+	local arrivalZone = NodeGraph.GetZone(node, _nodesFolder :: Instance)
+
+	-- A shop's Transition Node links back to one in Concourse, so the return trip out is ALSO
+	-- a link crossing between two Transition Nodes — gating on IsShopZone(arrivalZone) as well
+	-- keeps that return arrival from being mistaken for a fresh shop entry and re-triggering the
+	-- dwell timer / Wander flip.
+	local isShopDetourArrival = NodeGraph.IsShopZone(arrivalZone)
+		and record.arrivedViaLink
 		and NodeGraph.IsTransitionNode(node)
 		and record.lastNode
 		and NodeGraph.IsTransitionNode(record.lastNode)
@@ -1534,7 +1595,20 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 		end
 	end
 
-	if NodeGraph.GetZone(node, _nodesFolder :: Instance) ~= "Concourse" then
+	-- Entering a shop zone confines Wander's candidate search to that zone alone (see
+	-- Wander.luau's ctx.confineZone) and tracks live occupancy on the zone folder's NPCCount
+	-- attribute; leaving one (arriving anywhere outside it) releases both.
+	if NodeGraph.IsShopZone(arrivalZone) then
+		record.model:SetAttribute("WanderConfineZone", arrivalZone)
+		local zoneFolder = NodeGraph.GetZoneFolder(_nodesFolder :: Instance, arrivalZone)
+		if zoneFolder then
+			NodeGraph.SetNPCShopZone(record.model, zoneFolder)
+		end
+	else
+		NodeGraph.SetNPCShopZone(record.model, nil)
+	end
+
+	if arrivalZone ~= "Concourse" then
 		record.model:SetAttribute("ConcourseLoiterRolled", nil)
 	end
 
