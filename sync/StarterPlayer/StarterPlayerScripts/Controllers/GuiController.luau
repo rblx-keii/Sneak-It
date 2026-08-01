@@ -75,6 +75,9 @@ function Shared.Init()
 	for _, frame in CollectionService:GetTagged("ExitButton") do
 		if not frame or not frame:IsDescendantOf(player) then continue end
 		local button = frame:FindFirstChild("Button") :: GuiButton
+		if not button and frame:IsA("GuiButton") then
+			button = frame
+		end
 
 		button.Activated:Connect(function()
 			task.delay(.2, function()

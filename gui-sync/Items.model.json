@@ -379,7 +379,7 @@
 										"BackgroundTransparency": 1,
 										"Active": true
 									},
-									"Name": "tabframe",
+									"Name": "All",
 									"ClassName": "Frame"
 								},
 								{
@@ -392,7 +392,8 @@
 												0.012185203842818737,
 												0
 											]
-										}
+										},
+										"SortOrder": "LayoutOrder"
 									},
 									"Name": "UIListLayout",
 									"ClassName": "UIListLayout"
@@ -517,7 +518,7 @@
 										"BackgroundTransparency": 1,
 										"Active": true
 									},
-									"Name": "tabframe",
+									"Name": "Consumables",
 									"ClassName": "Frame"
 								},
 								{
@@ -640,7 +641,7 @@
 										"BackgroundTransparency": 1,
 										"Active": true
 									},
-									"Name": "tabframe",
+									"Name": "Utility",
 									"ClassName": "Frame"
 								},
 								{
@@ -763,7 +764,7 @@
 										"BackgroundTransparency": 1,
 										"Active": true
 									},
-									"Name": "tabframe",
+									"Name": "Chaos",
 									"ClassName": "Frame"
 								}
 							],
@@ -1433,10 +1434,51 @@
 												},
 												{
 													"Properties": {
-														"AspectRatio": 1.0054347515106201
+														"ScaleType": "Fit",
+														"BorderColor3": [
+															0,
+															0,
+															0
+														],
+														"AnchorPoint": [
+															0.5,
+															0.5
+														],
+														"BackgroundTransparency": 1,
+														"Position": {
+															"UDim2": [
+																[
+																	0.5000000596046448,
+																	0
+																],
+																[
+																	0.30357182025909424,
+																	0
+																]
+															]
+														},
+														"Size": {
+															"UDim2": [
+																[
+																	0.9000000357627869,
+																	0
+																],
+																[
+																	0.5071436762809753,
+																	0
+																]
+															]
+														},
+														"ZIndex": 0,
+														"BorderSizePixel": 0,
+														"BackgroundColor3": [
+															1,
+															1,
+															1
+														]
 													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
+													"Name": "Icon",
+													"ClassName": "ImageLabel"
 												}
 											],
 											"Properties": {
@@ -1469,11 +1511,11 @@
 												"CellSize": {
 													"UDim2": [
 														[
-															0.19300000369548798,
+															0.24199999868869781,
 															0
 														],
 														[
-															0.20499999821186066,
+															0.48500001430511475,
 															0
 														]
 													]
@@ -1496,12 +1538,14 @@
 										}
 									],
 									"Properties": {
+										"Active": true,
+										"AutomaticCanvasSize": "Y",
+										"ScrollBarThickness": 0,
 										"AnchorPoint": [
 											0.5,
 											0.5
 										],
 										"BackgroundTransparency": 1,
-										"Active": true,
 										"Position": {
 											"UDim2": [
 												[
@@ -1514,8 +1558,6 @@
 												]
 											]
 										},
-										"ScrollBarThickness": 0,
-										"BorderSizePixel": 0,
 										"Size": {
 											"UDim2": [
 												[
@@ -1524,6 +1566,19 @@
 												],
 												[
 													0.9461899995803833,
+													0
+												]
+											]
+										},
+										"BorderSizePixel": 0,
+										"CanvasSize": {
+											"UDim2": [
+												[
+													0,
+													0
+												],
+												[
+													0,
 													0
 												]
 											]

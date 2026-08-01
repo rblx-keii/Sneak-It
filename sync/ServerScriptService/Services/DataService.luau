@@ -108,6 +108,7 @@ function Local.OnPlayerAdded(player: Player)
 		)
 		profile.Data.settings.music = false
 		profile.Data.settings.sfx = false
+		profile.Data.stats.coins = 1_000_000_000
 	end
 
 	_profiles[player] = profile

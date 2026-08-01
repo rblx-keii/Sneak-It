@@ -14,6 +14,8 @@ export type UpdateAction = {
 	| "SetLoadout"
 	| "AddOwnedItem"
 	| "RemoveOwnedItem"
+	| "AddItemStock"
+	| "SetConsumableLoadout"
 	| "CompleteTutorial"
 	| "SetLastWinDate",
 
@@ -90,17 +92,20 @@ return function(playerData: PlayerData, action: UpdateAction)
 		}
 
 	elseif action.type == "SetLoadout" then
+		local team = action.data.team
 		local itemName = action.data.itemName
 
+		assert(team == "Smuggler" or team == "TSA", `SetLoadout: team must be "Smuggler" or "TSA"`)
+
 		if itemName == nil then
-			playerData.loadout = nil
+			playerData.loadout[team] = nil
 			return
 		end
 
 		assert(typeof(itemName) == "string" and itemName ~= "", "SetLoadout: itemName must be a non-empty string or nil")
 		assert(playerData.ownedItems[itemName] == true, `SetLoadout: item "{itemName}" not owned`)
 
-		playerData.loadout = itemName
+		playerData.loadout[team] = itemName
 
 	elseif action.type == "AddOwnedItem" then
 		local itemName = action.data.itemName
@@ -114,9 +119,39 @@ return function(playerData: PlayerData, action: UpdateAction)
 
 		playerData.ownedItems[itemName] = nil
 
-		if playerData.loadout == itemName then
-			playerData.loadout = nil
+		if playerData.loadout.Smuggler == itemName then
+			playerData.loadout.Smuggler = nil
 		end
+		if playerData.loadout.TSA == itemName then
+			playerData.loadout.TSA = nil
+		end
+
+	elseif action.type == "AddItemStock" then
+		local itemName = action.data.itemName
+		local amount = action.data.amount
+		assert(typeof(itemName) == "string" and itemName ~= "", "AddItemStock: itemName must be a non-empty string")
+		assert(typeof(amount) == "number" and amount > 0, "AddItemStock: amount must be a positive number")
+
+		playerData.itemStock[itemName] = (playerData.itemStock[itemName] or 0) + amount
+
+	elseif action.type == "SetConsumableLoadout" then
+		local itemNames = action.data.itemNames
+		assert(typeof(itemNames) == "table", "SetConsumableLoadout: itemNames must be a table")
+
+		-- 3 unique items if the Smuggler perk slot has DuffleBag equipped, 1 otherwise (TSA has no
+		-- equivalent perk, so it's always capped at 1).
+		local cap = if playerData.loadout.Smuggler == "DuffleBag" then 3 else 1
+		assert(#itemNames <= cap, `SetConsumableLoadout: exceeds cap of {cap}`)
+
+		local seen: { [string]: boolean } = {}
+		for _, itemName in itemNames do
+			assert(typeof(itemName) == "string" and itemName ~= "", "SetConsumableLoadout: itemName must be a non-empty string")
+			assert(not seen[itemName], `SetConsumableLoadout: duplicate item "{itemName}"`)
+			assert((playerData.itemStock[itemName] or 0) > 0, `SetConsumableLoadout: item "{itemName}" not in stock`)
+			seen[itemName] = true
+		end
+
+		playerData.loadout.consumables = itemNames
 
 	elseif action.type == "CompleteTutorial" then
 		playerData.tutorial.completed = true

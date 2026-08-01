@@ -33,7 +33,7 @@ local _connections: {RBXScriptConnection} = {}
 local isStudio = RunService:IsStudio()
 
 --|| Constants
-local MIN_TOTAL_PLAYERS = isStudio and 1 or 2
+local MIN_TOTAL_PLAYERS = isStudio and 2 or 2
 local INTERMISSION_DURATION = isStudio and 5 or 10
 local STARTING_DURATION = isStudio and 5 or 20
 local ROUND_DURATION = isStudio and math.huge or 600

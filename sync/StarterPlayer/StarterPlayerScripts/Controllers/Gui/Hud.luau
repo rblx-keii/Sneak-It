@@ -18,6 +18,13 @@ local tokensAmountLabel = sidebar.Tokens.Main.Content.Amount :: TextLabel
 local statusFrame = Hud.Status :: Frame
 local statusLabel = statusFrame.Label :: TextLabel
 
+local subMenu = sidebar.Menu.SubMenu
+local shopButton = subMenu.Shop.Content.Button :: ImageButton
+local bagButton = subMenu.Bag.Content.Button :: ImageButton
+local perksButton = subMenu.Perks.Content.Button :: ImageButton
+local itemsButton = subMenu.Items.Content.Button :: ImageButton
+local questsButton = sidebar.Menu.Quests.Button :: ImageButton
+
 --|| Variables
 local _connections = {}
 
@@ -53,6 +60,22 @@ function Shared.Init()
 	end))
 
 	table.insert(_connections, playButton.Activated:Connect(RoundController.RequestJoin))
+
+	table.insert(_connections, shopButton.Activated:Connect(function()
+		GuiController.SwitchActiveGui("Shop")
+	end))
+	table.insert(_connections, bagButton.Activated:Connect(function()
+		GuiController.SwitchActiveGui("Inventory")
+	end))
+	table.insert(_connections, perksButton.Activated:Connect(function()
+		GuiController.SwitchActiveGui("Perks")
+	end))
+	table.insert(_connections, itemsButton.Activated:Connect(function()
+		GuiController.SwitchActiveGui("Items")
+	end))
+	table.insert(_connections, questsButton.Activated:Connect(function()
+		GuiController.SwitchActiveGui("Quest")
+	end))
 
 	table.insert(_connections, GateController.OnStageChanged:Connect(Local.UpdateStatus))
 	table.insert(_connections, GateController.OnTimeLeftChanged:Connect(function(_timeLeft)
@@ -92,6 +115,12 @@ function Local.UpdateVisibility()
 
 	sidebar.Visible = not isPlaying
 	playButton.Visible = not isPlaying and state == "InProgress"
+
+	-- Sidebar (and its Shop/Bag/Perks/Items/Quests buttons) is hidden while playing, so close
+	-- whichever submenu was left open rather than stranding it open behind a hidden sidebar.
+	if isPlaying then
+		GuiController.RestoreGuis()
+	end
 end
 
 function Local.UpdatePhase(state: RoundController.RoundState)

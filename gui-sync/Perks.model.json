@@ -215,7 +215,7 @@
 						"BorderSizePixel": 0,
 						"Active": true
 					},
-					"Name": "innerframe",
+					"Name": "Backdrop",
 					"ClassName": "Frame"
 				},
 				{
@@ -252,7 +252,7 @@
 							]
 						}
 					},
-					"Name": "close",
+					"Name": "Exit",
 					"ClassName": "ImageButton"
 				},
 				{
@@ -388,7 +388,7 @@
 							]
 						}
 					},
-					"Name": "title",
+					"Name": "Title",
 					"ClassName": "Frame"
 				},
 				{
@@ -525,7 +525,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -572,7 +572,7 @@
 																	]
 																}
 															},
-															"Name": "subtitle",
+															"Name": "SubTitle",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -619,7 +619,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -795,7 +795,7 @@
 																			1
 																		]
 																	},
-																	"Name": "buy",
+																	"Name": "Button",
 																	"ClassName": "TextButton"
 																},
 																{
@@ -846,7 +846,7 @@
 																			]
 																		}
 																	},
-																	"Name": "txt",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																}
 															],
@@ -883,8 +883,56 @@
 																	1
 																]
 															},
-															"Name": "buy",
+															"Name": "Button",
 															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"ScaleType": "Fit",
+																"BorderColor3": [
+																	0,
+																	0,
+																	0
+																],
+																"AnchorPoint": [
+																	0.5,
+																	0.5
+																],
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.5,
+																			0
+																		],
+																		[
+																			0.43055641651153564,
+																			0
+																		]
+																	]
+																},
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8999999761581421,
+																			0
+																		],
+																		[
+																			0.4760171175003052,
+																			0
+																		]
+																	]
+																},
+																"ZIndex": 0,
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "Icon",
+															"ClassName": "ImageLabel"
 														}
 													],
 													"Properties": {
@@ -916,39 +964,44 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
 												}
 											],
 											"Properties": {
+												"Active": true,
 												"Size": {
 													"UDim2": [
 														[
-															0.14106500148773193,
+															0.3290029764175415,
 															0
 														],
 														[
-															1,
+															1.0000001192092896,
 															0
 														]
 													]
 												},
+												"Position": {
+													"UDim2": [
+														[
+															6.974715915930574e-8,
+															0
+														],
+														[
+															0,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
 												"BackgroundColor3": [
 													1,
 													1,
 													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
+												]
 											},
-											"Name": "itemframe",
+											"Name": "Perk_1",
 											"ClassName": "Frame"
 										},
 										{
@@ -1056,7 +1109,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1103,7 +1156,7 @@
 																	]
 																}
 															},
-															"Name": "subtitle",
+															"Name": "SubTitle",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1150,7 +1203,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1190,7 +1243,7 @@
 																			]
 																		}
 																	},
-																	"Name": "lockedbg",
+																	"Name": "Backdrop",
 																	"ClassName": "ImageLabel"
 																},
 																{
@@ -1237,7 +1290,7 @@
 																			]
 																		}
 																	},
-																	"Name": "title",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -1281,7 +1334,7 @@
 																			]
 																		}
 																	},
-																	"Name": "lock",
+																	"Name": "Lock",
 																	"ClassName": "ImageLabel"
 																},
 																{
@@ -1325,8 +1378,56 @@
 																	]
 																}
 															},
-															"Name": "locked",
+															"Name": "Button",
 															"ClassName": "Frame"
+														},
+														{
+															"Properties": {
+																"ScaleType": "Fit",
+																"BorderColor3": [
+																	0,
+																	0,
+																	0
+																],
+																"AnchorPoint": [
+																	0.5,
+																	0.5
+																],
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.5,
+																			0
+																		],
+																		[
+																			0.43055641651153564,
+																			0
+																		]
+																	]
+																},
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8999999761581421,
+																			0
+																		],
+																		[
+																			0.4760171175003052,
+																			0
+																		]
+																	]
+																},
+																"ZIndex": 0,
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "Icon",
+															"ClassName": "ImageLabel"
 														}
 													],
 													"Properties": {
@@ -1358,39 +1459,44 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
 												}
 											],
 											"Properties": {
+												"Active": true,
 												"Size": {
 													"UDim2": [
 														[
-															0.14106500148773193,
+															0.32900306582450867,
 															0
 														],
 														[
-															1,
+															1.0000001192092896,
 															0
 														]
 													]
 												},
+												"Position": {
+													"UDim2": [
+														[
+															0.33549848198890686,
+															0
+														],
+														[
+															0,
+															0
+														]
+													]
+												},
+												"BorderSizePixel": 0,
 												"BackgroundColor3": [
 													1,
 													1,
 													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
+												]
 											},
-											"Name": "itemframe",
+											"Name": "Perk_2",
 											"ClassName": "Frame"
 										},
 										{
@@ -1484,7 +1590,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1531,7 +1637,7 @@
 																	]
 																}
 															},
-															"Name": "subtitle",
+															"Name": "SubTitle",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1578,7 +1684,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1618,7 +1724,7 @@
 																			]
 																		}
 																	},
-																	"Name": "lockedbg",
+																	"Name": "Backdrop",
 																	"ClassName": "ImageLabel"
 																},
 																{
@@ -1665,7 +1771,7 @@
 																			]
 																		}
 																	},
-																	"Name": "title",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -1709,7 +1815,7 @@
 																			]
 																		}
 																	},
-																	"Name": "lock",
+																	"Name": "Lock",
 																	"ClassName": "ImageLabel"
 																},
 																{
@@ -1753,408 +1859,22 @@
 																	]
 																}
 															},
-															"Name": "locked",
+															"Name": "Button",
 															"ClassName": "Frame"
-														}
-													],
-													"Properties": {
-														"BackgroundTransparency": 1,
-														"Active": true,
-														"Position": {
-															"UDim2": [
-																[
-																	0.02962999977171421,
-																	0
-																],
-																[
-																	0.06915999948978424,
-																	0
-																]
-															]
-														},
-														"BorderSizePixel": 0,
-														"Size": {
-															"UDim2": [
-																[
-																	0.9444400072097778,
-																	0
-																],
-																[
-																	0.8962500095367432,
-																	0
-																]
-															]
-														}
-													},
-													"Name": "padding",
-													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
-												}
-											],
-											"Properties": {
-												"Size": {
-													"UDim2": [
-														[
-															0.14106500148773193,
-															0
-														],
-														[
-															1,
-															0
-														]
-													]
-												},
-												"BackgroundColor3": [
-													1,
-													1,
-													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
-											},
-											"Name": "itemframe",
-											"ClassName": "Frame"
-										},
-										{
-											"Children": [
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
-												},
-												{
-													"Children": [
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Bold"
-																},
-																"Active": true,
-																"Text": "Empty Duffel Bag",
-																"TextWrapped": true,
-																"TextSize": 21,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.015690000727772713,
-																			0
-																		],
-																		[
-																			0,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0.10599999874830246,
-																	0.2840000092983246
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.964709997177124,
-																			0
-																		],
-																		[
-																			0.0771699994802475,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "title",
-															"ClassName": "TextLabel"
 														},
 														{
 															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Free/Default",
-																"TextWrapped": true,
-																"TextSize": 16,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.1921599954366684,
-																			0
-																		],
-																		[
-																			0.09324999898672104,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
+																"ScaleType": "Fit",
+																"BorderColor3": [
 																	0,
 																	0,
 																	0
 																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.6078400015830994,
-																			0
-																		],
-																		[
-																			0.0643099993467331,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "subtitle",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Proident tempor incididunt aute. Deserunt ut nulla nostrud exercitation cillum velit nulla reprehenderit ",
-																"TextWrapped": true,
-																"TextSize": 12,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0,
-																			0
-																		],
-																		[
-																			0.7106099724769592,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0,
-																	0
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			1,
-																			0
-																		],
-																		[
-																			0.14469000697135925,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "desc",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Children": [
-																{
-																	"Properties": {
-																		"AnchorPoint": [
-																			0.5,
-																			0.5
-																		],
-																		"Image": "rbxassetid://123522679489122",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.5,
-																					0
-																				],
-																				[
-																					0.5,
-																					0
-																				]
-																			]
-																		},
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					1,
-																					0
-																				],
-																				[
-																					1,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lockedbg",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"FontFace": {
-																			"family": "rbxassetid://11702779517",
-																			"style": "Normal",
-																			"weight": "Bold"
-																		},
-																		"Active": true,
-																		"Text": "Reach Lv.10 to Unlock",
-																		"TextWrapped": true,
-																		"TextSize": 14,
-																		"BackgroundTransparency": 1,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.17885999381542206,
-																					0
-																				],
-																				[
-																					0.2777799963951111,
-																					0
-																				]
-																			]
-																		},
-																		"TextScaled": true,
-																		"TextColor3": [
-																			1,
-																			1,
-																			1
-																		],
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.646340012550354,
-																					0
-																				],
-																				[
-																					0.47221997380256653,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "title",
-																	"ClassName": "TextLabel"
-																},
-																{
-																	"Children": [
-																		{
-																			"Properties": {
-																				"DominantAxis": "Height"
-																			},
-																			"Name": "UIAspectRatioConstraint",
-																			"ClassName": "UIAspectRatioConstraint"
-																		}
-																	],
-																	"Properties": {
-																		"Image": "rbxassetid://113313954747740",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.03658999875187874,
-																					0
-																				],
-																				[
-																					0.25,
-																					0
-																				]
-																			]
-																		},
-																		"ScaleType": "Fit",
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.0731699988245964,
-																					0
-																				],
-																				[
-																					0.49999505281448364,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lock",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"AspectRatio": 6.833333492279053
-																	},
-																	"Name": "UIAspectRatioConstraint",
-																	"ClassName": "UIAspectRatioConstraint"
-																}
-															],
-															"Properties": {
 																"AnchorPoint": [
 																	0.5,
-																	1
+																	0.5
 																],
 																"BackgroundTransparency": 1,
-																"Active": true,
 																"Position": {
 																	"UDim2": [
 																		[
@@ -2162,27 +1882,33 @@
 																			0
 																		],
 																		[
-																			1,
+																			0.43055641651153564,
 																			0
 																		]
 																	]
 																},
-																"BorderSizePixel": 0,
 																"Size": {
 																	"UDim2": [
 																		[
-																			1,
+																			0.8999999761581421,
 																			0
 																		],
 																		[
-																			0.11999087780714035,
+																			0.4760171175003052,
 																			0
 																		]
 																	]
-																}
+																},
+																"ZIndex": 0,
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
 															},
-															"Name": "locked",
-															"ClassName": "Frame"
+															"Name": "Icon",
+															"ClassName": "ImageLabel"
 														}
 													],
 													"Properties": {
@@ -2214,917 +1940,56 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
 												}
 											],
 											"Properties": {
+												"Active": true,
 												"Size": {
 													"UDim2": [
 														[
-															0.14106500148773193,
+															0.32900306582450867,
 															0
 														],
 														[
-															1,
+															1.0000001192092896,
 															0
 														]
 													]
 												},
-												"BackgroundColor3": [
-													1,
-													1,
-													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
-											},
-											"Name": "itemframe",
-											"ClassName": "Frame"
-										},
-										{
-											"Children": [
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
-												},
-												{
-													"Children": [
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Bold"
-																},
-																"Active": true,
-																"Text": "Empty Duffel Bag",
-																"TextWrapped": true,
-																"TextSize": 21,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.015690000727772713,
-																			0
-																		],
-																		[
-																			0,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0.10599999874830246,
-																	0.2840000092983246
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.964709997177124,
-																			0
-																		],
-																		[
-																			0.0771699994802475,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "title",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Free/Default",
-																"TextWrapped": true,
-																"TextSize": 16,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.1921599954366684,
-																			0
-																		],
-																		[
-																			0.09324999898672104,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0,
-																	0
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.6078400015830994,
-																			0
-																		],
-																		[
-																			0.0643099993467331,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "subtitle",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Proident tempor incididunt aute. Deserunt ut nulla nostrud exercitation cillum velit nulla reprehenderit ",
-																"TextWrapped": true,
-																"TextSize": 12,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0,
-																			0
-																		],
-																		[
-																			0.7106099724769592,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0,
-																	0
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			1,
-																			0
-																		],
-																		[
-																			0.14469000697135925,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "desc",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Children": [
-																{
-																	"Properties": {
-																		"AnchorPoint": [
-																			0.5,
-																			0.5
-																		],
-																		"Image": "rbxassetid://123522679489122",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.5,
-																					0
-																				],
-																				[
-																					0.5,
-																					0
-																				]
-																			]
-																		},
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					1,
-																					0
-																				],
-																				[
-																					1,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lockedbg",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"FontFace": {
-																			"family": "rbxassetid://11702779517",
-																			"style": "Normal",
-																			"weight": "Bold"
-																		},
-																		"Active": true,
-																		"Text": "Reach Lv.10 to Unlock",
-																		"TextWrapped": true,
-																		"TextSize": 14,
-																		"BackgroundTransparency": 1,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.17885999381542206,
-																					0
-																				],
-																				[
-																					0.2777799963951111,
-																					0
-																				]
-																			]
-																		},
-																		"TextScaled": true,
-																		"TextColor3": [
-																			1,
-																			1,
-																			1
-																		],
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.646340012550354,
-																					0
-																				],
-																				[
-																					0.47221997380256653,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "title",
-																	"ClassName": "TextLabel"
-																},
-																{
-																	"Children": [
-																		{
-																			"Properties": {
-																				"DominantAxis": "Height"
-																			},
-																			"Name": "UIAspectRatioConstraint",
-																			"ClassName": "UIAspectRatioConstraint"
-																		}
-																	],
-																	"Properties": {
-																		"Image": "rbxassetid://113313954747740",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.03658999875187874,
-																					0
-																				],
-																				[
-																					0.25,
-																					0
-																				]
-																			]
-																		},
-																		"ScaleType": "Fit",
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.0731699988245964,
-																					0
-																				],
-																				[
-																					0.49999505281448364,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lock",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"AspectRatio": 6.833333492279053
-																	},
-																	"Name": "UIAspectRatioConstraint",
-																	"ClassName": "UIAspectRatioConstraint"
-																}
-															],
-															"Properties": {
-																"AnchorPoint": [
-																	0.5,
-																	1
-																],
-																"BackgroundTransparency": 1,
-																"Active": true,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.5,
-																			0
-																		],
-																		[
-																			1,
-																			0
-																		]
-																	]
-																},
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			1,
-																			0
-																		],
-																		[
-																			0.11999087780714035,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "locked",
-															"ClassName": "Frame"
-														}
-													],
-													"Properties": {
-														"BackgroundTransparency": 1,
-														"Active": true,
-														"Position": {
-															"UDim2": [
-																[
-																	0.02962999977171421,
-																	0
-																],
-																[
-																	0.06915999948978424,
-																	0
-																]
-															]
-														},
-														"BorderSizePixel": 0,
-														"Size": {
-															"UDim2": [
-																[
-																	0.9444400072097778,
-																	0
-																],
-																[
-																	0.8962500095367432,
-																	0
-																]
-															]
-														}
-													},
-													"Name": "padding",
-													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
-												}
-											],
-											"Properties": {
-												"Size": {
+												"Position": {
 													"UDim2": [
 														[
-															0.14106500148773193,
+															0.33549848198890686,
 															0
 														],
 														[
-															1,
+															0,
 															0
 														]
 													]
 												},
+												"BorderSizePixel": 0,
 												"BackgroundColor3": [
 													1,
 													1,
 													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
+												]
 											},
-											"Name": "itemframe",
-											"ClassName": "Frame"
-										},
-										{
-											"Children": [
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
-												},
-												{
-													"Children": [
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Bold"
-																},
-																"Active": true,
-																"Text": "Empty Duffel Bag",
-																"TextWrapped": true,
-																"TextSize": 21,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.015690000727772713,
-																			0
-																		],
-																		[
-																			0,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0.10599999874830246,
-																	0.2840000092983246
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.964709997177124,
-																			0
-																		],
-																		[
-																			0.0771699994802475,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "title",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Free/Default",
-																"TextWrapped": true,
-																"TextSize": 16,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.1921599954366684,
-																			0
-																		],
-																		[
-																			0.09324999898672104,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0,
-																	0
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			0.6078400015830994,
-																			0
-																		],
-																		[
-																			0.0643099993467331,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "subtitle",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Properties": {
-																"FontFace": {
-																	"family": "rbxassetid://11702779517",
-																	"style": "Normal",
-																	"weight": "Regular"
-																},
-																"Active": true,
-																"Text": "Proident tempor incididunt aute. Deserunt ut nulla nostrud exercitation cillum velit nulla reprehenderit ",
-																"TextWrapped": true,
-																"TextSize": 12,
-																"BackgroundTransparency": 1,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0,
-																			0
-																		],
-																		[
-																			0.7106099724769592,
-																			0
-																		]
-																	]
-																},
-																"TextScaled": true,
-																"TextColor3": [
-																	0,
-																	0,
-																	0
-																],
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			1,
-																			0
-																		],
-																		[
-																			0.14469000697135925,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "desc",
-															"ClassName": "TextLabel"
-														},
-														{
-															"Children": [
-																{
-																	"Properties": {
-																		"AnchorPoint": [
-																			0.5,
-																			0.5
-																		],
-																		"Image": "rbxassetid://123522679489122",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.5,
-																					0
-																				],
-																				[
-																					0.5,
-																					0
-																				]
-																			]
-																		},
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					1,
-																					0
-																				],
-																				[
-																					1,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lockedbg",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"FontFace": {
-																			"family": "rbxassetid://11702779517",
-																			"style": "Normal",
-																			"weight": "Bold"
-																		},
-																		"Active": true,
-																		"Text": "Reach Lv.10 to Unlock",
-																		"TextWrapped": true,
-																		"TextSize": 14,
-																		"BackgroundTransparency": 1,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.17885999381542206,
-																					0
-																				],
-																				[
-																					0.2777799963951111,
-																					0
-																				]
-																			]
-																		},
-																		"TextScaled": true,
-																		"TextColor3": [
-																			1,
-																			1,
-																			1
-																		],
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.646340012550354,
-																					0
-																				],
-																				[
-																					0.47221997380256653,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "title",
-																	"ClassName": "TextLabel"
-																},
-																{
-																	"Children": [
-																		{
-																			"Properties": {
-																				"DominantAxis": "Height"
-																			},
-																			"Name": "UIAspectRatioConstraint",
-																			"ClassName": "UIAspectRatioConstraint"
-																		}
-																	],
-																	"Properties": {
-																		"Image": "rbxassetid://113313954747740",
-																		"BackgroundTransparency": 1,
-																		"Active": true,
-																		"Position": {
-																			"UDim2": [
-																				[
-																					0.03658999875187874,
-																					0
-																				],
-																				[
-																					0.25,
-																					0
-																				]
-																			]
-																		},
-																		"ScaleType": "Fit",
-																		"BorderSizePixel": 0,
-																		"Size": {
-																			"UDim2": [
-																				[
-																					0.0731699988245964,
-																					0
-																				],
-																				[
-																					0.49999505281448364,
-																					0
-																				]
-																			]
-																		}
-																	},
-																	"Name": "lock",
-																	"ClassName": "ImageLabel"
-																},
-																{
-																	"Properties": {
-																		"AspectRatio": 6.833333492279053
-																	},
-																	"Name": "UIAspectRatioConstraint",
-																	"ClassName": "UIAspectRatioConstraint"
-																}
-															],
-															"Properties": {
-																"AnchorPoint": [
-																	0.5,
-																	1
-																],
-																"BackgroundTransparency": 1,
-																"Active": true,
-																"Position": {
-																	"UDim2": [
-																		[
-																			0.5,
-																			0
-																		],
-																		[
-																			1,
-																			0
-																		]
-																	]
-																},
-																"BorderSizePixel": 0,
-																"Size": {
-																	"UDim2": [
-																		[
-																			1,
-																			0
-																		],
-																		[
-																			0.11999087780714035,
-																			0
-																		]
-																	]
-																}
-															},
-															"Name": "locked",
-															"ClassName": "Frame"
-														}
-													],
-													"Properties": {
-														"BackgroundTransparency": 1,
-														"Active": true,
-														"Position": {
-															"UDim2": [
-																[
-																	0.02962999977171421,
-																	0
-																],
-																[
-																	0.06915999948978424,
-																	0
-																]
-															]
-														},
-														"BorderSizePixel": 0,
-														"Size": {
-															"UDim2": [
-																[
-																	0.9444400072097778,
-																	0
-																],
-																[
-																	0.8962500095367432,
-																	0
-																]
-															]
-														}
-													},
-													"Name": "padding",
-													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"AspectRatio": 0.7781004905700684
-													},
-													"Name": "UIAspectRatioConstraint",
-													"ClassName": "UIAspectRatioConstraint"
-												}
-											],
-											"Properties": {
-												"Size": {
-													"UDim2": [
-														[
-															0.14106500148773193,
-															0
-														],
-														[
-															1,
-															0
-														]
-													]
-												},
-												"BackgroundColor3": [
-													1,
-													1,
-													1
-												],
-												"BorderSizePixel": 0,
-												"Active": true
-											},
-											"Name": "itemframe",
+											"Name": "Perk_3",
 											"ClassName": "Frame"
 										}
 									],
 									"Properties": {
+										"Active": true,
+										"AutomaticCanvasSize": "X",
+										"ScrollBarThickness": 0,
 										"AnchorPoint": [
 											0.5,
 											0
 										],
-										"Size": {
-											"UDim2": [
-												[
-													1,
-													0
-												],
-												[
-													0.8222699761390686,
-													0
-												]
-											]
-										},
 										"BackgroundTransparency": 1,
-										"Active": true,
 										"Position": {
 											"UDim2": [
 												[
@@ -3137,12 +2002,23 @@
 												]
 											]
 										},
-										"ScrollBarThickness": 0,
+										"Size": {
+											"UDim2": [
+												[
+													1,
+													0
+												],
+												[
+													0.8222699761390686,
+													0
+												]
+											]
+										},
 										"BorderSizePixel": 0,
 										"CanvasSize": {
 											"UDim2": [
 												[
-													2,
+													0,
 													0
 												],
 												[
@@ -3152,7 +2028,7 @@
 											]
 										}
 									},
-									"Name": "items",
+									"Name": "Items",
 									"ClassName": "ScrollingFrame"
 								},
 								{
@@ -3334,7 +2210,7 @@
 															]
 														}
 													},
-													"Name": "desc",
+													"Name": "Description",
 													"ClassName": "TextLabel"
 												},
 												{
@@ -3368,6 +2244,54 @@
 															},
 															"Name": "UICorner",
 															"ClassName": "UICorner"
+														},
+														{
+															"Properties": {
+																"ScaleType": "Fit",
+																"BorderColor3": [
+																	0,
+																	0,
+																	0
+																],
+																"AnchorPoint": [
+																	0.5,
+																	0.5
+																],
+																"BackgroundTransparency": 1,
+																"Position": {
+																	"UDim2": [
+																		[
+																			0.5,
+																			0
+																		],
+																		[
+																			0.5,
+																			0
+																		]
+																	]
+																},
+																"Size": {
+																	"UDim2": [
+																		[
+																			0.8999999761581421,
+																			0
+																		],
+																		[
+																			0.8999999761581421,
+																			0
+																		]
+																	]
+																},
+																"ZIndex": 0,
+																"BorderSizePixel": 0,
+																"BackgroundColor3": [
+																	1,
+																	1,
+																	1
+																]
+															},
+															"Name": "Icon",
+															"ClassName": "ImageLabel"
 														}
 													],
 													"Properties": {
@@ -3392,7 +2316,7 @@
 															0.8349999785423279
 														]
 													},
-													"Name": "container",
+													"Name": "IconContainer",
 													"ClassName": "Frame"
 												},
 												{
@@ -3436,7 +2360,7 @@
 															]
 														}
 													},
-													"Name": "title",
+													"Name": "Title",
 													"ClassName": "TextLabel"
 												}
 											],
@@ -3457,7 +2381,7 @@
 												"BackgroundTransparency": 1,
 												"Active": true
 											},
-											"Name": "info",
+											"Name": "Info",
 											"ClassName": "Frame"
 										}
 									],
@@ -3494,7 +2418,7 @@
 											]
 										}
 									},
-									"Name": "footer",
+									"Name": "Footer",
 									"ClassName": "Frame"
 								}
 							],
@@ -3531,7 +2455,7 @@
 									]
 								}
 							},
-							"Name": "padding",
+							"Name": "Container",
 							"ClassName": "Frame"
 						}
 					],
@@ -3572,7 +2496,7 @@
 							0.9449999928474426
 						]
 					},
-					"Name": "items",
+					"Name": "Content",
 					"ClassName": "Frame"
 				},
 				{
@@ -3598,7 +2522,7 @@
 											"weight": "Bold"
 										},
 										"Active": true,
-										"Text": "TabName",
+										"Text": "Smuggler",
 										"TextWrapped": true,
 										"AnchorPoint": [
 											0.5,
@@ -3638,7 +2562,7 @@
 											]
 										}
 									},
-									"Name": "TabName",
+									"Name": "Label",
 									"ClassName": "TextLabel"
 								},
 								{
@@ -3688,7 +2612,7 @@
 											1
 										]
 									},
-									"Name": "tabbutton",
+									"Name": "Button",
 									"ClassName": "ImageButton"
 								}
 							],
@@ -3709,7 +2633,7 @@
 								"BackgroundTransparency": 1,
 								"Active": true
 							},
-							"Name": "Tabframe",
+							"Name": "Smuggler",
 							"ClassName": "Frame"
 						},
 						{
@@ -3733,7 +2657,7 @@
 											"weight": "Bold"
 										},
 										"Active": true,
-										"Text": "TabName",
+										"Text": "Security",
 										"TextWrapped": true,
 										"AnchorPoint": [
 											0.5,
@@ -3773,7 +2697,7 @@
 											]
 										}
 									},
-									"Name": "TabName",
+									"Name": "Label",
 									"ClassName": "TextLabel"
 								},
 								{
@@ -3823,7 +2747,7 @@
 											1
 										]
 									},
-									"Name": "tabbutton",
+									"Name": "Button",
 									"ClassName": "ImageButton"
 								}
 							],
@@ -3860,7 +2784,7 @@
 									]
 								}
 							},
-							"Name": "Tabframe",
+							"Name": "Security",
 							"ClassName": "Frame"
 						}
 					],
@@ -3897,7 +2821,7 @@
 							]
 						}
 					},
-					"Name": "tabs",
+					"Name": "Tabs",
 					"ClassName": "Frame"
 				}
 			],
@@ -3938,7 +2862,7 @@
 					1
 				]
 			},
-			"Name": "Perks",
+			"Name": "Frame",
 			"ClassName": "Frame"
 		}
 	],
