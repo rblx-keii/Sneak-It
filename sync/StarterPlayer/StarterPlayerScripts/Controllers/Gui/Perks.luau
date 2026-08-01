@@ -18,7 +18,9 @@ local footerIcon = footerInfo.IconContainer.Icon :: ImageLabel
 
 local tabsFrame = Gui.Frame.Tabs
 local smugglerTabButton = tabsFrame.Smuggler.Button :: ImageButton
+local smugglerTabLabel = tabsFrame.Smuggler.Label :: TextLabel
 local securityTabButton = tabsFrame.Security.Button :: ImageButton
+local securityTabLabel = tabsFrame.Security.Label :: TextLabel
 
 --|| Types
 type Team = PerksConfig.Team
@@ -45,10 +47,16 @@ local _activeTeam: Team = "Smuggler"
 local _ownedItems: { [string]: boolean } = {}
 local _loadout: { Smuggler: string?, TSA: string? } = {}
 
+-- Studio only ships one state's art per tab (Smuggler shipped with the Active pill graphic, Security
+-- with the Inactive one) — both are the same generic pill, not team-branded, so each button borrows
+-- whichever image it's missing from the other.
+local _activeTabImage: string = smugglerTabButton.Image
+local _inactiveTabImage: string = securityTabButton.Image
+
 --|| Constants
 local SLOT_NAMES = { "Perk_1", "Perk_2", "Perk_3" }
-local TAB_ACTIVE_TRANSPARENCY = 0
-local TAB_INACTIVE_TRANSPARENCY = 0.5
+local ACTIVE_TEXT_COLOR = Color3.fromRGB(255, 255, 255)
+local INACTIVE_TEXT_COLOR = Color3.fromRGB(0, 27, 72)
 
 --|| MAIN ||--
 local Local = {}
@@ -177,8 +185,11 @@ end
 function Local.SetActiveTeam(team: Team)
 	_activeTeam = team
 
-	smugglerTabButton.ImageTransparency = if team == "Smuggler" then TAB_ACTIVE_TRANSPARENCY else TAB_INACTIVE_TRANSPARENCY
-	securityTabButton.ImageTransparency = if team == "TSA" then TAB_ACTIVE_TRANSPARENCY else TAB_INACTIVE_TRANSPARENCY
+	smugglerTabButton.Image = if team == "Smuggler" then _activeTabImage else _inactiveTabImage
+	securityTabButton.Image = if team == "TSA" then _activeTabImage else _inactiveTabImage
+
+	smugglerTabLabel.TextColor3 = if team == "Smuggler" then ACTIVE_TEXT_COLOR else INACTIVE_TEXT_COLOR
+	securityTabLabel.TextColor3 = if team == "TSA" then ACTIVE_TEXT_COLOR else INACTIVE_TEXT_COLOR
 
 	Local.RefreshSlots()
 end

@@ -94,12 +94,25 @@ function TimeFormatter.FormatHMS(seconds: number, style: "hh:mm:ss"|"h m s")
 	local hours = math.floor(seconds / 3600)
 	local minutes = math.floor((seconds % 3600) / 60)
 	local remainingSeconds = seconds % 60
-	
+
 	if style == "hh:mm:ss" then
 		return string.format("%02d:%02d:%02d", hours, minutes, remainingSeconds)
 	else
 		return string.format("%dh %dm %ds", hours, minutes, remainingSeconds)
 	end
+end
+
+-- Like FormatDHMS but always shows all 4 parts (e.g. "0d 0h 0m 0s"), never omitting zeroed units
+function TimeFormatter.FormatDHMSFull(seconds: number): string
+	seconds = math.max(0, math.floor(seconds))
+	local days = math.floor(seconds / 86400)
+	seconds %= 86400
+	local hours = math.floor(seconds / 3600)
+	seconds %= 3600
+	local minutes = math.floor(seconds / 60)
+	seconds %= 60
+
+	return string.format("%dd %dh %dm %ds", days, hours, minutes, seconds)
 end
 
 return TimeFormatter

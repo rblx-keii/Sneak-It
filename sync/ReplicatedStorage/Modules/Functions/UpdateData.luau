@@ -16,6 +16,9 @@ export type UpdateAction = {
 	| "RemoveOwnedItem"
 	| "AddItemStock"
 	| "SetConsumableLoadout"
+	| "AssignQuests"
+	| "SetQuestProgress"
+	| "ClaimQuest"
 	| "CompleteTutorial"
 	| "SetLastWinDate",
 
@@ -152,6 +155,53 @@ return function(playerData: PlayerData, action: UpdateAction)
 		end
 
 		playerData.loadout.consumables = itemNames
+
+	elseif action.type == "AssignQuests" then
+		local category = action.data.category
+		local resetId = action.data.resetId
+		local ids = action.data.ids
+
+		assert(category == "Daily" or category == "Weekly", `AssignQuests: category must be "Daily" or "Weekly"`)
+		assert(typeof(resetId) == "string", "AssignQuests: resetId must be a string")
+		assert(typeof(ids) == "table", "AssignQuests: ids must be a table")
+
+		local active = {}
+		for _, id in ids do
+			table.insert(active, { id = id, progress = 0, claimed = false })
+		end
+
+		playerData.quests[category] = { resetId = resetId, active = active }
+
+	elseif action.type == "SetQuestProgress" then
+		local category = action.data.category
+		local id = action.data.id
+		local progress = action.data.progress
+
+		assert(category == "Daily" or category == "Weekly", `SetQuestProgress: category must be "Daily" or "Weekly"`)
+		assert(typeof(id) == "string", "SetQuestProgress: id must be a string")
+		assert(typeof(progress) == "number", "SetQuestProgress: progress must be a number")
+
+		for _, quest in playerData.quests[category].active do
+			if quest.id == id then
+				quest.progress = progress
+				break
+			end
+		end
+
+	elseif action.type == "ClaimQuest" then
+		local category = action.data.category
+		local id = action.data.id
+
+		assert(category == "Daily" or category == "Weekly", `ClaimQuest: category must be "Daily" or "Weekly"`)
+		assert(typeof(id) == "string", "ClaimQuest: id must be a string")
+
+		for _, quest in playerData.quests[category].active do
+			if quest.id == id then
+				assert(not quest.claimed, `ClaimQuest: quest "{id}" already claimed`)
+				quest.claimed = true
+				break
+			end
+		end
 
 	elseif action.type == "CompleteTutorial" then
 		playerData.tutorial.completed = true

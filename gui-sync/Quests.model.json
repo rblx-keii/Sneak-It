@@ -215,7 +215,7 @@
 						"BorderSizePixel": 0,
 						"Active": true
 					},
-					"Name": "innerframe",
+					"Name": "Backdrop",
 					"ClassName": "Frame"
 				},
 				{
@@ -252,7 +252,7 @@
 							]
 						}
 					},
-					"Name": "close",
+					"Name": "Exit",
 					"ClassName": "ImageButton"
 				},
 				{
@@ -388,7 +388,7 @@
 							]
 						}
 					},
-					"Name": "title",
+					"Name": "Title",
 					"ClassName": "Frame"
 				},
 				{
@@ -514,7 +514,7 @@
 															0.8349999785423279
 														]
 													},
-													"Name": "line",
+													"Name": "Line",
 													"ClassName": "Frame"
 												},
 												{
@@ -550,6 +550,52 @@
 																	},
 																	"Name": "UICorner",
 																	"ClassName": "UICorner"
+																},
+																{
+																	"Properties": {
+																		"AnchorPoint": [
+																			0.5,
+																			0.5
+																		],
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.5,
+																					0
+																				],
+																				[
+																					0.5,
+																					0
+																				]
+																			]
+																		},
+																		"BorderColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8500000238418579,
+																					0
+																				],
+																				[
+																					0.8500000238418579,
+																					0
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "Icon",
+																	"ClassName": "ImageLabel"
 																}
 															],
 															"Properties": {
@@ -574,7 +620,7 @@
 																	0
 																]
 															},
-															"Name": "container",
+															"Name": "Display",
 															"ClassName": "Frame"
 														},
 														{
@@ -622,7 +668,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -671,7 +717,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -767,7 +813,7 @@
 																			]
 																		}
 																	},
-																	"Name": "progtext",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -901,7 +947,7 @@
 																					1
 																				]
 																			},
-																			"Name": "movingbar",
+																			"Name": "Value",
 																			"ClassName": "Frame"
 																		}
 																	],
@@ -931,7 +977,7 @@
 																			1
 																		]
 																	},
-																	"Name": "CanvasGroup",
+																	"Name": "ProgressBar",
 																	"ClassName": "CanvasGroup"
 																}
 															],
@@ -968,7 +1014,7 @@
 																	0.13899999856948853
 																]
 															},
-															"Name": "bar",
+															"Name": "Progress",
 															"ClassName": "Frame"
 														},
 														{
@@ -1017,7 +1063,7 @@
 																			]
 																		}
 																	},
-																	"Name": "title",
+																	"Name": "Title",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -1066,7 +1112,7 @@
 																					]
 																				}
 																			},
-																			"Name": "value",
+																			"Name": "Amount",
 																			"ClassName": "TextLabel"
 																		},
 																		{
@@ -1118,7 +1164,7 @@
 																					1
 																				]
 																			},
-																			"Name": "coin",
+																			"Name": "Coin",
 																			"ClassName": "ImageLabel"
 																		}
 																	],
@@ -1151,7 +1197,7 @@
 																			]
 																		}
 																	},
-																	"Name": "container",
+																	"Name": "Content",
 																	"ClassName": "Frame"
 																},
 																{
@@ -1343,7 +1389,7 @@
 																					1
 																				]
 																			},
-																			"Name": "claim",
+																			"Name": "Button",
 																			"ClassName": "TextButton"
 																		},
 																		{
@@ -1394,7 +1440,7 @@
 																					]
 																				}
 																			},
-																			"Name": "Claim!",
+																			"Name": "Label",
 																			"ClassName": "TextLabel"
 																		}
 																	],
@@ -1431,7 +1477,7 @@
 																			1
 																		]
 																	},
-																	"Name": "claim",
+																	"Name": "Claim",
 																	"ClassName": "Frame"
 																}
 															],
@@ -1464,7 +1510,7 @@
 																	]
 																}
 															},
-															"Name": "reward",
+															"Name": "Reward",
 															"ClassName": "Frame"
 														}
 													],
@@ -1497,7 +1543,7 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
 												}
 											],
@@ -1522,8 +1568,18 @@
 												"BorderSizePixel": 0,
 												"Active": true
 											},
-											"Name": "questframe",
+											"Name": "Quest_1",
 											"ClassName": "Frame"
+										},
+										{
+											"Properties": {
+												"VerticalAlignment": "Center",
+												"SortOrder": "LayoutOrder",
+												"HorizontalAlignment": "Center",
+												"VerticalFlex": "SpaceAround"
+											},
+											"Name": "UIListLayout",
+											"ClassName": "UIListLayout"
 										},
 										{
 											"Children": [
@@ -1605,7 +1661,7 @@
 															0.8349999785423279
 														]
 													},
-													"Name": "line",
+													"Name": "Line",
 													"ClassName": "Frame"
 												},
 												{
@@ -1641,6 +1697,52 @@
 																	},
 																	"Name": "UICorner",
 																	"ClassName": "UICorner"
+																},
+																{
+																	"Properties": {
+																		"AnchorPoint": [
+																			0.5,
+																			0.5
+																		],
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.5,
+																					0
+																				],
+																				[
+																					0.5,
+																					0
+																				]
+																			]
+																		},
+																		"BorderColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8500000238418579,
+																					0
+																				],
+																				[
+																					0.8500000238418579,
+																					0
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "Icon",
+																	"ClassName": "ImageLabel"
 																}
 															],
 															"Properties": {
@@ -1665,7 +1767,7 @@
 																	0
 																]
 															},
-															"Name": "container",
+															"Name": "Display",
 															"ClassName": "Frame"
 														},
 														{
@@ -1713,7 +1815,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1762,7 +1864,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -1858,7 +1960,7 @@
 																			]
 																		}
 																	},
-																	"Name": "progtext",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -1992,7 +2094,7 @@
 																					1
 																				]
 																			},
-																			"Name": "movingbar",
+																			"Name": "Value",
 																			"ClassName": "Frame"
 																		}
 																	],
@@ -2022,7 +2124,7 @@
 																			1
 																		]
 																	},
-																	"Name": "CanvasGroup",
+																	"Name": "ProgressBar",
 																	"ClassName": "CanvasGroup"
 																}
 															],
@@ -2059,7 +2161,7 @@
 																	0.13899999856948853
 																]
 															},
-															"Name": "bar",
+															"Name": "Progress",
 															"ClassName": "Frame"
 														},
 														{
@@ -2108,7 +2210,7 @@
 																			]
 																		}
 																	},
-																	"Name": "title",
+																	"Name": "Title",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -2157,7 +2259,7 @@
 																					]
 																				}
 																			},
-																			"Name": "value",
+																			"Name": "Amount",
 																			"ClassName": "TextLabel"
 																		},
 																		{
@@ -2209,7 +2311,7 @@
 																					1
 																				]
 																			},
-																			"Name": "coin",
+																			"Name": "Coin",
 																			"ClassName": "ImageLabel"
 																		}
 																	],
@@ -2242,7 +2344,7 @@
 																			]
 																		}
 																	},
-																	"Name": "container",
+																	"Name": "Content",
 																	"ClassName": "Frame"
 																},
 																{
@@ -2434,7 +2536,7 @@
 																					1
 																				]
 																			},
-																			"Name": "claim",
+																			"Name": "Button",
 																			"ClassName": "TextButton"
 																		},
 																		{
@@ -2485,7 +2587,7 @@
 																					]
 																				}
 																			},
-																			"Name": "Claim!",
+																			"Name": "Label",
 																			"ClassName": "TextLabel"
 																		}
 																	],
@@ -2522,7 +2624,7 @@
 																			1
 																		]
 																	},
-																	"Name": "claim",
+																	"Name": "Claim",
 																	"ClassName": "Frame"
 																}
 															],
@@ -2555,7 +2657,7 @@
 																	]
 																}
 															},
-															"Name": "reward",
+															"Name": "Reward",
 															"ClassName": "Frame"
 														}
 													],
@@ -2588,16 +2690,11 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
 												}
 											],
 											"Properties": {
-												"AnchorPoint": [
-													0.5,
-													0.5
-												],
-												"Active": true,
 												"Size": {
 													"UDim2": [
 														[
@@ -2610,26 +2707,15 @@
 														]
 													]
 												},
-												"Position": {
-													"UDim2": [
-														[
-															0.5,
-															0
-														],
-														[
-															0.5,
-															0
-														]
-													]
-												},
-												"BorderSizePixel": 0,
 												"BackgroundColor3": [
 													1,
 													1,
 													1
-												]
+												],
+												"BorderSizePixel": 0,
+												"Active": true
 											},
-											"Name": "questframe",
+											"Name": "Quest_2",
 											"ClassName": "Frame"
 										},
 										{
@@ -2712,7 +2798,7 @@
 															0.8349999785423279
 														]
 													},
-													"Name": "line",
+													"Name": "Line",
 													"ClassName": "Frame"
 												},
 												{
@@ -2748,6 +2834,52 @@
 																	},
 																	"Name": "UICorner",
 																	"ClassName": "UICorner"
+																},
+																{
+																	"Properties": {
+																		"AnchorPoint": [
+																			0.5,
+																			0.5
+																		],
+																		"BackgroundTransparency": 1,
+																		"Position": {
+																			"UDim2": [
+																				[
+																					0.5,
+																					0
+																				],
+																				[
+																					0.5,
+																					0
+																				]
+																			]
+																		},
+																		"BorderColor3": [
+																			0,
+																			0,
+																			0
+																		],
+																		"Size": {
+																			"UDim2": [
+																				[
+																					0.8500000238418579,
+																					0
+																				],
+																				[
+																					0.8500000238418579,
+																					0
+																				]
+																			]
+																		},
+																		"BorderSizePixel": 0,
+																		"BackgroundColor3": [
+																			1,
+																			1,
+																			1
+																		]
+																	},
+																	"Name": "Icon",
+																	"ClassName": "ImageLabel"
 																}
 															],
 															"Properties": {
@@ -2772,7 +2904,7 @@
 																	0
 																]
 															},
-															"Name": "container",
+															"Name": "Display",
 															"ClassName": "Frame"
 														},
 														{
@@ -2820,7 +2952,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -2869,7 +3001,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -2965,7 +3097,7 @@
 																			]
 																		}
 																	},
-																	"Name": "progtext",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -3099,7 +3231,7 @@
 																					1
 																				]
 																			},
-																			"Name": "movingbar",
+																			"Name": "Value",
 																			"ClassName": "Frame"
 																		}
 																	],
@@ -3129,7 +3261,7 @@
 																			1
 																		]
 																	},
-																	"Name": "CanvasGroup",
+																	"Name": "ProgressBar",
 																	"ClassName": "CanvasGroup"
 																}
 															],
@@ -3166,7 +3298,7 @@
 																	0.13899999856948853
 																]
 															},
-															"Name": "bar",
+															"Name": "Progress",
 															"ClassName": "Frame"
 														},
 														{
@@ -3215,7 +3347,7 @@
 																			]
 																		}
 																	},
-																	"Name": "title",
+																	"Name": "Title",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -3264,7 +3396,7 @@
 																					]
 																				}
 																			},
-																			"Name": "value",
+																			"Name": "Amount",
 																			"ClassName": "TextLabel"
 																		},
 																		{
@@ -3316,7 +3448,7 @@
 																					1
 																				]
 																			},
-																			"Name": "coin",
+																			"Name": "Coin",
 																			"ClassName": "ImageLabel"
 																		}
 																	],
@@ -3349,7 +3481,7 @@
 																			]
 																		}
 																	},
-																	"Name": "container",
+																	"Name": "Content",
 																	"ClassName": "Frame"
 																},
 																{
@@ -3541,7 +3673,7 @@
 																					1
 																				]
 																			},
-																			"Name": "claim",
+																			"Name": "Button",
 																			"ClassName": "TextButton"
 																		},
 																		{
@@ -3592,7 +3724,7 @@
 																					]
 																				}
 																			},
-																			"Name": "Claim!",
+																			"Name": "Label",
 																			"ClassName": "TextLabel"
 																		}
 																	],
@@ -3629,7 +3761,7 @@
 																			1
 																		]
 																	},
-																	"Name": "claim",
+																	"Name": "Claim",
 																	"ClassName": "Frame"
 																}
 															],
@@ -3662,7 +3794,7 @@
 																	]
 																}
 															},
-															"Name": "reward",
+															"Name": "Reward",
 															"ClassName": "Frame"
 														}
 													],
@@ -3695,16 +3827,11 @@
 															]
 														}
 													},
-													"Name": "padding",
+													"Name": "Content",
 													"ClassName": "Frame"
 												}
 											],
 											"Properties": {
-												"AnchorPoint": [
-													0.5,
-													1
-												],
-												"Active": true,
 												"Size": {
 													"UDim2": [
 														[
@@ -3717,26 +3844,15 @@
 														]
 													]
 												},
-												"Position": {
-													"UDim2": [
-														[
-															0.5,
-															0
-														],
-														[
-															1,
-															0
-														]
-													]
-												},
-												"BorderSizePixel": 0,
 												"BackgroundColor3": [
 													1,
 													1,
 													1
-												]
+												],
+												"BorderSizePixel": 0,
+												"Active": true
 											},
-											"Name": "questframe",
+											"Name": "Quest_3",
 											"ClassName": "Frame"
 										}
 									],
@@ -3757,7 +3873,7 @@
 										"BackgroundTransparency": 1,
 										"Active": true
 									},
-									"Name": "smallframes",
+									"Name": "Daily",
 									"ClassName": "Frame"
 								},
 								{
@@ -3806,7 +3922,7 @@
 													]
 												}
 											},
-											"Name": "refreshicon",
+											"Name": "Icon",
 											"ClassName": "ImageLabel"
 										},
 										{
@@ -3855,7 +3971,7 @@
 													]
 												}
 											},
-											"Name": "refreshtimer",
+											"Name": "Timer",
 											"ClassName": "TextLabel"
 										}
 									],
@@ -3888,7 +4004,7 @@
 											]
 										}
 									},
-									"Name": "footer",
+									"Name": "Footer",
 									"ClassName": "Frame"
 								},
 								{
@@ -3912,7 +4028,7 @@
 													]
 												}
 											},
-											"Name": "framebg",
+											"Name": "Backdrop",
 											"ClassName": "ImageLabel"
 										},
 										{
@@ -4026,7 +4142,7 @@
 													]
 												}
 											},
-											"Name": "titlebar",
+											"Name": "Title",
 											"ClassName": "Frame"
 										},
 										{
@@ -4064,7 +4180,7 @@
 													0.8349999785423279
 												]
 											},
-											"Name": "line",
+											"Name": "Line",
 											"ClassName": "Frame"
 										},
 										{
@@ -4115,7 +4231,7 @@
 																	]
 																}
 															},
-															"Name": "titel",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -4162,7 +4278,7 @@
 																	]
 																}
 															},
-															"Name": "desc",
+															"Name": "Description",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -4211,7 +4327,7 @@
 																			]
 																		}
 																	},
-																	"Name": "value",
+																	"Name": "Value",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -4372,7 +4488,7 @@
 																							1
 																						]
 																					},
-																					"Name": "movingbar",
+																					"Name": "Value",
 																					"ClassName": "Frame"
 																				}
 																			],
@@ -4413,7 +4529,7 @@
 																					0.2840000092983246
 																				]
 																			},
-																			"Name": "bar",
+																			"Name": "Bar",
 																			"ClassName": "Frame"
 																		}
 																	],
@@ -4459,7 +4575,7 @@
 																			1
 																		]
 																	},
-																	"Name": "CanvasGroup",
+																	"Name": "ProgressBar",
 																	"ClassName": "CanvasGroup"
 																}
 															],
@@ -4492,7 +4608,7 @@
 																	]
 																}
 															},
-															"Name": "progress",
+															"Name": "Progress",
 															"ClassName": "Frame"
 														}
 													],
@@ -4513,7 +4629,7 @@
 														"BackgroundTransparency": 1,
 														"Active": true
 													},
-													"Name": "core",
+													"Name": "Content",
 													"ClassName": "Frame"
 												},
 												{
@@ -4562,7 +4678,7 @@
 																	]
 																}
 															},
-															"Name": "title",
+															"Name": "Title",
 															"ClassName": "TextLabel"
 														},
 														{
@@ -4611,7 +4727,7 @@
 																			]
 																		}
 																	},
-																	"Name": "value",
+																	"Name": "Amount",
 																	"ClassName": "TextLabel"
 																},
 																{
@@ -4659,7 +4775,7 @@
 																			1
 																		]
 																	},
-																	"Name": "coin",
+																	"Name": "Coin",
 																	"ClassName": "ImageLabel"
 																}
 															],
@@ -4692,7 +4808,7 @@
 																	]
 																}
 															},
-															"Name": "container",
+															"Name": "Content",
 															"ClassName": "Frame"
 														},
 														{
@@ -4884,7 +5000,7 @@
 																			1
 																		]
 																	},
-																	"Name": "claim",
+																	"Name": "Button",
 																	"ClassName": "TextButton"
 																},
 																{
@@ -4931,7 +5047,7 @@
 																			]
 																		}
 																	},
-																	"Name": "Claim!",
+																	"Name": "Label",
 																	"ClassName": "TextLabel"
 																}
 															],
@@ -4968,7 +5084,7 @@
 																	1
 																]
 															},
-															"Name": "claim",
+															"Name": "Claim",
 															"ClassName": "Frame"
 														}
 													],
@@ -5001,7 +5117,7 @@
 															]
 														}
 													},
-													"Name": "reward",
+													"Name": "Reward",
 													"ClassName": "Frame"
 												}
 											],
@@ -5034,7 +5150,7 @@
 													]
 												}
 											},
-											"Name": "content",
+											"Name": "Details",
 											"ClassName": "Frame"
 										}
 									],
@@ -5067,7 +5183,7 @@
 											]
 										}
 									},
-									"Name": "largeframe",
+									"Name": "Weekly",
 									"ClassName": "Frame"
 								}
 							],
@@ -5104,7 +5220,7 @@
 									]
 								}
 							},
-							"Name": "padding",
+							"Name": "Container",
 							"ClassName": "Frame"
 						}
 					],
@@ -5145,7 +5261,7 @@
 							0.9449999928474426
 						]
 					},
-					"Name": "contents",
+					"Name": "Content",
 					"ClassName": "Frame"
 				}
 			],
@@ -5186,7 +5302,7 @@
 					1
 				]
 			},
-			"Name": "quests",
+			"Name": "Frame",
 			"ClassName": "Frame"
 		}
 	],

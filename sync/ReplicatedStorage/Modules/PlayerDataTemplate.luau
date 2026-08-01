@@ -60,8 +60,27 @@ export type PlayerData = {
 	tutorial: {
 		completed: boolean,
 	},
-	
+
 	afk: boolean,
+
+	-- Randomly-assigned quests (see QuestsConfig) — 3 Daily, 1 Weekly. `resetId` is the day
+	-- ("!%Y-%m-%d") or week (epoch-week index, as a string) they were assigned for, checked on
+	-- join and rerolled (progress reset) once it no longer matches the current period.
+	quests: {
+		Daily: QuestSlot,
+		Weekly: QuestSlot,
+	},
+}
+
+export type QuestProgress = {
+	id: string,
+	progress: number,
+	claimed: boolean,
+}
+
+export type QuestSlot = {
+	resetId: string,
+	active: { QuestProgress },
 }
 
 local PLAYER_DATA_TEMPLATE: PlayerData = {
@@ -110,8 +129,13 @@ local PLAYER_DATA_TEMPLATE: PlayerData = {
 	tutorial = {
 		completed = false,
 	},
-	
+
 	afk = false,
+
+	quests = {
+		Daily = { resetId = "", active = {} },
+		Weekly = { resetId = "", active = {} },
+	},
 }
 
 return {
