@@ -31,6 +31,7 @@ local AWAITING_SCAN_ATTR = "AwaitingScan"
 local item = {}
 
 item.properties = {
+	iconId = 71934931185791, -- item icon asset id
 	cooldown = 1,
 	range = 15, -- short — this is a wand check, not a weapon
 	validationThreshold = 4,

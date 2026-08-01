@@ -34,6 +34,7 @@ export type PendingAction = {
 local item = {}
 
 item.properties = {
+	iconId = 136277959728618, -- item icon asset id
 	cooldown = 0, -- single-use consumable, no reuse cooldown needed
 	idleAnimationId = 119523608544368,
 	useAnimationId = 70544756472581, -- drink animation

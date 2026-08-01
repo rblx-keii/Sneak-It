@@ -37,6 +37,7 @@ export type PendingAction = {
 local item = {}
 
 item.properties = {
+	iconId = 134011246639736, -- item icon asset id
 	cooldown = 0, -- single-use consumable, no reuse cooldown needed
 	idleAnimationId = 140339485311797,
 	useAnimationId = 0, -- add an equip animation id if/when one exists

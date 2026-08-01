@@ -18,6 +18,7 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
+	iconId = 101907851086432, -- item icon asset id
 	idleAnimationId = 0, -- fill in
 	spawnWeight = 20, -- relative chance to spawn where this item is scattered (higher = more common)
 	itemType = "Non-functional", -- item-spawn category (ItemSpawnService); "Chaos" | "Non-functional"

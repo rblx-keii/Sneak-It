@@ -16,9 +16,12 @@ local player = if not RunService:IsServer() then Players.LocalPlayer else nil
 --|| Variables
 local _initialized = false
 
--- SERVER: keyed by itemModel, true while that extinguisher's foam-drain loop is running.
--- Also doubles as the "is this item currently firing" idempotency guard for FireStart.
-local _activeDrainLoops: { [Model]: boolean } = {}
+-- SERVER: keyed by item UID (not Model/character lookup) so FireStop can find and cancel a loop
+-- even after the item's already been force-unequipped elsewhere (Jail, Ragdoll) and is no longer
+-- reachable via the owner's character's HeldItem attribute by the time FireStop arrives. Also
+-- doubles as the "is this item currently firing" idempotency guard for FireStart.
+type DrainLoopEntry = { model: Model, player: Player }
+local _activeDrainLoops: { [string]: DrainLoopEntry } = {}
 
 -- CLIENT: local firing state for whichever extinguisher WE are holding.
 local _isFiring = false
@@ -35,6 +38,7 @@ local DRAIN_TICK = 0.1 -- seconds between server-side foam decrements
 local item = {}
 
 item.properties = {
+	iconId = 129232806530950, -- item icon asset id
 	cooldown = 0.1,
 	range = 20,
 	sprayWidth = 4,
@@ -226,7 +230,7 @@ function item.OnInitialize()
 			local record = JailService.GetRecord(sender)
 			if not record or record.isJailed then return end
 
-			if _activeDrainLoops[itemModel] then return end -- already firing, idempotent
+			if _activeDrainLoops[data.uid] then return end -- already firing, idempotent
 
 			local foamRemaining = itemModel:GetAttribute(FOAM_ATTR)
 			if foamRemaining == nil then
@@ -238,10 +242,11 @@ function item.OnInitialize()
 			itemModel:SetAttribute(FIRING_ATTR, true)
 			Network:FireAllExcept(EVENT_NAME, sender, "ReplicateFireStart", itemModel)
 
-			_activeDrainLoops[itemModel] = true
+			local uid = data.uid
+			_activeDrainLoops[uid] = { model = itemModel, player = sender }
 
 			task.spawn(function()
-				while _activeDrainLoops[itemModel] do
+				while _activeDrainLoops[uid] do
 					local dt = task.wait(DRAIN_TICK)
 					if not itemModel or not itemModel.Parent then break end
 
@@ -253,7 +258,7 @@ function item.OnInitialize()
 					if remaining <= 0 then break end
 				end
 
-				_activeDrainLoops[itemModel] = nil
+				_activeDrainLoops[uid] = nil
 				if itemModel and itemModel.Parent then
 					itemModel:SetAttribute(FIRING_ATTR, false)
 				end
@@ -262,16 +267,15 @@ function item.OnInitialize()
 		end)
 
 		Network:BindEvent(EVENT_NAME, "FireStop", function(sender: Player, data: { uid: string? })
-			local character = sender.Character
-			if not character then return end
 			if not data.uid then return end
 
-			local heldItemName = character:GetAttribute("HeldItem")
-			local itemModel = heldItemName and character:FindFirstChild(heldItemName)
-			if not itemModel or itemModel:GetAttribute("UID") ~= data.uid then return end
+			-- Looked up by uid (not the sender's current HeldItem) so this still finds and
+			-- cancels the loop even if the item was already force-unequipped elsewhere (Jail,
+			-- Ragdoll) by the time this arrives — HeldItem alone can't resolve it by then.
+			local entry = _activeDrainLoops[data.uid]
+			if not entry or entry.player ~= sender then return end
 
-			-- Signals the drain loop above to end on its next tick.
-			_activeDrainLoops[itemModel] = nil
+			_activeDrainLoops[data.uid] = nil
 		end)
 
 		Network:BindEvent(EVENT_NAME, "ReportExtinguisherHits", function(sender: Player, data: { uid: string?, hitCharacters: { Model }? })
@@ -316,11 +320,10 @@ function item.OnInitialize()
 		end)
 
 		Players.PlayerRemoving:Connect(function(leavingPlayer: Player)
-			local character = leavingPlayer.Character
-			local heldItemName = character and character:GetAttribute("HeldItem")
-			local itemModel = heldItemName and character and character:FindFirstChild(heldItemName)
-			if itemModel then
-				_activeDrainLoops[itemModel] = nil
+			for uid, entry in _activeDrainLoops do
+				if entry.player == leavingPlayer then
+					_activeDrainLoops[uid] = nil
+				end
 			end
 		end)
 	else

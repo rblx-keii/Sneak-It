@@ -7131,6 +7131,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -7233,6 +7276,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -7402,77 +7516,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -7678,49 +7721,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -7757,6 +7757,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -7859,6 +7902,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -8028,77 +8142,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -8304,49 +8347,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -8383,6 +8383,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -8485,6 +8528,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -8654,77 +8768,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -8930,49 +8973,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -9009,6 +9009,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -9111,6 +9154,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -9280,77 +9394,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -9556,49 +9599,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -9635,6 +9635,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -9737,6 +9780,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -9906,77 +10020,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -10182,49 +10225,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -10261,6 +10261,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.0648215189576149,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -10363,6 +10406,77 @@
 														},
 														{
 															"Children": [
+																{
+																	"Properties": {
+																		"Color": {
+																			"ColorSequence": {
+																				"keypoints": [
+																					{
+																						"time": 0,
+																						"color": [
+																							0.17803916335105896,
+																							0.7710128426551819,
+																							0.35593125224113464
+																						]
+																					},
+																					{
+																						"time": 1,
+																						"color": [
+																							0.12207998335361481,
+																							0.5163134336471558,
+																							0.24034999310970306
+																						]
+																					}
+																				]
+																			}
+																		},
+																		"Rotation": 90
+																	},
+																	"Name": "UIGradient",
+																	"ClassName": "UIGradient"
+																},
+																{
+																	"Properties": {
+																		"ApplyStrokeMode": "Border",
+																		"Color": [
+																			0.08500000089406967,
+																			0.33500000834465027,
+																			0.1599999964237213
+																		]
+																	},
+																	"Name": "UIStroke",
+																	"ClassName": "UIStroke"
+																},
+																{
+																	"Properties": {
+																		"TopRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomRightRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"TopLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		},
+																		"BottomLeftRadius": {
+																			"UDim": [
+																				0.2057289481163025,
+																				0
+																			]
+																		}
+																	},
+																	"Name": "UICorner",
+																	"ClassName": "UICorner"
+																},
 																{
 																	"Children": [
 																		{
@@ -10532,77 +10646,6 @@
 																	},
 																	"Name": "BUY",
 																	"ClassName": "TextLabel"
-																},
-																{
-																	"Properties": {
-																		"Color": {
-																			"ColorSequence": {
-																				"keypoints": [
-																					{
-																						"time": 0,
-																						"color": [
-																							0.17803916335105896,
-																							0.7710128426551819,
-																							0.35593125224113464
-																						]
-																					},
-																					{
-																						"time": 1,
-																						"color": [
-																							0.12207998335361481,
-																							0.5163134336471558,
-																							0.24034999310970306
-																						]
-																					}
-																				]
-																			}
-																		},
-																		"Rotation": 90
-																	},
-																	"Name": "UIGradient",
-																	"ClassName": "UIGradient"
-																},
-																{
-																	"Properties": {
-																		"ApplyStrokeMode": "Border",
-																		"Color": [
-																			0.08500000089406967,
-																			0.33500000834465027,
-																			0.1599999964237213
-																		]
-																	},
-																	"Name": "UIStroke",
-																	"ClassName": "UIStroke"
-																},
-																{
-																	"Properties": {
-																		"TopRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomRightRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"TopLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		},
-																		"BottomLeftRadius": {
-																			"UDim": [
-																				0.2057289481163025,
-																				0
-																			]
-																		}
-																	},
-																	"Name": "UICorner",
-																	"ClassName": "UICorner"
 																}
 															],
 															"Properties": {
@@ -10808,49 +10851,6 @@
 													},
 													"Name": "content",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.0648215189576149,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {

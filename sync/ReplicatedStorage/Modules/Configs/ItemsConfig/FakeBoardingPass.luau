@@ -34,6 +34,7 @@ export type PendingAction = {
 local item = {}
 
 item.properties = {
+	iconId = 130085333520025, -- item icon asset id
 	cooldown = 0, -- single-use consumable, no reuse cooldown needed
 	idleAnimationId = 77856338533905,
 	useAnimationId = 0, -- add a "flash the pass" animation id if/when one exists

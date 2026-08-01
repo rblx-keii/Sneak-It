@@ -29,6 +29,7 @@ local THROW_ORIGIN_ATTR = "ThrowOrigin"
 local item = {}
 
 item.properties = {
+	iconId = 78637835345128, -- item icon asset id
 	cooldown = 8,
 	projectileName = "OverchargedBattery",
 	throwSpeed = 60,

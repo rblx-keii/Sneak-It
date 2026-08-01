@@ -18,10 +18,6 @@
 		{
 			"Children": [
 				{
-					"Name": "UIAspectRatioConstraint",
-					"ClassName": "UIAspectRatioConstraint"
-				},
-				{
 					"Properties": {
 						"TopRightRadius": {
 							"UDim": [
@@ -50,6 +46,10 @@
 					},
 					"Name": "UICorner",
 					"ClassName": "UICorner"
+				},
+				{
+					"Name": "UIAspectRatioConstraint",
+					"ClassName": "UIAspectRatioConstraint"
 				}
 			],
 			"Properties": {

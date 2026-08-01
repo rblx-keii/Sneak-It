@@ -18,17 +18,15 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
-	iconId = 126744108156056, -- item icon asset id
-	idleAnimationId = 0, -- fill in
-	spawnWeight = 20, -- relative chance to spawn where this item is scattered (higher = more common)
-	itemType = "Non-functional", -- item-spawn category (ItemSpawnService); "Chaos" | "Non-functional"
+	iconId = 131859491595724, -- item icon asset id
+	idleAnimationId = 0, -- TODO: no held-idle animation id provided yet
 }
 
 item.attributes = {
-	Rating = 3.5,
+	Rating = 2.5,
 	Weight = 1.5,
-	IsBag = false,
-	IsContraband = true,
+	MaxWeight = 10,
+	IsBag = true,
 }
 
 item.usable = false
@@ -64,8 +62,6 @@ function item.OnEquip(_itemModel: Instance?)
 
 	local handleMotor = _itemModel and _itemModel:WaitForChild("Handle_Motor", 5)
 	if not handleMotor then return end
-
-	if item.properties.idleAnimationId == 0 then return end
 
 	local idleAnim = Instance.new("Animation")
 	idleAnim.AnimationId = `rbxassetid://{item.properties.idleAnimationId}`

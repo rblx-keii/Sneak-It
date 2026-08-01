@@ -18,6 +18,7 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
+	iconId = 83601958162430, -- item icon asset id
 	idleAnimationId = 80829435622638
 }
 

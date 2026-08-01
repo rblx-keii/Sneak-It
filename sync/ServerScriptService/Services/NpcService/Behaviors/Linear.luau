@@ -132,7 +132,13 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	elseif NodeGraph.GetNodeType(node) == "seatnode" then
 		candidate = nil
 	else
-		candidate = NodeGraph.GetLink(node)
+		-- Shop entry/exit is the same Transition Node <-> Transition Node link walked in both
+		-- directions, so a node just arrived at via link would otherwise immediately re-follow
+		-- its own Link straight back the way it came (e.g. bouncing right back into a shop it
+		-- just left). Suppress that one case and let the dispatch below find real forward
+		-- progress instead; any other Link target is still taken as normal.
+		local link = NodeGraph.GetLink(node)
+		candidate = if link ~= ctx.lastNode then link else nil
 	end
 
 	local zone = NodeGraph.GetZone(node, ctx.nodesFolder)

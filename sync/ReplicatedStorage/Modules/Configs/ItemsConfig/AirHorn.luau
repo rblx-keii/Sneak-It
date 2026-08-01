@@ -28,6 +28,7 @@ local SUPPRESS_AUDIO_ATTR = "SuppressAudioCues"
 local item = {}
 
 item.properties = {
+	iconId = 111365963699582, -- item icon asset id
 	cooldown = 20, -- high cooldown, reusable
 	requiresAim = false, -- self-centered area effect, no aim needed
 

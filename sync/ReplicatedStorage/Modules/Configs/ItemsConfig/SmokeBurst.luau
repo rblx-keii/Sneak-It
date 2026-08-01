@@ -26,6 +26,7 @@ local THROW_ORIGIN_ATTR = "ThrowOrigin"
 local item = {}
 
 item.properties = {
+	iconId = 85526542035934, -- item icon asset id
 	cooldown = 8,
 	projectileName = "SmokeBurst",
 	throwSpeed = 60,

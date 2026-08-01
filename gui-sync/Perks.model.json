@@ -1396,6 +1396,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -1745,49 +1788,6 @@
 													},
 													"Name": "padding",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -1824,6 +1824,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -2173,49 +2216,6 @@
 													},
 													"Name": "padding",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -2252,6 +2252,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -2601,49 +2644,6 @@
 													},
 													"Name": "padding",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {
@@ -2680,6 +2680,49 @@
 										{
 											"Children": [
 												{
+													"Properties": {
+														"ApplyStrokeMode": "Border",
+														"Color": [
+															0.5329999923706055,
+															0.6629999876022339,
+															0.8349999785423279
+														],
+														"BorderStrokePosition": "Inner"
+													},
+													"Name": "UIStroke",
+													"ClassName": "UIStroke"
+												},
+												{
+													"Properties": {
+														"TopRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomRightRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"TopLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														},
+														"BottomLeftRadius": {
+															"UDim": [
+																0.044444490224123,
+																0
+															]
+														}
+													},
+													"Name": "UICorner",
+													"ClassName": "UICorner"
+												},
+												{
 													"Children": [
 														{
 															"Properties": {
@@ -3029,49 +3072,6 @@
 													},
 													"Name": "padding",
 													"ClassName": "Frame"
-												},
-												{
-													"Properties": {
-														"ApplyStrokeMode": "Border",
-														"Color": [
-															0.5329999923706055,
-															0.6629999876022339,
-															0.8349999785423279
-														],
-														"BorderStrokePosition": "Inner"
-													},
-													"Name": "UIStroke",
-													"ClassName": "UIStroke"
-												},
-												{
-													"Properties": {
-														"TopRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomRightRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"TopLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														},
-														"BottomLeftRadius": {
-															"UDim": [
-																0.044444490224123,
-																0
-															]
-														}
-													},
-													"Name": "UICorner",
-													"ClassName": "UICorner"
 												},
 												{
 													"Properties": {

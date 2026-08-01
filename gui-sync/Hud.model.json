@@ -1,5 +1,8 @@
 {
 	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"ZIndexBehavior": "Sibling",
 		"ResetOnSpawn": false,
 		"Attributes": {
 			"Ignored": {
@@ -8,9 +11,7 @@
 			"Startup": {
 				"Bool": true
 			}
-		},
-		"ScreenInsets": "DeviceSafeInsets",
-		"ZIndexBehavior": "Sibling"
+		}
 	},
 	"Children": [
 		{

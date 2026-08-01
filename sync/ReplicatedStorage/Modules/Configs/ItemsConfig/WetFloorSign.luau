@@ -28,6 +28,7 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
+	iconId = 97735903841449, -- item icon asset id
 	cooldown = 5,
 	placementDistance = 3,
 	floorRaycastDrop = 20,

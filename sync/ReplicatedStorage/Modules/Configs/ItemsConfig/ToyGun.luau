@@ -23,6 +23,7 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
+	iconId = 133209233236404, -- item icon asset id
 	cooldown = 1,                  -- seconds between shots
 	range = 120,                   -- studs
 	bonkSoundId = "rbxassetid://137041944943141",

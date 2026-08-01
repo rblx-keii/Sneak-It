@@ -28,6 +28,7 @@ local COUGH_SOUND_ID = "rbxassetid://116385785266010" -- fill in
 local item = {}
 
 item.properties = {
+	iconId = 99612314931897, -- item icon asset id
 	cooldown = 8,
 	projectileName = "StinkBurst",
 	throwSpeed = 60,
