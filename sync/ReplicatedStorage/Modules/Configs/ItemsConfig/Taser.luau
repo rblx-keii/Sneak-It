@@ -24,6 +24,7 @@ local EVENT_NAME = `Item_{script.Name}`
 local item = {}
 
 item.properties = {
+	icondId = 96813226314066,
 	cooldown = 1,                  -- seconds between shots
 	range = 120,                   -- studs
 	zapSoundId = 0,                 -- fill in — taser zap sound

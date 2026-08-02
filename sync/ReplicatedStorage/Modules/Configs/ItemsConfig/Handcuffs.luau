@@ -26,6 +26,7 @@ local AWAITING_HIT_ATTR = "AwaitingHandcuffHit"
 local item = {}
 
 item.properties = {
+	iconId = 123308856629534,
 	cooldown = 1,
 	range = 15, -- short — this is a wand-check, not a projectile
 	validationThreshold = 4,
