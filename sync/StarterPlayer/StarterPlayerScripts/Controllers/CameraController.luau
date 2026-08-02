@@ -31,6 +31,7 @@ local _yaw: number = 0
 local _snapTargetYaw: number = 0
 
 local _lastInputWasGamepad: boolean = false
+local _suppressed: boolean = false
 
 --|| Constants
 local FREE_LOOK_ACTION = "Camera_FreeLook"
@@ -121,8 +122,8 @@ end
 
 -- [[ Private Functions ]] --
 function Local.OnRoundStateChanged()
-	local att = Workspace:GetAttribute(ROUND_STATE_ATTR) 
-	if att == "Starting" or att == "InProgress" then
+	local att = Workspace:GetAttribute(ROUND_STATE_ATTR)
+	if not _suppressed and (att == "Starting" or att == "InProgress") then
 		Shared.Enable()
 	else
 		Shared.Disable()
@@ -362,6 +363,14 @@ end
 
 function Shared.IsFreeLook(): boolean
 	return _isFreeLook
+end
+
+-- Lets other controllers hold free-look/mouse-lock off during a forced UI window without racing the
+-- RoundState listener above — re-evaluates against the live state on release rather than blind-Enable.
+function Shared.SetSuppressed(suppressed: boolean)
+	if _suppressed == suppressed then return end
+	_suppressed = suppressed
+	Local.OnRoundStateChanged()
 end
 
 function Shared.Destroy()

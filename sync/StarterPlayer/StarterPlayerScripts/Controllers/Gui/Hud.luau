@@ -3,6 +3,7 @@ local GuiController = require(script.Parent.Parent.GuiController)
 local RoundController = require(script.Parent.Parent.RoundController)
 local DataController = require(script.Parent.Parent.DataController)
 local GateController = require(script.Parent.Parent.GateController)
+local RoundIntroController = require(script.Parent.Parent.RoundIntroController)
 
 local Hud = GuiController.Guis.Hud
 
@@ -118,7 +119,8 @@ function Local.UpdateVisibility()
 
 	-- Sidebar (and its Shop/Bag/Perks/Items/Quests buttons) is hidden while playing, so close
 	-- whichever submenu was left open rather than stranding it open behind a hidden sidebar.
-	if isPlaying then
+	-- Skipped during RoundIntroController's forced Perks/Inventory sequence, which needs them open.
+	if isPlaying and not RoundIntroController.IsActive() then
 		GuiController.RestoreGuis()
 	end
 end

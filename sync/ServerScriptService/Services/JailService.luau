@@ -38,6 +38,7 @@ local Shared = {}
 
 -- [[ Signals ]] --
 Shared.OnJailed = ModuleUtils.signal.new() :: typeof(ModuleUtils.signal.new())
+Shared.OnReleased = ModuleUtils.signal.new() :: typeof(ModuleUtils.signal.new())
 
 -- [[ Startup ]] --
 function Shared.Init()
@@ -131,6 +132,7 @@ function Local.RunJailCountdown(player: Player, duration: number)
 		local teamName = TeamService.GetTeam(player)
 		if teamName then
 			SpawnService.SpawnPlayer(player, teamName)
+			Shared.OnReleased:Fire(player, teamName)
 		end
 
 		Network:FireClient("Jail", player, "Released", { teamName = teamName or "" })
@@ -197,6 +199,7 @@ function Shared.ReleasePlayer(player: Player)
 	local teamName = TeamService.GetTeam(player)
 	if teamName then
 		SpawnService.SpawnPlayer(player, teamName)
+		Shared.OnReleased:Fire(player, teamName)
 	end
 
 	Network:FireClient("Jail", player, "Released", { teamName = teamName or "" })

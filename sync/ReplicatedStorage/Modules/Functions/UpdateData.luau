@@ -15,6 +15,7 @@ export type UpdateAction = {
 	| "AddOwnedItem"
 	| "RemoveOwnedItem"
 	| "AddItemStock"
+	| "RemoveItemStock"
 	| "SetConsumableLoadout"
 	| "AssignQuests"
 	| "SetQuestProgress"
@@ -136,6 +137,28 @@ return function(playerData: PlayerData, action: UpdateAction)
 		assert(typeof(amount) == "number" and amount > 0, "AddItemStock: amount must be a positive number")
 
 		playerData.itemStock[itemName] = (playerData.itemStock[itemName] or 0) + amount
+
+	elseif action.type == "RemoveItemStock" then
+		local itemName = action.data.itemName
+		local amount = action.data.amount or 1
+		assert(typeof(itemName) == "string" and itemName ~= "", "RemoveItemStock: itemName must be a non-empty string")
+		assert(typeof(amount) == "number" and amount > 0, "RemoveItemStock: amount must be a positive number")
+
+		local remaining = math.max((playerData.itemStock[itemName] or 0) - amount, 0)
+
+		if remaining <= 0 then
+			playerData.itemStock[itemName] = nil
+
+			-- Stock-depleted items shouldn't silently keep granting for free — drop from the loadout too.
+			local consumables = playerData.loadout.consumables
+			for i = #consumables, 1, -1 do
+				if consumables[i] == itemName then
+					table.remove(consumables, i)
+				end
+			end
+		else
+			playerData.itemStock[itemName] = remaining
+		end
 
 	elseif action.type == "SetConsumableLoadout" then
 		local itemNames = action.data.itemNames

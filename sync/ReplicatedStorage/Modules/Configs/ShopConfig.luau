@@ -12,21 +12,21 @@ export type ShopEntry = {
 --|| MAIN ||--
 local ShopConfig = {}
 
--- Placeholder catalog — first-draft prices/categories/copy for tuning, not final balance. Perk
--- items (see PerksConfig) are deliberately excluded: those are unlocked via wins/Robux, not bought
--- here.
+-- Placeholder catalog — first-draft prices/copy, not final balance. DuffleBag/ScannerWand also exist
+-- as PerksConfig entries; buying them here is a separate path that just grants regular-pick stock.
 ShopConfig.Entries = {
+	{ itemName = "DoubleEspresso", displayName = "Double Espresso", description = "Temporarily increases your speed — helps chase down fleeing Smugglers.", price = 300, category = "Consumables" },
+
+	{ itemName = "PaddedJacket", displayName = "Padded Vest", description = "Softens the impact of a ragdoll or fall.", price = 200, category = "Utility" },
+	{ itemName = "DuffleBag", displayName = "Duffle Bag", description = "Roomy contraband storage — carry up to 3 items at once.", price = 500, category = "Utility" },
+	{ itemName = "Briefcase", displayName = "Briefcase", description = "A smaller, lower-profile alternative to the duffel bag.", price = 350, category = "Utility" },
+	{ itemName = "ScannerWand", displayName = "Scanner Wand", description = "Scan players to check whether they're carrying contraband.", price = 450, category = "Utility" },
+
+	{ itemName = "FireExtinguisher", displayName = "Fire Extinguisher", description = "Spray a blinding foam cloud to block vision and slow pursuers.", price = 250, category = "Chaos" },
 	{ itemName = "AirHorn", displayName = "Air Horn", description = "Blast a deafening honk to startle nearby players.", price = 150, category = "Chaos" },
-	{ itemName = "StinkBurst", displayName = "Stink Burst", description = "Release a foul cloud that disorients anyone caught in it.", price = 150, category = "Chaos" },
-	{ itemName = "ToyGun", displayName = "Toy Gun", description = "Looks real enough to cause a scene.", price = 200, category = "Chaos" },
-	{ itemName = "FireExtinguisher", displayName = "Fire Extinguisher", description = "Spray a blinding foam cloud to block vision and slow pursuers.", price = 250, category = "Utility" },
-	{ itemName = "OverchargedBattery", displayName = "Overcharged Battery", description = "A jury-rigged power cell with a risky kick.", price = 250, category = "Utility" },
-	{ itemName = "PaddedJacket", displayName = "Padded Jacket", description = "Softens the impact of a ragdoll or fall.", price = 200, category = "Utility" },
-	{ itemName = "Pizza", displayName = "Pizza", description = "A greasy slice. Purely for flavor.", price = 75, category = "Consumables" },
-	{ itemName = "BurgerBox", displayName = "Burger Box", description = "Fast food in a box. Purely for flavor.", price = 75, category = "Consumables" },
-	{ itemName = "ChipBag", displayName = "Chip Bag", description = "A crinkly bag of chips. Purely for flavor.", price = 50, category = "Consumables" },
-	{ itemName = "SodaCup", displayName = "Soda Cup", description = "A fizzy drink. Purely for flavor.", price = 50, category = "Consumables" },
-	{ itemName = "WaterBottle", displayName = "Water Bottle", description = "Stays sealed and TSA-approved. Purely for flavor.", price = 40, category = "Consumables" },
+	{ itemName = "StinkBurst", displayName = "Stink Grenade", description = "Throw to release a foul cloud that disorients anyone caught in it.", price = 150, category = "Chaos" },
+	{ itemName = "SmokeBurst", displayName = "Smoke Grenade", description = "Throw to create a thick smoke cloud — block vision, escape Security, or cause chaos.", price = 200, category = "Chaos" },
+	{ itemName = "OverchargedBattery", displayName = "Overcharged Battery", description = "A jury-rigged power cell with a risky kick.", price = 250, category = "Chaos" },
 } :: { ShopEntry }
 
 -- [[ Public Functions ]] --

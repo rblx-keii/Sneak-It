@@ -15,6 +15,19 @@ local itemsFrame = content.Container.Items :: ScrollingFrame
 local template = itemsFrame.Template :: Frame
 template.Visible = false
 
+-- Script-built placeholder; swap for a dedicated Studio element once the UI dev has time.
+local emptyLabel = Instance.new("TextLabel")
+emptyLabel.Name = "EmptyState"
+emptyLabel.BackgroundTransparency = 1
+emptyLabel.Size = UDim2.fromScale(1, 1)
+emptyLabel.TextWrapped = true
+emptyLabel.TextScaled = true
+emptyLabel.FontFace = Font.new("rbxassetid://11702779517", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+emptyLabel.TextColor3 = Color3.fromRGB(0, 27, 72)
+emptyLabel.Text = "You don't own any items yet — visit the Shop next round to stock up!"
+emptyLabel.Visible = false
+emptyLabel.Parent = itemsFrame
+
 --|| Types
 type Category = "All" | ShopConfig.ShopCategory
 
@@ -124,6 +137,8 @@ function Local.RefreshItems()
 			Local.CreateCard(entry, stock)
 		end
 	end
+
+	emptyLabel.Visible = _activeCategory == "All" and #_cards == 0
 end
 
 function Local.CreateCard(entry: ShopConfig.ShopEntry, stock: number)

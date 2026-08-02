@@ -14,6 +14,8 @@ local ItemsConfig = require(ReplicatedStorage.Modules.Configs.ItemsConfig)
 
 local JailService = require(script.Parent.JailService)
 local RagdollService = require(script.Parent.RagdollService)
+local RoundService = require(script.Parent.RoundService)
+local DataService = require(script.Parent.DataService)
 
 local DebrisFolder = ReplicatedStorage:FindFirstChild("Debris") or ReplicatedStorage
 local _assetsFolder = ReplicatedStorage:FindFirstChild("Assets")
@@ -122,6 +124,23 @@ function Shared.Init()
 		Local.ClearEquipped(character)
 	end)
 
+	JailService.OnReleased:Connect(Shared.GrantPerkItem)
+
+	-- Granted on InProgress, not Starting — Starting is the barricade-locked prep window.
+	RoundService.OnStateChange:Connect(function(newState: RoundService.RoundState)
+		if newState ~= "InProgress" then return end
+
+		for _, player in RoundService.GetMatchParticipants() do
+			local team = player.Team
+			if team then
+				Shared.GrantLoadout(player, team.Name)
+			end
+		end
+	end)
+
+	-- Mid-round late joiners skip the InProgress transition above, so they need their own grant.
+	RoundService.OnPlayerJoinedMatch:Connect(Shared.GrantLoadout)
+
 	-- OnRagdolled (not OnPlayerRagdolled) so a held item drops for NPCs too, not just players —
 	-- ClearEquipped already no-ops the player-only network sync internally when there isn't one.
 	RagdollService.OnRagdolled:Connect(function(rig: Model)
@@ -134,6 +153,70 @@ function Shared.Start()
 end
 
 -- [[ Private Functions ]] --
+
+-- Perk-only, no consumable stock touched — used for the round-start grant (via GrantLoadout below)
+-- and for perk-loss recovery (successful deposit, jail release), which must not re-roll consumables.
+function Shared.GrantPerkItem(player: Player, teamName: string): Model?
+	local character = player.Character
+	if not character then return nil end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then return nil end
+
+	local playerData = DataService.GetData(player)
+	if not playerData then return nil end
+
+	local perkItemName = playerData.loadout[teamName]
+	if not perkItemName then return nil end
+
+	local item = Shared.SpawnItem(perkItemName, hrp.CFrame)
+	if not item then return nil end
+
+	if Shared.ForcePickupItem(player, item) then
+		return item
+	end
+
+	item:Destroy()
+	return nil
+end
+
+-- Consumable stock is only ever spent here — call this once per round (round start / late join),
+-- never on perk-loss recovery, or players would get free reloads on every deposit/jail cycle.
+function Shared.GrantLoadout(player: Player, teamName: string)
+	local character = player.Character
+	if not character then return end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then return end
+
+	local playerData = DataService.GetData(player)
+	if not playerData then return end
+
+	local heldItem = Shared.GrantPerkItem(player, teamName)
+
+	-- Snapshot first: RemoveItemStock below can prune this same live array mid-loop once stock hits 0.
+	if heldItem and heldItem:GetAttribute("IsBag") == true then
+		local consumables = table.clone(playerData.loadout.consumables)
+		for _, consumableName in consumables do
+			if (playerData.itemStock[consumableName] or 0) > 0 and Shared.AddItemToBag(heldItem, consumableName) then
+				DataService.UpdateData(player, { type = "RemoveItemStock", data = { itemName = consumableName, amount = 1 } })
+			end
+		end
+	elseif not heldItem then
+		local firstConsumable = playerData.loadout.consumables[1]
+		if firstConsumable and (playerData.itemStock[firstConsumable] or 0) > 0 then
+			local item = Shared.SpawnItem(firstConsumable, hrp.CFrame)
+			if item then
+				if Shared.ForcePickupItem(player, item) then
+					DataService.UpdateData(player, { type = "RemoveItemStock", data = { itemName = firstConsumable, amount = 1 } })
+				else
+					item:Destroy()
+				end
+			end
+		end
+	end
+end
+
 function Local.InitializeItem(instance: Instance)
 	if not instance:IsA("Model") then return end
 
@@ -931,7 +1014,16 @@ function Shared.AddItemToBag(bag: Model, itemName: string): boolean
 	if not bag:GetAttribute("IsBag") then return false end
 
 	local itemUid = HttpService:GenerateGUID(false)
-	return Local.InsertBagEntry(bag, itemName, itemUid)
+	local inserted = Local.InsertBagEntry(bag, itemName, itemUid)
+	if not inserted then return false end
+
+	local character = bag.Parent
+	local owningPlayer = character and Players:GetPlayerFromCharacter(character)
+	if owningPlayer then
+		Local.SyncClient(owningPlayer, "BagStore")
+	end
+
+	return true
 end
 
 function Shared.Destroy()

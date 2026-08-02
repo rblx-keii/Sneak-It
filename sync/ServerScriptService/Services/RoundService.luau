@@ -33,9 +33,9 @@ local _connections: {RBXScriptConnection} = {}
 local isStudio = RunService:IsStudio()
 
 --|| Constants
-local MIN_TOTAL_PLAYERS = isStudio and 2 or 2
+local MIN_TOTAL_PLAYERS = isStudio and 1 or 2
 local INTERMISSION_DURATION = isStudio and 5 or 10
-local STARTING_DURATION = isStudio and 5 or 20
+local STARTING_DURATION = isStudio and 20 or 20
 local ROUND_DURATION = isStudio and math.huge or 600
 local ENDED_DISPLAY_DURATION = 10
 local EMPTY_TEAM_GRACE = 10
@@ -54,6 +54,9 @@ local Shared = {}
 
 -- [[ Signals ]] --
 Shared.OnStateChange = ModuleUtils.signal.new()
+
+-- Fired per late joiner (Local.OnRequestJoin) — they skip the Starting -> InProgress transition.
+Shared.OnPlayerJoinedMatch = ModuleUtils.signal.new()
 
 -- [[ Startup ]] --
 function Shared.Init()
@@ -138,6 +141,7 @@ function Local.OnRequestJoin(player: Player)
 		local activeMap = MapService.GetActiveMap()
 		if activeMap and player.Character then
 			SpawnService.SpawnPlayer(player, teamName)
+			Shared.OnPlayerJoinedMatch:Fire(player, teamName)
 		end
 	end)
 end
