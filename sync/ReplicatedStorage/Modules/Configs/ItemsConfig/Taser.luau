@@ -26,14 +26,14 @@ local item = {}
 item.properties = {
 	icondId = 96813226314066,
 	cooldown = 1,                  -- seconds between shots
-	range = 120,                   -- studs
+	range = 35,                   -- studs
 	zapSoundId = 0,                 -- fill in — taser zap sound
 	projectileName = "TaserDart",    -- template under Resources.Bullets
 	projectileSpeed = 200,           -- studs/sec, fast but visible travel time
 	validationThreshold = 6,         -- studs of permissible client/server divergence
 	ragdollForce = 400,              -- impulse applied to the ragdolled target on hit
-	idleAnimationId = 0, -- fill in
-	fireAnimationId = 0, -- fill in
+	idleAnimationId = 115709251445298, -- fill in
+	fireAnimationId = 116591366376588, -- fill in
 }
 
 item.attributes = {

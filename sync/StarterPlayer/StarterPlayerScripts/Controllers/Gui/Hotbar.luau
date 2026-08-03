@@ -14,6 +14,11 @@ local inventoryUi = GuiController.Guis.Hotbar
 local hotbar = inventoryUi.Hotbar
 local slot1 = hotbar.Slot1
 local slot1Content = slot1.Content
+local slot1Button = slot1Content.Button :: TextButton
+
+local perkSlot = hotbar.PerkSlot
+local perkSlotContent = perkSlot.Content
+local perkSlotButton = perkSlotContent.Button :: TextButton
 
 local arrowFrame = hotbar.Arrow
 local arrowContent = arrowFrame.Content
@@ -33,32 +38,51 @@ type ItemSyncData = {
 	rating: number,
 	isBag: boolean,
 	uid: string,
+	iconId: number?,
 }
 
 type BagSlotData = {
 	name: string,
 	weight: number,
 	rating: number,
+	iconId: number?,
 }
 
+type LoadoutSlot = "Perk" | "Inventory"
+
 type SyncPayload = {
-	action: "ItemPickup" | "ItemDropped" | "ItemThrown" | "BagStore" | "BagPop" | "ItemConsumed",
+	action: "ItemPickup" | "ItemDropped" | "ItemThrown" | "BagStore" | "BagPop" | "ItemConsumed" | "ItemStashed",
 	heldItem: ItemSyncData?,
 	bagContents: { BagSlotData }?,
+	perkItem: ItemSyncData?,
+	inventoryItem: ItemSyncData?,
+	activeSlot: LoadoutSlot?,
 }
 
 --|| Variables
 local _networkConnections: { Network.Cleanup } = {}
 local _bagToggleHandle: any = nil
+local _slotSwapHandle: any = nil
 local _arrowButtonConn: RBXScriptConnection? = nil
+local _slot1ButtonConn: RBXScriptConnection? = nil
+local _perkSlotButtonConn: RBXScriptConnection? = nil
 
 local _heldItem: ItemSyncData? = nil
+local _perkItem: ItemSyncData? = nil
+local _inventoryItem: ItemSyncData? = nil
+local _activeSlot: LoadoutSlot? = nil
 local _bagContents: { BagSlotData } = {}
 local _isBagOpen: boolean = false
 
 --|| Constants
 local BAG_TOGGLE_ACTION = "Inventory_ToggleBag"
 local BAG_TOGGLE_KEYS = { Enum.KeyCode.B, Enum.KeyCode.DPadDown }
+
+local SLOT_SWAP_ACTION = "Hotbar_SlotSwap"
+local SLOT_SWAP_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.DPadUp, Enum.UserInputType.MouseWheel }
+
+local ACTIVE_SLOT_TRANSPARENCY = 0.25
+local INACTIVE_SLOT_TRANSPARENCY = 0.65
 
 local TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 local BAG_OPEN_POS = UDim2.new(0.5, 0, 0.5, 0)
@@ -76,6 +100,7 @@ local Shared = {}
 function Shared.Init()
 	bagTemplate.Visible = false
 	slot1.Visible = false
+	perkSlot.Visible = false
 	bagPanel.Visible = false
 	arrowFrame.Visible = false
 
@@ -84,6 +109,14 @@ function Shared.Init()
 
 		arrowFrame.Visible = payload and payload.heldItem and payload.heldItem.isBag
 	end))
+
+	_slot1ButtonConn = slot1Button.Activated:Connect(function()
+		Local.RequestSwap("Inventory")
+	end)
+
+	_perkSlotButtonConn = perkSlotButton.Activated:Connect(function()
+		Local.RequestSwap("Perk")
+	end)
 
 	table.insert(_networkConnections, RoundController.OnPlayingChanged:Connect(Local.SetInventoryEnabled))
 	Local.SetInventoryEnabled(RoundController.IsPlaying())
@@ -96,6 +129,12 @@ end
 -- [[ Private Functions ]] --
 function Local.SetInventoryEnabled(enabled: boolean)
 	inventoryUi.Enabled = enabled
+
+	if enabled then
+		Local.BindSlotSwapControls()
+	else
+		Local.UnbindSlotSwapControls()
+	end
 
 	if not enabled and _isBagOpen then
 		Local.SetBagPanelVisible(false)
@@ -136,31 +175,23 @@ function Local.PopulateSlot(content: Frame, data: BagSlotData)
 	local itemName = content:FindFirstChild("ItemName") :: TextLabel
 	local weight = content:FindFirstChild("Weight") :: TextLabel
 	local rating = content:FindFirstChild("Rating") :: Frame
+	local icon = content:FindFirstChild("ImageLabel") :: ImageLabel
 
 	if itemName then itemName.Text = data.name end
 	if weight then weight.Text = `{data.weight} kg` end
 	if rating then Local.PopulateStars(rating, data.rating) end
+	if icon then icon.Image = if data.iconId then `rbxassetid://{data.iconId}` else "" end
 end
 
-function Local.RefreshHeldSlot()
-	if not _heldItem then
-		Local.ClearHeldSlot()
-		return
-	end
-
-	Local.PopulateSlot(slot1Content, _heldItem)
-	slot1.Visible = true
-end
-
-function Local.ClearHeldSlot()
-	slot1.Visible = false
-
-	local itemName = slot1Content:FindFirstChild("ItemName") :: TextLabel
-	local weight = slot1Content:FindFirstChild("Weight") :: TextLabel
-	local rating = slot1Content:FindFirstChild("Rating") :: Frame
+function Local.ClearSlot(content: Frame)
+	local itemName = content:FindFirstChild("ItemName") :: TextLabel
+	local weight = content:FindFirstChild("Weight") :: TextLabel
+	local rating = content:FindFirstChild("Rating") :: Frame
+	local icon = content:FindFirstChild("ImageLabel") :: ImageLabel
 
 	if itemName then itemName.Text = "" end
 	if weight then weight.Text = "" end
+	if icon then icon.Image = "" end
 	if rating then
 		for _, child in rating:GetChildren() do
 			if child.Name ~= "Template" and child:IsA("GuiObject") then
@@ -168,6 +199,23 @@ function Local.ClearHeldSlot()
 			end
 		end
 	end
+end
+
+function Local.RefreshSlot(frame: Frame, content: Frame, data: ItemSyncData?, isActive: boolean)
+	if not data then
+		frame.Visible = false
+		Local.ClearSlot(content)
+		return
+	end
+
+	Local.PopulateSlot(content, data)
+	frame.Visible = true
+	content.BackgroundTransparency = if isActive then ACTIVE_SLOT_TRANSPARENCY else INACTIVE_SLOT_TRANSPARENCY
+end
+
+function Local.RefreshHotbarSlots()
+	Local.RefreshSlot(slot1, slot1Content, _inventoryItem, _activeSlot == "Inventory")
+	Local.RefreshSlot(perkSlot, perkSlotContent, _perkItem, _activeSlot == "Perk")
 end
 
 function Local.RefreshBagSlots()
@@ -265,11 +313,64 @@ function Local.UnbindBagControls()
 	end
 end
 
+function Local.RequestSwap(slot: LoadoutSlot)
+	if slot == _activeSlot then return end
+	if slot == "Perk" and not _perkItem then return end
+	if slot == "Inventory" and not _inventoryItem then return end
+
+	Network:FireServer("Item", "RequestSwap", { slot = slot })
+end
+
+function Local.ToggleSlot()
+	Local.RequestSwap(if _activeSlot == "Perk" then "Inventory" else "Perk")
+end
+
+function Local.BindSlotSwapControls()
+	if _slotSwapHandle then return end
+
+	_slotSwapHandle = InputController.BindAction({
+		name = SLOT_SWAP_ACTION,
+		keys = SLOT_SWAP_KEYS,
+		priority = Enum.ContextActionPriority.Medium.Value,
+		callback = function(_name: string, state: Enum.UserInputState, input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseWheel then
+				if state ~= Enum.UserInputState.Change then return Enum.ContextActionResult.Pass end
+				Local.ToggleSlot()
+				return Enum.ContextActionResult.Sink
+			end
+
+			if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
+
+			if input.KeyCode == Enum.KeyCode.One then
+				Local.RequestSwap("Inventory")
+			elseif input.KeyCode == Enum.KeyCode.Two then
+				Local.RequestSwap("Perk")
+			elseif input.KeyCode == Enum.KeyCode.DPadUp then
+				Local.ToggleSlot()
+			else
+				return Enum.ContextActionResult.Pass
+			end
+
+			return Enum.ContextActionResult.Sink
+		end,
+	})
+end
+
+function Local.UnbindSlotSwapControls()
+	if _slotSwapHandle then
+		_slotSwapHandle:Unbind()
+		_slotSwapHandle = nil
+	end
+end
+
 function Local.ApplySync(payload: SyncPayload)
 	_heldItem = payload.heldItem or nil
 	_bagContents = payload.bagContents or {}
+	_perkItem = payload.perkItem or nil
+	_inventoryItem = payload.inventoryItem or nil
+	_activeSlot = payload.activeSlot or nil
 
-	Local.RefreshHeldSlot()
+	Local.RefreshHotbarSlots()
 
 	local holdingBag = _heldItem ~= nil and _heldItem.isBag
 
@@ -292,8 +393,20 @@ function Shared.Destroy()
 	end
 	table.clear(_networkConnections)
 
+	if _slot1ButtonConn then
+		_slot1ButtonConn:Disconnect()
+		_slot1ButtonConn = nil
+	end
+
+	if _perkSlotButtonConn then
+		_perkSlotButtonConn:Disconnect()
+		_perkSlotButtonConn = nil
+	end
+
 	Local.UnbindBagControls()
-	Local.ClearHeldSlot()
+	Local.UnbindSlotSwapControls()
+	Local.ClearSlot(slot1Content)
+	Local.ClearSlot(perkSlotContent)
 	Local.ClearBagSlots()
 
 	if _isBagOpen then

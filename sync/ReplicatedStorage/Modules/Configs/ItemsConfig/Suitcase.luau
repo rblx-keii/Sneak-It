@@ -19,7 +19,7 @@ local item = {}
 
 item.properties = {
 	iconId = 131859491595724, -- item icon asset id
-	idleAnimationId = 0, -- TODO: no held-idle animation id provided yet
+	idleAnimationId = 75766598049781, -- TODO: no held-idle animation id provided yet
 }
 
 item.attributes = {

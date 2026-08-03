@@ -32,7 +32,7 @@ type Slot = {
 	subtitle: TextLabel,
 	description: TextLabel,
 	icon: ImageLabel,
-	unlockedButton: Frame,
+	activeButton: Frame,
 	equipButton: TextButton,
 	equipLabel: TextLabel,
 	lockedButton: Frame,
@@ -94,53 +94,20 @@ function Shared.Start()
 end
 
 -- [[ Private Functions ]] --
-function Local.IsLockedButton(button: Frame): boolean
-	return button:FindFirstChild("Lock") ~= nil
-end
-
--- Every slot's Content has a single "Button" frame whose contents differ depending on which state
--- the Studio template happened to be authored in (Perk_1 ships the clickable/equip look, Perk_2 and
--- Perk_3 ship the locked look) — but any slot can be in either state at runtime, so the missing
--- variant is cloned in from whichever slot already has it and both are kept as hidden/shown
--- siblings. Runtime-only patch; the synced GUI files are never touched.
 function Local.BuildSlots()
-	local unlockedSource: Frame? = nil
-	local lockedSource: Frame? = nil
-
 	for _, slotName in SLOT_NAMES do
 		local frame = itemsFrame:FindFirstChild(slotName) :: Frame?
 		if not frame then continue end
-		local slotContent = frame:FindFirstChild("Content") :: Frame
-		local button = slotContent:FindFirstChild("Button") :: Frame?
-		if not button then continue end
 
-		if Local.IsLockedButton(button) then
-			lockedSource = lockedSource or button
-		else
-			unlockedSource = unlockedSource or button
-		end
-	end
+		local slotContent = frame:FindFirstChild("Content") :: Frame?
+		if not slotContent then continue end
 
-	for _, slotName in SLOT_NAMES do
-		local frame = itemsFrame:FindFirstChild(slotName) :: Frame?
-		if not frame then continue end
-		local slotContent = frame:FindFirstChild("Content") :: Frame
-		local existingButton = slotContent:FindFirstChild("Button") :: Frame?
-		if not existingButton then continue end
+		local activeButton = slotContent:FindFirstChild("ActiveButton") :: Frame?
+		local lockedButton = slotContent:FindFirstChild("LockedButton") :: Frame?
+		if not activeButton or not lockedButton then continue end
 
-		local unlockedButton: Frame
-		local lockedButton: Frame
-
-		if Local.IsLockedButton(existingButton) then
-			lockedButton = existingButton
-			unlockedButton = if unlockedSource then unlockedSource:Clone() else existingButton
-		else
-			unlockedButton = existingButton
-			lockedButton = if lockedSource then lockedSource:Clone() else existingButton
-		end
-
-		if unlockedButton ~= existingButton then unlockedButton.Parent = slotContent end
-		if lockedButton ~= existingButton then lockedButton.Parent = slotContent end
+		local equipButton = activeButton:FindFirstChild("Button") :: TextButton?
+		if not equipButton then continue end
 
 		local slot: Slot = {
 			frame = frame,
@@ -149,9 +116,9 @@ function Local.BuildSlots()
 			subtitle = slotContent:FindFirstChild("SubTitle") :: TextLabel,
 			description = slotContent:FindFirstChild("Description") :: TextLabel,
 			icon = slotContent:FindFirstChild("Icon") :: ImageLabel,
-			unlockedButton = unlockedButton,
-			equipButton = unlockedButton:FindFirstChild("Button") :: TextButton,
-			equipLabel = unlockedButton:FindFirstChild("Label") :: TextLabel,
+			activeButton = activeButton,
+			equipButton = equipButton,
+			equipLabel = activeButton:FindFirstChild("Label") :: TextLabel,
 			lockedButton = lockedButton,
 			lockedLabel = lockedButton:FindFirstChild("Label") :: TextLabel,
 		}
@@ -223,7 +190,7 @@ function Local.RefreshSlots()
 			equippedIconId = iconId
 		end
 
-		slot.unlockedButton.Visible = owned
+		slot.activeButton.Visible = owned
 		slot.lockedButton.Visible = not owned
 
 		if owned then

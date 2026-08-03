@@ -21,12 +21,25 @@ local DebrisFolder = ReplicatedStorage:FindFirstChild("Debris") or ReplicatedSto
 local _assetsFolder = ReplicatedStorage:FindFirstChild("Assets")
 local ItemTemplatesFolder = _assetsFolder and _assetsFolder:FindFirstChild("Items")
 
+local _workspaceDebrisFolder = Workspace:FindFirstChild("Debris")
+local ItemSpawnFolder = (_workspaceDebrisFolder and _workspaceDebrisFolder:FindFirstChild("Items")) or _workspaceDebrisFolder or Workspace
+
 --|| Variables
 local _networkConnections: {Network.Cleanup} = {}
+local _connections: {RBXScriptConnection} = {}
 local _stopTagObserver: (() -> ())? = nil
 local _bagContents: { [string]: { BagEntry } } = {}
 
 local _activeThrowListeners: { [Model]: () -> () } = {}
+
+-- Dual perk/inventory hotbar slots. Only ever populated for non-bag perks — a bag perk just is the
+-- Inventory item (per design), so those players never get an entry here and never see a swap.
+local _loadoutSlots: { [Player]: LoadoutSlots } = {}
+
+-- True once a player has legitimately spent their single-use Perk this round (Shared.UseItem ->
+-- ConsumeEquipped while it was active) — GrantPerkItem must not refund it, only recover it if it was
+-- lost involuntarily (dropped on arrest).
+local _perkConsumed: { [Player]: boolean } = {}
 
 --|| Types
 type ItemSyncData = {
@@ -35,12 +48,14 @@ type ItemSyncData = {
 	rating: number,
 	isBag: boolean,
 	uid: string,
+	iconId: number?,
 }
 
 type BagSlotData = {
 	name: string,
 	weight: number,
 	rating: number,
+	iconId: number?,
 }
 
 type BagEntry = {
@@ -48,10 +63,25 @@ type BagEntry = {
 	uid: string,
 }
 
+type SlotData = {
+	itemName: string,
+	uid: string,
+}
+
+type LoadoutSlots = {
+	Perk: SlotData?,
+	Inventory: SlotData?,
+}
+
+export type LoadoutSlot = "Perk" | "Inventory"
+
 type SyncPayload = {
-	action: "ItemPickup" | "ItemDropped" | "ItemThrown" | "BagStore" | "BagPop" | "ItemConsumed",
+	action: "ItemPickup" | "ItemDropped" | "ItemThrown" | "BagStore" | "BagPop" | "ItemConsumed" | "ItemStashed",
 	heldItem: ItemSyncData?,
 	bagContents: { BagSlotData }?,
+	perkItem: ItemSyncData?,
+	inventoryItem: ItemSyncData?,
+	activeSlot: LoadoutSlot?,
 }
 
 --|| Constants
@@ -118,6 +148,16 @@ function Shared.Init()
 		Shared.UseItem(player, originCFrame, direction)
 	end))
 
+	table.insert(_networkConnections, Network:BindEvent("Item", "RequestSwap", function(player: Player, data: { slot: LoadoutSlot })
+		if data.slot ~= "Perk" and data.slot ~= "Inventory" then return end
+		Shared.SetActiveSlot(player, data.slot)
+	end))
+
+	table.insert(_connections, Players.PlayerRemoving:Connect(function(player: Player)
+		_loadoutSlots[player] = nil
+		_perkConsumed[player] = nil
+	end))
+
 	JailService.OnJailed:Connect(function(player: Player)
 		local character = player.Character
 		if not character then return end
@@ -154,29 +194,125 @@ end
 
 -- [[ Private Functions ]] --
 
+function Local.IsBagItem(itemName: string): boolean
+	local itemConfig = ItemsConfig.GetItem(itemName)
+	return itemConfig ~= nil and itemConfig.attributes.IsBag == true
+end
+
+function Local.GetItemIconId(itemName: string): number?
+	local itemConfig = ItemsConfig.GetItem(itemName)
+	return itemConfig and itemConfig.properties.iconId
+end
+
+-- Equips `item` as the new HeldItem with no regard for whatever was held before — callers are
+-- responsible for clearing/stashing the previous item first.
+function Local.EquipItemDirect(player: Player, character: Model, item: Model)
+	Local.EnsureUID(item)
+	character:SetAttribute("HeldItem", item.Name)
+	Local.WeldToHand(character, item)
+
+	-- Swapped here server-side so Handle_Motor exists before HeldItem even replicates to the client
+	if not Local.SwapGripWeldToMotor(item) then
+		warn(`[ItemService] EquipItemDirect({player.Name}, {item.Name}) — Motor6D swap failed, item will stay weld-only`)
+	end
+
+	Local.RecalculateContraband(character)
+	Local.SyncClient(player, "ItemPickup")
+end
+
+-- Captures the currently-held item's identity into its loadout slot and destroys the live Model —
+-- mirrors how bag contents are stored as data rather than kept as live Instances.
+function Local.StashActiveItem(player: Player, character: Model)
+	local slots = _loadoutSlots[player]
+	if not slots then return end
+
+	local activeSlot = character:GetAttribute("ActiveSlot") :: LoadoutSlot?
+	if activeSlot ~= "Perk" and activeSlot ~= "Inventory" then return end
+
+	local heldItemName = character:GetAttribute("HeldItem")
+	if not heldItemName or heldItemName == "" then return end
+
+	local heldModel = character:FindFirstChild(heldItemName)
+	if not heldModel then return end
+
+	local uid = Local.EnsureUID(heldModel)
+	slots[activeSlot] = { itemName = heldItemName, uid = uid }
+
+	Network:FireClient("Item", player, "ForceUnequip", heldModel)
+	heldModel:Destroy()
+
+	character:SetAttribute("HeldItem", "")
+	character:SetAttribute("ActiveSlot", "")
+
+	Local.RecalculateContraband(character)
+end
+
+-- Reconstructs the given slot's item from its stored data (respawns the Model fresh, matching
+-- Shared.PopBagItem's reconstruct-from-data approach) and equips it as the new HeldItem.
+function Local.ActivateSlot(player: Player, character: Model, slot: LoadoutSlot): boolean
+	local slots = _loadoutSlots[player]
+	local data = slots and slots[slot]
+	if not data then return false end
+
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not hrp then return false end
+
+	local item = Shared.SpawnItem(data.itemName, hrp.CFrame)
+	if not item then return false end
+
+	item:SetAttribute("UID", data.uid)
+	if item:GetAttribute("IsBag") then
+		Local.UpdateBagStats(item)
+	end
+
+	-- Set before equipping — EquipItemDirect syncs to the client as its last step.
+	character:SetAttribute("ActiveSlot", slot)
+	Local.EquipItemDirect(player, character, item)
+	return true
+end
+
 -- Perk-only, no consumable stock touched — used for the round-start grant (via GrantLoadout below)
 -- and for perk-loss recovery (successful deposit, jail release), which must not re-roll consumables.
 function Shared.GrantPerkItem(player: Player, teamName: string): Model?
 	local character = player.Character
 	if not character then return nil end
 
-	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not hrp then return nil end
-
 	local playerData = DataService.GetData(player)
 	if not playerData then return nil end
 
 	local perkItemName = playerData.loadout[teamName]
 	if not perkItemName then return nil end
+	if _perkConsumed[player] then return nil end
 
-	local item = Shared.SpawnItem(perkItemName, hrp.CFrame)
-	if not item then return nil end
+	if Local.IsBagItem(perkItemName) then
+		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if not hrp then return nil end
 
-	if Shared.ForcePickupItem(player, item) then
-		return item
+		local item = Shared.SpawnItem(perkItemName, hrp.CFrame)
+		if not item then return nil end
+
+		character:SetAttribute("ActiveSlot", "Inventory")
+
+		if Shared.ForcePickupItem(player, item) then
+			return item
+		end
+
+		item:Destroy()
+		return nil
 	end
 
-	item:Destroy()
+	local slots = _loadoutSlots[player]
+	if not slots then
+		slots = { Perk = nil, Inventory = nil }
+		_loadoutSlots[player] = slots
+	end
+
+	slots.Perk = { itemName = perkItemName, uid = HttpService:GenerateGUID(false) }
+
+	if Local.ActivateSlot(player, character, "Perk") then
+		return character:FindFirstChild(perkItemName) :: Model?
+	end
+
 	return nil
 end
 
@@ -192,29 +328,68 @@ function Shared.GrantLoadout(player: Player, teamName: string)
 	local playerData = DataService.GetData(player)
 	if not playerData then return end
 
-	local heldItem = Shared.GrantPerkItem(player, teamName)
+	_perkConsumed[player] = nil
 
-	-- Snapshot first: RemoveItemStock below can prune this same live array mid-loop once stock hits 0.
-	if heldItem and heldItem:GetAttribute("IsBag") == true then
+	local perkItemName = playerData.loadout[teamName]
+
+	if perkItemName and Local.IsBagItem(perkItemName) then
+		-- Bag perks skip the perk/inventory swap entirely — the bag just is the inventory item.
+		_loadoutSlots[player] = nil
+		character:SetAttribute("ActiveSlot", "Inventory")
+
+		local item = Shared.SpawnItem(perkItemName, hrp.CFrame)
+		if not item or not Shared.ForcePickupItem(player, item) then
+			if item then item:Destroy() end
+			return
+		end
+
+		-- Snapshot first: RemoveItemStock below can prune this same live array mid-loop once stock hits 0.
 		local consumables = table.clone(playerData.loadout.consumables)
 		for _, consumableName in consumables do
-			if (playerData.itemStock[consumableName] or 0) > 0 and Shared.AddItemToBag(heldItem, consumableName) then
+			if (playerData.itemStock[consumableName] or 0) > 0 and Shared.AddItemToBag(item, consumableName) then
 				DataService.UpdateData(player, { type = "RemoveItemStock", data = { itemName = consumableName, amount = 1 } })
 			end
 		end
-	elseif not heldItem then
-		local firstConsumable = playerData.loadout.consumables[1]
-		if firstConsumable and (playerData.itemStock[firstConsumable] or 0) > 0 then
-			local item = Shared.SpawnItem(firstConsumable, hrp.CFrame)
-			if item then
-				if Shared.ForcePickupItem(player, item) then
-					DataService.UpdateData(player, { type = "RemoveItemStock", data = { itemName = firstConsumable, amount = 1 } })
-				else
-					item:Destroy()
-				end
-			end
-		end
+
+		return
 	end
+
+	local slots: LoadoutSlots = { Perk = nil, Inventory = nil }
+
+	if perkItemName then
+		slots.Perk = { itemName = perkItemName, uid = HttpService:GenerateGUID(false) }
+	end
+
+	local firstConsumable = playerData.loadout.consumables[1]
+	if firstConsumable and (playerData.itemStock[firstConsumable] or 0) > 0 then
+		slots.Inventory = { itemName = firstConsumable, uid = HttpService:GenerateGUID(false) }
+		DataService.UpdateData(player, { type = "RemoveItemStock", data = { itemName = firstConsumable, amount = 1 } })
+	end
+
+	_loadoutSlots[player] = slots
+
+	local defaultSlot: LoadoutSlot? = if slots.Perk then "Perk" elseif slots.Inventory then "Inventory" else nil
+	if defaultSlot then
+		Local.ActivateSlot(player, character, defaultSlot)
+	end
+end
+
+-- Swaps which loadout slot is physically held — no-ops if the target slot is empty, already active,
+-- or the player is jailed (their equipped item was already dropped on arrest).
+function Shared.SetActiveSlot(player: Player, slot: LoadoutSlot)
+	local character = player.Character
+	if not character then return end
+
+	local slots = _loadoutSlots[player]
+	if not slots or not slots[slot] then return end
+
+	if character:GetAttribute("ActiveSlot") == slot then return end
+
+	local record = JailService.GetRecord(player)
+	if record and record.isJailed then return end
+
+	Local.StashActiveItem(player, character)
+	Local.ActivateSlot(player, character, slot)
 end
 
 function Local.InitializeItem(instance: Instance)
@@ -302,7 +477,7 @@ function Local.MonitorItemRest(item: Model)
 		local elapsed = 0
 		local restTicks = 0
 
-		while item and item.Parent == Workspace and elapsed < maxWaitTimeout do
+		while item and item.Parent == ItemSpawnFolder and elapsed < maxWaitTimeout do
 			local dt = task.wait(0.1)
 			elapsed += dt
 
@@ -316,7 +491,7 @@ function Local.MonitorItemRest(item: Model)
 			end
 		end
 
-		if item and item.Parent == Workspace then
+		if item and item.Parent == ItemSpawnFolder then
 			for _, descendant in item:GetDescendants() do
 				if descendant:IsA("BasePart") then
 					descendant.CollisionGroup = descendant:GetAttribute("OriginalCollisionGroup") or "Default"
@@ -560,19 +735,56 @@ function Local.ClearEquipped(character: Model): Model?
 		end
 	end
 
-	item.Parent = Workspace
+	item.Parent = ItemSpawnFolder
 	CollectionService:AddTag(item, INTERACT_TAG)
 
 	local owningPlayer = Players:GetPlayerFromCharacter(character)
 	if owningPlayer then
 		Network:FireClient("Item", owningPlayer, "ForceUnequip", item)
+
+		-- The dropped item is now a free-standing world pickup, not this player's anymore — clear the
+		-- slot record so a later ActivateSlot can't spawn a duplicate sharing its UID.
+		local activeSlot = character:GetAttribute("ActiveSlot") :: LoadoutSlot?
+		local slots = _loadoutSlots[owningPlayer]
+		if slots and (activeSlot == "Perk" or activeSlot == "Inventory") then
+			slots[activeSlot] = nil
+		end
 	end
 
 	character:SetAttribute("HeldItem", "")
+	character:SetAttribute("ActiveSlot", "")
 
 	Local.RecalculateContraband(character)
 
 	return item :: Model
+end
+
+-- Weight/rating computed from data alone (config base + any tracked bag contents), so a stashed
+-- slot's stats can be reported to the client without needing a live Model.
+function Local.BuildSyncItemData(itemName: string, uid: string): ItemSyncData
+	local baseAttrs = Local.GetItemConfigAttributes(itemName)
+	local totalWeight = baseAttrs.Weight
+	local maxRating = baseAttrs.Rating
+
+	local contents = _bagContents[uid]
+	if contents then
+		for _, entry in contents do
+			local entryAttrs = Local.GetItemConfigAttributes(entry.itemName)
+			totalWeight += entryAttrs.Weight
+			if entryAttrs.Rating > maxRating then
+				maxRating = entryAttrs.Rating
+			end
+		end
+	end
+
+	return {
+		name = itemName,
+		weight = totalWeight,
+		rating = maxRating,
+		isBag = Local.IsBagItem(itemName),
+		uid = uid,
+		iconId = Local.GetItemIconId(itemName),
+	}
 end
 
 function Local.SyncClient(player: Player, action: string)
@@ -586,18 +798,10 @@ function Local.SyncClient(player: Player, action: string)
 	if heldItemName and heldItemName ~= "" then
 		local item = character:FindFirstChild(heldItemName)
 		if item and item:IsA("Model") then
-			local isBag = item:GetAttribute("IsBag") == true
 			local uid = item:GetAttribute("UID") or ""
+			heldItem = Local.BuildSyncItemData(item:GetAttribute("ItemName") or item.Name, uid)
 
-			heldItem = {
-				name = item:GetAttribute("ItemName") or item.Name,
-				weight = item:GetAttribute("Weight") or 1,
-				rating = item:GetAttribute("Rating") or 1,
-				isBag = isBag,
-				uid = uid,
-			}
-
-			if isBag and _bagContents[uid] then
+			if heldItem.isBag and _bagContents[uid] then
 				bagContents = {}
 				for _, entry in _bagContents[uid] do
 					local configAttrs = Local.GetItemConfigAttributes(entry.itemName)
@@ -605,16 +809,38 @@ function Local.SyncClient(player: Player, action: string)
 						name = entry.itemName,
 						weight = configAttrs.Weight,
 						rating = configAttrs.Rating,
+						iconId = Local.GetItemIconId(entry.itemName),
 					})
 				end
 			end
 		end
 	end
 
+	local activeSlot = character:GetAttribute("ActiveSlot") :: LoadoutSlot?
+	local slots = _loadoutSlots[player]
+	local perkItem: ItemSyncData? = nil
+	local inventoryItem: ItemSyncData? = nil
+
+	if slots then
+		if slots.Perk then
+			perkItem = if activeSlot == "Perk" then heldItem else Local.BuildSyncItemData(slots.Perk.itemName, slots.Perk.uid)
+		end
+		if slots.Inventory then
+			inventoryItem = if activeSlot == "Inventory" then heldItem else Local.BuildSyncItemData(slots.Inventory.itemName, slots.Inventory.uid)
+		end
+	elseif activeSlot == "Inventory" then
+		-- Bag perks never populate _loadoutSlots (single-slot regime, no separate Perk slot) —
+		-- the bag is just Slot 1.
+		inventoryItem = heldItem
+	end
+
 	local payload: SyncPayload = {
 		action = action,
 		heldItem = heldItem,
 		bagContents = bagContents,
+		perkItem = perkItem,
+		inventoryItem = inventoryItem,
+		activeSlot = (activeSlot and activeSlot ~= "") and activeSlot or nil,
 	}
 
 	Network:FireClient("Inventory", player, "Sync", payload)
@@ -699,25 +925,29 @@ function Local.GrantItem(player: Player, character: Model, hrp: BasePart, item: 
 			return success
 		end
 
-		local droppedItem = Local.ClearEquipped(character)
-		if droppedItem and droppedItem.PrimaryPart then
-			Local.SafeReposition(droppedItem, hrp.CFrame * CFrame.new(0, 0, -3))
-			Local.MonitorItemRest(droppedItem)
+		-- A held Perk item is never dropped by an ordinary pickup — it gets stashed back to its slot
+		-- instead, and the new item takes over the Inventory slot below.
+		if _loadoutSlots[player] and character:GetAttribute("ActiveSlot") == "Perk" then
+			Local.StashActiveItem(player, character)
+		else
+			local droppedItem = Local.ClearEquipped(character)
+			if droppedItem and droppedItem.PrimaryPart then
+				Local.SafeReposition(droppedItem, hrp.CFrame * CFrame.new(0, 0, -3))
+				Local.MonitorItemRest(droppedItem)
+			end
 		end
 	end
 
-	Local.EnsureUID(item)
-	character:SetAttribute("HeldItem", item.Name)
-	Local.WeldToHand(character, item)
+	-- Set before equipping — EquipItemDirect syncs to the client as its last step, and the payload
+	-- needs ActiveSlot/loadoutSlots already up to date at that point.
+	character:SetAttribute("ActiveSlot", "Inventory")
 
-	-- Swapped here server-side so Handle_Motor exists before HeldItem even replicates to the client
-	if not Local.SwapGripWeldToMotor(item) then
-		warn(`[ItemService] GrantItem({player.Name}, {item.Name}) — Motor6D swap failed, item will stay weld-only`)
+	if _loadoutSlots[player] then
+		_loadoutSlots[player].Inventory = { itemName = item.Name, uid = Local.EnsureUID(item) }
 	end
 
-	Local.RecalculateContraband(character)
+	Local.EquipItemDirect(player, character, item)
 
-	Local.SyncClient(player, "ItemPickup")
 	return true
 end
 
@@ -791,7 +1021,7 @@ function Shared.PopBagItem(player: Player)
 		end
 	end
 
-	clone.Parent = Workspace
+	clone.Parent = ItemSpawnFolder
 	Local.SafeReposition(clone, hrp.CFrame * CFrame.new(0, 0, -2.5))
 	Local.MonitorItemRest(clone)
 
@@ -806,6 +1036,7 @@ end
 function Shared.ThrowItem(player: Player, originCFrame: CFrame, direction: Vector3)
 	local character = player.Character
 	if not character then return end
+	if character:GetAttribute("ActiveSlot") == "Perk" then return end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
 	if not hrp then return end
@@ -832,6 +1063,7 @@ end
 function Shared.DropItem(player: Player)
 	local character = player.Character
 	if not character then return end
+	if character:GetAttribute("ActiveSlot") == "Perk" then return end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
 	if not hrp then return end
@@ -879,7 +1111,18 @@ function Shared.ConsumeEquipped(player: Player)
 	if uid and _bagContents[uid] then
 		_bagContents[uid] = nil
 	end
+
+	local activeSlot = character:GetAttribute("ActiveSlot") :: LoadoutSlot?
+	if activeSlot == "Perk" then
+		_perkConsumed[player] = true
+		local slots = _loadoutSlots[player]
+		if slots then
+			slots.Perk = nil
+		end
+	end
+
 	character:SetAttribute("HeldItem", "")
+	character:SetAttribute("ActiveSlot", "")
 
 	Local.RecalculateContraband(character)
 
@@ -979,7 +1222,7 @@ function Shared.SpawnItem(itemName: string, cframe: CFrame?): Model?
 		item:PivotTo(Local.PlaceItemOnSurface(item, cframe))
 	end
 
-	item.Parent = Workspace
+	item.Parent = ItemSpawnFolder
 	return item
 end
 
@@ -1036,6 +1279,14 @@ function Shared.Destroy()
 		conn:Disconnect()
 	end
 	table.clear(_networkConnections)
+
+	for _, conn in _connections do
+		conn:Disconnect()
+	end
+	table.clear(_connections)
+
+	table.clear(_loadoutSlots)
+	table.clear(_perkConsumed)
 end
 
 return Shared

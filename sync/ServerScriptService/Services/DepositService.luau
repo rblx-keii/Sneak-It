@@ -115,6 +115,10 @@ function Local.TryDeposit(player: Player)
 	if character:GetAttribute("Disabled") then return end
 	if TeamService.GetTeam(player) ~= "Smuggler" then return end
 
+	-- The active Perk item is never depositable, even if it happens to touch the zone — only the
+	-- Inventory slot (bag/consumable) counts as contraband.
+	if character:GetAttribute("ActiveSlot") == "Perk" then return end
+
 	local heldItemName = character:GetAttribute("HeldItem")
 	if not heldItemName or heldItemName == "" then return end
 

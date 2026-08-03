@@ -6,7 +6,7 @@
 		"ResetOnSpawn": false,
 		"Attributes": {
 			"Ignored": {
-				"Bool": false
+				"Bool": true
 			},
 			"Startup": {
 				"Bool": false

@@ -40,6 +40,9 @@ local RETRY_COOLDOWN = 5
 
 local NPC_FOLDER_NAME = "NPCs"
 
+-- Flip off once the "can't steal" investigation is done.
+local DEBUG_STEAL = true
+
 --|| MAIN ||--
 
 -- [[ Startup ]] --
@@ -48,6 +51,8 @@ function Shared.Init()
 		local npc = Local.FindNPCById(data and data.npcId)
 		if npc then
 			Shared.StartSteal(player, npc)
+		elseif DEBUG_STEAL then
+			warn(`[StealService][Debug] "Start" from {player.Name} — npcId "{data and data.npcId}" did not resolve to a live NPC`)
 		end
 	end))
 
@@ -55,6 +60,8 @@ function Shared.Init()
 		local npc = Local.FindNPCById(data and data.npcId)
 		if npc then
 			Shared.CompleteSteal(player, npc)
+		elseif DEBUG_STEAL then
+			warn(`[StealService][Debug] "Complete" from {player.Name} — npcId "{data and data.npcId}" did not resolve to a live NPC`)
 		end
 	end))
 
@@ -197,23 +204,47 @@ end
 
 -- [[ Public Functions ]] --
 function Shared.StartSteal(player: Player, npcModel: Model): boolean
-	if not npcModel or not npcModel.Parent then return false end
+	if not npcModel or not npcModel.Parent then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}) — rejected: npcModel missing/unparented`) end
+		return false
+	end
 
-	if ItemService.IsHoldingBag(player) then return false end
-	if Local.activeSessions[player.UserId] then return false end
-	if Local.lockedNPCs[npcModel] then return false end
+	if ItemService.IsHoldingBag(player) then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: player already holding a bag`) end
+		return false
+	end
+	if Local.activeSessions[player.UserId] then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: player already has an active steal session`) end
+		return false
+	end
+	if Local.lockedNPCs[npcModel] then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: NPC already locked by another steal session`) end
+		return false
+	end
 
 	local cooldownUntil = Local.retryCooldowns[npcModel]
-	if cooldownUntil and workspace:GetServerTimeNow() < cooldownUntil then return false end
+	if cooldownUntil and workspace:GetServerTimeNow() < cooldownUntil then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: NPC on retry cooldown for {cooldownUntil - workspace:GetServerTimeNow()}s more`) end
+		return false
+	end
 
 	local npcHeldItemName = npcModel:GetAttribute("HeldItem")
-	if not npcHeldItemName or npcHeldItemName == "" then return false end
+	if not npcHeldItemName or npcHeldItemName == "" then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: NPC HeldItem attribute is empty`) end
+		return false
+	end
 
 	local heldModel = npcModel:FindFirstChild(npcHeldItemName)
-	if not heldModel or not heldModel:GetAttribute("IsBag") then return false end
+	if not heldModel or not heldModel:GetAttribute("IsBag") then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: held item "{npcHeldItemName}" missing or not a bag (found={heldModel ~= nil}, isBag={heldModel and heldModel:GetAttribute("IsBag")})`) end
+		return false
+	end
 
 	local distance = Local.GetDistance(player, npcModel)
-	if not distance or distance > MAX_STEAL_DISTANCE then return false end
+	if not distance or distance > MAX_STEAL_DISTANCE then
+		if DEBUG_STEAL then warn(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — rejected: distance {distance} exceeds {MAX_STEAL_DISTANCE}`) end
+		return false
+	end
 
 	local threshold = npcModel:GetAttribute("StealThreshold")
 	if type(threshold) ~= "number" or threshold <= 0 then
@@ -231,6 +262,10 @@ function Shared.StartSteal(player: Player, npcModel: Model): boolean
 	Local.activeSessions[player.UserId] = session
 	Local.lockedNPCs[npcModel] = session
 
+	if DEBUG_STEAL then
+		print(`[StealService][Debug] StartSteal({player.Name}, {npcModel.Name}) — session started, threshold={threshold}`)
+	end
+
 	task.spawn(Local.RunSessionWatch, session)
 
 	return true
@@ -238,18 +273,30 @@ end
 
 function Shared.CompleteSteal(player: Player, npcModel: Model): boolean
 	local session = Local.activeSessions[player.UserId]
-	if not session or not session.active then return false end
-	if session.npc ~= npcModel then return false end
+	if not session or not session.active then
+		if DEBUG_STEAL then warn(`[StealService][Debug] CompleteSteal({player.Name}, {npcModel.Name}) — rejected: no active session`) end
+		return false
+	end
+	if session.npc ~= npcModel then
+		if DEBUG_STEAL then warn(`[StealService][Debug] CompleteSteal({player.Name}, {npcModel.Name}) — rejected: session npc mismatch (session npc={session.npc.Name})`) end
+		return false
+	end
 
 	local elapsed = workspace:GetServerTimeNow() - session.startTime
 	if elapsed + COMPLETION_TOLERANCE < session.threshold then
+		if DEBUG_STEAL then warn(`[StealService][Debug] CompleteSteal({player.Name}, {npcModel.Name}) — rejected: elapsed {elapsed} < threshold {session.threshold}`) end
 		return false
 	end
 
 	local distance = Local.GetDistance(player, npcModel)
 	if not distance or distance > MAX_STEAL_DISTANCE then
+		if DEBUG_STEAL then warn(`[StealService][Debug] CompleteSteal({player.Name}, {npcModel.Name}) — rejected: out of range ({distance})`) end
 		Local.TriggerFailure(session, "OutOfRange")
 		return false
+	end
+
+	if DEBUG_STEAL then
+		print(`[StealService][Debug] CompleteSteal({player.Name}, {npcModel.Name}) — SUCCESS`)
 	end
 
 	Local.TriggerSuccess(session)

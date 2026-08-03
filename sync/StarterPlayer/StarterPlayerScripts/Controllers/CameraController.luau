@@ -19,7 +19,7 @@ local CursorGui = GuiController.Guis.Cursor
 local player = Players.LocalPlayer
 
 --|| Variables
-local _connections: {RBXScriptConnection} = {}
+local _connections: { RBXScriptConnection } = {}
 local _freeLookHandle: any = nil
 
 local _isEnabled: boolean = false
@@ -49,6 +49,8 @@ local SNAP_BACK_SPEED = 10
 
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.RespectCanCollide = true
+RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
+RAYCAST_PARAMS.IgnoreWater = true
 
 --|| MAIN ||--
 local Local = {}
@@ -56,14 +58,11 @@ local Shared = {}
 
 -- [[ Startup ]] --
 function Shared.Init()
-	RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
-	RAYCAST_PARAMS.IgnoreWater = true
-
 	RunService:BindToRenderStep("OTSCameraUpdate", Enum.RenderPriority.Camera.Value, Local.OnRenderStepped)
-	
-	UserInputService.InputChanged:Connect(function(input: InputObject, gameProcessedEvent: boolean) 
+
+	UserInputService.InputChanged:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 		_lastInputWasGamepad = UserInputService.PreferredInput.Name:lower():find("gamepad") ~= nil
-		
+
 		local otherKey = _lastInputWasGamepad and FREE_LOOK_KEYS[1] or FREE_LOOK_KEYS[2]
 		local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
 
@@ -72,36 +71,38 @@ function Shared.Init()
 		ActionPromptController.ShowPrompt(key, text)
 		ActionPromptController.HidePrompt(otherKey)
 	end)
-	
-	UserInputService.GamepadConnected:Connect(function(gamepadNum: Enum.UserInputType) 
+
+	UserInputService.GamepadConnected:Connect(function(gamepadNum: Enum.UserInputType)
 		_lastInputWasGamepad = true
-		
+
 		local otherKey = _lastInputWasGamepad and FREE_LOOK_KEYS[1] or FREE_LOOK_KEYS[2]
 		local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
-		
+
 		local text = _isFreeLook and "Release Free Look" or "Free Look"
-		
+
 		ActionPromptController.ShowPrompt(key, text)
 		ActionPromptController.HidePrompt(otherKey)
 	end)
-	
-	UserInputService.GamepadDisconnected:Connect(function(gamepadNum: Enum.UserInputType) 
+
+	UserInputService.GamepadDisconnected:Connect(function(gamepadNum: Enum.UserInputType)
 		_lastInputWasGamepad = false
-		
+
 		local otherKey = _lastInputWasGamepad and FREE_LOOK_KEYS[1] or FREE_LOOK_KEYS[2]
 		local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
-		
+
 		local text = _isFreeLook and "Release Free Look" or "Free Look"
-		
+
 		ActionPromptController.ShowPrompt(key, text)
 		ActionPromptController.HidePrompt(otherKey)
 	end)
 
 	Observers.observeCharacter(function(_player: Player, _character: Model): (() -> ())?
-		if _player ~= player then return end
+		if _player ~= player then
+			return
+		end
 		local character = player.Character
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-		if not humanoid then 
+		if not humanoid then
 			return function() end
 		end
 
@@ -109,9 +110,7 @@ function Shared.Init()
 			workspace.CurrentCamera.CameraSubject = humanoid
 		end
 
-		return function()
-
-		end
+		return function() end
 	end)
 end
 
@@ -132,7 +131,9 @@ end
 
 function Local.GetOrSetupAlign(hrp: BasePart): AlignOrientation
 	local align = hrp:FindFirstChild("OTS_Align") :: AlignOrientation
-	if align then return align end
+	if align then
+		return align
+	end
 
 	local att = Instance.new("Attachment")
 	att.Name = "OTS_Attachment"
@@ -181,17 +182,16 @@ end
 
 function Local.OnFreeLook(_name: string, state: Enum.UserInputState, _input: InputObject): Enum.ContextActionResult?
 	local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
-	
+
 	if state == Enum.UserInputState.Begin then
 		_isFreeLook = true
 		_isSnappingBack = false
-		
-		ActionPromptController.ChangeActionText(key, "Release Free Look")
 
+		ActionPromptController.ChangeActionText(key, "Release Free Look")
 	elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
 		_isFreeLook = false
 		_isSnappingBack = true
-		
+
 		ActionPromptController.ChangeActionText(key, "Free Look")
 
 		local character = player.Character
@@ -208,15 +208,21 @@ function Local.OnFreeLook(_name: string, state: Enum.UserInputState, _input: Inp
 end
 
 function Local.OnRenderStepped(dt: number)
-	if not _isEnabled then return end
+	if not _isEnabled then
+		return
+	end
 
 	local camera = Workspace.CurrentCamera
 	local character = player.Character
-	if not camera or not character then return end
+	if not camera or not character then
+		return
+	end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
 	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-	if not hrp or not humanoid or humanoid.Health <= 0 then return end
+	if not hrp or not humanoid or humanoid.Health <= 0 then
+		return
+	end
 
 	if not _lastInputWasGamepad then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
@@ -228,7 +234,9 @@ function Local.OnRenderStepped(dt: number)
 
 	if _isSnappingBack then
 		local diff = (_snapTargetYaw - _yaw) % 360
-		if diff > 180 then diff -= 360 end
+		if diff > 180 then
+			diff -= 360
+		end
 
 		local lerpAlpha = 1 - math.exp(-SNAP_BACK_SPEED * dt)
 		_yaw += diff * lerpAlpha
@@ -248,7 +256,10 @@ function Local.OnRenderStepped(dt: number)
 	local camRotation = CFrame.Angles(0, math.rad(_yaw), 0) * CFrame.Angles(math.rad(_pitch), 0, 0)
 	local targetPos = focusPos + (camRotation * CAMERA_OFFSET)
 
-	RAYCAST_PARAMS.FilterDescendantsInstances = UtilsLibrary.tableUtils.Extend(CollectionService:GetTagged("Player"), CollectionService:GetTagged("THROWN_ITEM"))
+	RAYCAST_PARAMS.FilterDescendantsInstances = UtilsLibrary.tableUtils.Extend(
+		CollectionService:GetTagged("Player"),
+		CollectionService:GetTagged("THROWN_ITEM")
+	)
 	local direction = targetPos - focusPos
 	local result = Workspace:Raycast(focusPos, direction, RAYCAST_PARAMS)
 
@@ -280,7 +291,9 @@ end
 
 -- [[ Public Functions ]] --
 function Shared.Enable()
-	if _isEnabled then return end
+	if _isEnabled then
+		return
+	end
 	_isEnabled = true
 
 	if not _lastInputWasGamepad then
@@ -299,23 +312,25 @@ function Shared.Enable()
 		name = FREE_LOOK_ACTION,
 		keys = FREE_LOOK_KEYS,
 		priority = Enum.ContextActionPriority.High.Value,
-		callback = Local.OnFreeLook
+		callback = Local.OnFreeLook,
 	})
-	
+
 	local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
 
 	ActionPromptController.ShowPrompt(key, "Free Look")
 end
 
 function Shared.Disable()
-	if not _isEnabled then return end
+	if not _isEnabled then
+		return
+	end
 	_isEnabled = false
 
 	if _freeLookHandle then
 		_freeLookHandle:Unbind()
 		_freeLookHandle = nil
 	end
-	
+
 	local key = _lastInputWasGamepad and FREE_LOOK_KEYS[2] or FREE_LOOK_KEYS[1]
 
 	ActionPromptController.HidePrompt(key)
@@ -339,26 +354,39 @@ function Shared.Disable()
 		local hrp = character:FindFirstChild("HumanoidRootPart")
 		if hrp then
 			local align = hrp:FindFirstChild("OTS_Align")
-			if align then align:Destroy() end
+			if align then
+				align:Destroy()
+			end
 			local att = hrp:FindFirstChild("OTS_Attachment")
-			if att then att:Destroy() end
+			if att then
+				att:Destroy()
+			end
 		end
 	end
 end
 
-function Shared.GetLookTarget(maxDistance: number): RaycastResult?
-	if not _isEnabled then return nil end
+function Shared.GetLookTarget(maxDistance: number, customParams: RaycastParams?): RaycastResult?
+	if not _isEnabled then
+		return nil
+	end
 
 	local camera = Workspace.CurrentCamera
 	local character = player.Character
-	if not camera or not character then return nil end
+	if not camera or not character then
+		return nil
+	end
 
 	RAYCAST_PARAMS.FilterDescendantsInstances = { character }
+
+	local rayParams = customParams or RAYCAST_PARAMS
 
 	local origin = camera.CFrame.Position
 	local direction = camera.CFrame.LookVector * maxDistance
 
-	return Workspace:Raycast(origin, direction, RAYCAST_PARAMS)
+	local result = Workspace:Raycast(origin, direction, rayParams)
+	-- print(script.Name, result)
+
+	return result
 end
 
 function Shared.IsFreeLook(): boolean
@@ -368,7 +396,9 @@ end
 -- Lets other controllers hold free-look/mouse-lock off during a forced UI window without racing the
 -- RoundState listener above — re-evaluates against the live state on release rather than blind-Enable.
 function Shared.SetSuppressed(suppressed: boolean)
-	if _suppressed == suppressed then return end
+	if _suppressed == suppressed then
+		return
+	end
 	_suppressed = suppressed
 	Local.OnRoundStateChanged()
 end
