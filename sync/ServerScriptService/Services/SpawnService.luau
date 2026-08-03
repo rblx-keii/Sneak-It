@@ -210,6 +210,19 @@ function Shared.SpawnPlayer(player: Player, teamName: string)
 	end
 end
 
+function Shared.GetTeamSpawnPosition(teamName: string): Vector3?
+	local spawnsFolder = Local.GetSpawnsFolder()
+	if not spawnsFolder then return nil end
+
+	local spawnZone = spawnsFolder:FindFirstChild(teamName:upper()) :: BasePart?
+	if not spawnZone then
+		warn(`[SpawnService] No spawn zone found for team "{teamName:upper()}"`)
+		return nil
+	end
+
+	return spawnZone.Position
+end
+
 function Shared.SpawnPlayerToIntermission(player: Player)
 	local character = player.Character
 	if not character then return end

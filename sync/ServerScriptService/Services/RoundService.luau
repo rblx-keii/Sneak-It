@@ -14,6 +14,7 @@ local TeamService = require(script.Parent.TeamService)
 local DataService = require(script.Parent.DataService)
 local RewardService = require(script.Parent.RewardService)
 local NodeGraph = require(script.Parent.NpcService.NodeGraph)
+local TransitionLanes = require(script.Parent.NpcService.Behaviors.TransitionLanes)
 
 --|| Types
 export type RoundState = "Waiting" | "Intermission" | "MapLoading" | "Starting" | "InProgress" | "Ended"
@@ -35,7 +36,8 @@ local isStudio = RunService:IsStudio()
 --|| Constants
 local MIN_TOTAL_PLAYERS = isStudio and 1 or 2
 local INTERMISSION_DURATION = isStudio and 5 or 10
-local STARTING_DURATION = isStudio and 20 or 20
+local STARTING_DURATION = isStudio and 5 or 20
+local MAP_LOAD_STREAM_DURATION = 30
 local ROUND_DURATION = isStudio and math.huge or 600
 local ENDED_DISPLAY_DURATION = 10
 local EMPTY_TEAM_GRACE = 10
@@ -314,6 +316,21 @@ function Local.HandleIntermission(tid: number)
 	Shared.SetState("MapLoading")
 end
 
+function Local.RequestSpawnStreaming()
+	for _, player in _matchParticipants do
+		local teamName = TeamService.GetTeam(player)
+		if not teamName then continue end
+
+		local position = SpawnService.GetTeamSpawnPosition(teamName)
+		if not position then continue end
+
+		Network:FireClient("Round", player, "StreamSpawn", {
+			position = position,
+			timeout = MAP_LOAD_STREAM_DURATION,
+		})
+	end
+end
+
 function Local.HandleMapLoading(tid: number)
 	local roster = TeamService.AssignTeams(Local.GetEligiblePlayers())
 
@@ -339,7 +356,11 @@ function Local.HandleMapLoading(tid: number)
 	local nodesFolder = activeMap:FindFirstChild("Nodes")
 	if nodesFolder then
 		NodeGraph.PrefillLoSCache(nodesFolder)
+		TransitionLanes.Prefill(nodesFolder)
 	end
+	Local.RequestSpawnStreaming()
+
+	if _stateId ~= tid then return end
 
 	if _stateId ~= tid then return end
 	Shared.SetState("Starting")

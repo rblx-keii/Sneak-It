@@ -26,10 +26,6 @@ local _currentTargetNpc: Model? = nil
 local _activeHighlight: Highlight? = nil
 local _holdingNpc: Model? = nil
 local _isHoldingBag: boolean = false
-local _lastDebugNpc: Model? = nil
-local _lastDebugHitInstance: any = nil
-local _hasLoggedFirstHit: boolean = false
-local _lastDebugGateReason: string? = nil
 
 --|| Constants
 local STEALABLE_TAG = "StealableNPC"
@@ -41,9 +37,6 @@ local DEFAULT_STEAL_THRESHOLD = 3
 -- look-raycast from the camera needs far more reach than MAX_STEAL_DISTANCE (a character-to-NPC
 -- distance) to ever land on a target standing right next to the player.
 local LOOK_RAY_DISTANCE = 12
-
--- Flip off once the "can't steal" investigation is done — logs only fire while looking at/interacting with a bag, not every frame.
-local DEBUG_STEAL = true
 
 --|| MAIN ||--
 local Local = {}
@@ -60,9 +53,6 @@ function Shared.Init()
 	end)
 
 	table.insert(_networkConnections, Network:BindEvent("Steal", "Result", function(data: { result: string, reason: string? })
-		if DEBUG_STEAL then
-			print(`[StealController][Debug] Result received: {data.result}{data.reason and ` ({data.reason})` or ""}`)
-		end
 		Network:FireLocal("Steal", "ResultReceived", data)
 	end))
 
@@ -74,12 +64,7 @@ function Shared.Init()
 			if heldItemName and heldItemName ~= "" then
 				heldItem = character:FindFirstChild(heldItemName)
 			end
-			local wasHoldingBag = _isHoldingBag
 			_isHoldingBag = heldItem ~= nil and heldItem:GetAttribute("IsBag") == true
-
-			if DEBUG_STEAL and _isHoldingBag ~= wasHoldingBag then
-				print(`[StealController][Debug] isHoldingBag changed to {_isHoldingBag} (heldItem="{heldItemName}") — steal prompts {_isHoldingBag and "suppressed" or "allowed"}`)
-			end
 
 			if _isHoldingBag and _currentTargetNpc then
 				Local.OnTargetExited()
@@ -126,10 +111,6 @@ function Local.SetupPrompt(npc: Instance)
 
 	prompt.HoldStarted:Connect(function()
 		_holdingNpc = npc :: Model
-
-		if DEBUG_STEAL then
-			print(`[StealController][Debug] HoldStarted on "{npc.Name}" -> firing Steal/Start (npcId={npcId})`)
-		end
 		Network:FireServer("Steal", "Start", { npcId = npcId })
 	end)
 
@@ -140,26 +121,15 @@ function Local.SetupPrompt(npc: Instance)
 	end)
 
 	prompt.Triggered:Connect(function()
-		if DEBUG_STEAL then
-			print(`[StealController][Debug] Triggered on "{npc.Name}" -> firing Steal/Complete (npcId={npcId})`)
-		end
 		Network:FireServer("Steal", "Complete", { npcId = npcId })
 	end)
 
 	_activePrompts[npc :: Model] = prompt
-
-	if DEBUG_STEAL then
-		print(`[StealController][Debug] Prompt created for NPC "{npc.Name}" (uid={npcId}, threshold={threshold}) — StealableNPC tag was applied`)
-	end
 end
 
 function Local.TeardownPrompt(npc: Instance)
 	local prompt = _activePrompts[npc :: Model]
 	if not prompt then return end
-
-	if DEBUG_STEAL then
-		print(`[StealController][Debug] Prompt torn down for NPC "{(npc :: Model).Name}" (lost StealableNPC tag or despawned)`)
-	end
 
 	if _currentTargetNpc == npc then
 		Local.OnTargetExited()
@@ -182,7 +152,6 @@ function Local.GetBagTargetFromResult(result: RaycastResult): (Model?, Model?)
 	end
 
 	if not npc then
-		_lastDebugNpc = nil
 		return nil, nil
 	end
 
@@ -190,13 +159,6 @@ function Local.GetBagTargetFromResult(result: RaycastResult): (Model?, Model?)
 	local bagModel: Model? = nil
 	if heldItemName and heldItemName ~= "" then
 		bagModel = npc:FindFirstChild(heldItemName) :: Model?
-	end
-
-	local hasPrompt = _activePrompts[npc] ~= nil
-
-	if DEBUG_STEAL and npc ~= _lastDebugNpc then
-		_lastDebugNpc = npc
-		print(`[StealController][Debug] Raycast hit part of stealable NPC "{npc.Name}" — heldItem="{heldItemName}", bagModel={bagModel and bagModel.Name or "nil"}, hasPrompt={hasPrompt}, isHoldingBag={_isHoldingBag}`)
 	end
 
 	if not bagModel then
@@ -208,20 +170,8 @@ end
 
 function Local.OnRenderStepped()
 	if not RoundController.IsPlaying() or _isHoldingBag then
-		if DEBUG_STEAL then
-			local reason = not RoundController.IsPlaying() and "RoundController.IsPlaying() is false" or "isHoldingBag is true"
-			if reason ~= _lastDebugGateReason then
-				_lastDebugGateReason = reason
-				print(`[StealController][Debug] Steal targeting gated off — {reason}, no raycast is being run`)
-			end
-		end
 		if _currentTargetNpc then Local.OnTargetExited() end
 		return
-	end
-
-	if DEBUG_STEAL and _lastDebugGateReason then
-		_lastDebugGateReason = nil
-		print(`[StealController][Debug] Steal targeting gate cleared — resuming look raycasts`)
 	end
 
 	-- Don't let look-based retargeting fight an in-progress hold — once the player commits to a steal,
@@ -235,19 +185,6 @@ function Local.OnRenderStepped()
 	CUSTOM_RAYPARAMS.FilterType = Enum.RaycastFilterType.Exclude
 
 	local result = CameraController.GetLookTarget(LOOK_RAY_DISTANCE, CUSTOM_RAYPARAMS)
-
-	if DEBUG_STEAL then
-		local hitInstance = result and result.Instance or nil
-		if not _hasLoggedFirstHit or hitInstance ~= _lastDebugHitInstance then
-			_hasLoggedFirstHit = true
-			_lastDebugHitInstance = hitInstance
-			if hitInstance then
-				print(`[StealController][Debug] Look raycast hit "{hitInstance:GetFullName()}"`)
-			else
-				print(`[StealController][Debug] Look raycast — no hit within {LOOK_RAY_DISTANCE} studs`)
-			end
-		end
-	end
 
 	local newBag: Model? = nil
 	local newNpc: Model? = nil
@@ -274,17 +211,9 @@ function Local.OnTargetEntered(npc: Model, bag: Model)
 	if prompt then
 		prompt:SetEnabled(true)
 	end
-
-	if DEBUG_STEAL then
-		print(`[StealController][Debug] Target entered: NPC="{npc.Name}", bag="{bag.Name}", promptFound={prompt ~= nil}`)
-	end
 end
 
 function Local.OnTargetExited()
-	if DEBUG_STEAL and _currentTargetNpc then
-		print(`[StealController][Debug] Target exited: NPC="{_currentTargetNpc.Name}"`)
-	end
-
 	if _activeHighlight then
 		_activeHighlight:Destroy()
 		_activeHighlight = nil

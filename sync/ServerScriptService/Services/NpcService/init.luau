@@ -10,10 +10,12 @@ local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
 local ItemsConfig = require(ReplicatedStorage.Modules.Configs.ItemsConfig)
 local CharacterController = require(ReplicatedStorage.Modules.Shared.CharacterController)
 local NodeGraph = require(script.NodeGraph)
+local Queueing = require(script.Behaviors.Queueing)
 
 local RoundService = require(script.Parent.RoundService)
 local MapService = require(script.Parent.MapService)
 local ItemService = require(script.Parent.ItemService)
+local RagdollService = require(script.Parent.RagdollService)
 
 --|| Types
 
@@ -76,6 +78,10 @@ type NPCRecord = {
 	itemAnimTrack: AnimationTrack?,
 	baseAnimTracks: CharacterController.AnimationSet?,
 	unseating: boolean,
+	reactionState: "None" | "Alert" | "Panicking",
+	reactionEpoch: number,
+	baseWalkSpeed: number,
+	sprinting: boolean,
 }
 
 --|| Variables
@@ -121,6 +127,12 @@ local PATH_AGENT_PARAMS = {
 function Shared.Init()
 	table.insert(_connections, RoundService.OnStateChange:Connect(Local.OnRoundStateChange))
 	table.insert(_connections, Local.decisionReportEvent.Event:Connect(Local.OnDecisionReported))
+
+	-- Violence witnessed (player-on-player, player-on-NPC, or NPC-on-NPC ragdoll) panics every NPC
+	-- in blast radius, no line-of-sight required — matches the pre-node-graph legacy behavior.
+	table.insert(_connections, RagdollService.OnRagdolled:Connect(function(rig: Model)
+		Shared.ForcePanic(rig:GetPivot().Position, NPCConfig.PANIC_RADIUS, false)
+	end))
 
 	table.insert(
 		_connections,
@@ -199,6 +211,12 @@ function Local.ProcessNPCTick(record: NPCRecord): boolean?
 		return
 	end
 
+	-- Alert/Panicking own movement entirely via their own task.delay chains (EnterAlert/EnterPanic/
+	-- PanicWander) — the normal node-graph tick is fully suspended until ResumeAfterReaction clears this.
+	if record.reactionState ~= "None" then
+		return
+	end
+
 	-- Covers the full Unseat sequence (standing up AND the WalkClearOfSeat step that follows it)
 	-- so a real decision can't get requested mid-stand-up and race the seat-clearing walk.
 	if record.unseating then
@@ -241,7 +259,7 @@ function Local.ProcessNPCTick(record: NPCRecord): boolean?
 		return
 	end
 
-	if record.lineDwellUntil > 0 and workspace:GetServerTimeNow() < record.lineDwellUntil then
+	if Queueing.IsDwelling(record.lineDwellUntil) then
 		return
 	end
 
@@ -555,7 +573,8 @@ function Local.SpawnNPC(template: Model)
 		end
 	end
 
-	humanoid.WalkSpeed = NPCConfig.WALK_SPEED + (math.random() * 2 - 1) * NPCConfig.WALK_SPEED_JITTER
+	local baseWalkSpeed = NPCConfig.WALK_SPEED + (math.random() * 2 - 1) * NPCConfig.WALK_SPEED_JITTER
+	humanoid.WalkSpeed = baseWalkSpeed
 
 	_nextUid += 1
 	local uid = `NPC_{_nextUid}_{math.floor(workspace:GetServerTimeNow() * 1000)}`
@@ -604,6 +623,10 @@ function Local.SpawnNPC(template: Model)
 		itemAnimTrack = nil,
 		baseAnimTracks = CharacterController.Setup(humanoid),
 		unseating = false,
+		reactionState = "None",
+		reactionEpoch = 0,
+		baseWalkSpeed = baseWalkSpeed,
+		sprinting = false,
 	}
 
 	task.spawn(function()
@@ -633,6 +656,7 @@ function Local.SpawnNPC(template: Model)
 	_npcConnections[model] = connections
 
 	table.insert(_activeNPCs, record)
+	Local.ScheduleNextSprintCheck(record)
 end
 
 function Local.EquipStarterItem(record: NPCRecord)
@@ -1625,10 +1649,7 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 		end
 	end
 
-	if NodeGraph.GetNodeType(node) == "linenode" and not NodeGraph.IsSlotNode(node) then
-		record.lineDwellUntil = workspace:GetServerTimeNow()
-			+ math.random(NPCConfig.LINE_DWELL_MIN, NPCConfig.LINE_DWELL_MAX)
-	end
+	record.lineDwellUntil = Queueing.StartDwell(node) or 0
 
 	local isFinalDepartNode = NodeGraph.GetZone(node, _nodesFolder :: Instance) == "Depart"
 		and NodeGraph.GetLink(node) == nil
@@ -1721,6 +1742,14 @@ function Local.OnDecisionReported(npc: Model, nextNode: BasePart?, state: string
 		return
 	end
 
+	-- A decision requested before Alert/Panic interrupted this NPC is stale by the time it reports
+	-- back — discard it instead of letting it stomp the reaction's own movement/state.
+	if record.reactionState ~= "None" then
+		record.awaitingDecision = false
+		record.busy = false
+		return
+	end
+
 	if isPrefetch then
 		Local.OnPrefetchDecided(record, nextNode, state)
 		return
@@ -1737,6 +1766,204 @@ function Local.OnDecisionReported(npc: Model, nextNode: BasePart?, state: string
 	end
 
 	record.busy = false
+end
+
+-- [[ Private Functions — Alert / Panic / Contagion ]] --
+
+-- Pulls an NPC out of whatever node-specific holding state it's in (seat, line dwell, in-flight
+-- decision/prefetch) before switching it into a reaction state (Alert/Panicking).
+function Local.InterruptForReaction(record: NPCRecord)
+	record.targetNode = nil
+	record.moveTargetPos = nil
+	record.waypoints = nil
+	record.waypointIndex = nil
+	record.moveStartedAt = 0
+	record.prefetch = nil
+	record.awaitingDecision = false
+	record.lineDwellUntil = 0
+	record.pendingBagNode = nil
+	Local.ClearWaypointMarkers(record)
+	Local.ClearPathBlockedConnection(record)
+	Local.StopItemIdleAnimation(record)
+
+	if record.seatObject or Local.IsSeated(record) then
+		Local.Unseat(record)
+	end
+end
+
+-- Single source of truth for WalkSpeed: Panicking always wins, then an ambient sprint burst, else the
+-- NPC's own jittered base speed. Called any time either flag changes so the two systems never fight
+-- or compound each other's multiplier.
+function Local.RefreshWalkSpeed(record: NPCRecord)
+	if record.reactionState == "Panicking" then
+		record.humanoid.WalkSpeed = record.baseWalkSpeed * NPCConfig.PANIC_SPEED_MULTIPLIER
+	elseif record.sprinting then
+		record.humanoid.WalkSpeed = record.baseWalkSpeed * NPCConfig.SPRINT_SPEED_MULTIPLIER
+	else
+		record.humanoid.WalkSpeed = record.baseWalkSpeed
+	end
+end
+
+-- Reconciles a reaction-displaced NPC back into the node graph from wherever it physically ended up
+-- (unlike Local.SnapToNearestNode, which is Lobby-zone-locked and only correct at initial spawn).
+function Local.ResumeAfterReaction(record: NPCRecord)
+	record.reactionState = "None"
+	record.model:SetAttribute("AIState", "Commuting")
+
+	if not record.actor.Parent then
+		return
+	end
+
+	Local.RefreshWalkSpeed(record)
+
+	if not _nodesFolder then
+		return
+	end
+
+	local best, bestDist = nil, math.huge
+	for _, node in NodeGraph.EnumerateAllNodes(_nodesFolder :: Instance) do
+		local dist = (NodeGraph.GetNodePosition(node) - record.hrp.Position).Magnitude
+		if dist < bestDist then
+			bestDist = dist
+			best = node
+		end
+	end
+
+	if best then
+		Local.OnArrive(record, best)
+	end
+end
+
+function Local.EnterAlert(record: NPCRecord, sourcePosition: Vector3?)
+	if record.reactionState ~= "None" then
+		return
+	end
+
+	Local.InterruptForReaction(record)
+	record.reactionState = "Alert"
+	record.model:SetAttribute("AIState", "Alert")
+	Local.SetWalkTarget(record, record.hrp.Position) -- pause in place to "look"
+
+	local epoch = record.reactionEpoch + 1
+	record.reactionEpoch = epoch
+
+	task.delay(NPCConfig.ALERT_LOOK_DURATION, function()
+		if not record.actor.Parent then return end
+		if record.reactionState ~= "Alert" then return end
+		if record.reactionEpoch ~= epoch then return end
+
+		if math.random() < NPCConfig.ALERT_ESCALATE_CHANCE then
+			Local.EnterPanic(record, sourcePosition)
+		else
+			Local.ResumeAfterReaction(record)
+		end
+	end)
+end
+
+-- sourcePosition, when given, is the threat NPCs flee from (ragdoll location, or the panicking NPC
+-- that contagion is spreading from) — PanicWander biases its random points away from it. Omitted for
+-- the direct steal-alert victim, which has no external threat position to run from.
+function Local.EnterPanic(record: NPCRecord, sourcePosition: Vector3?)
+	if record.reactionState ~= "Panicking" then
+		Local.InterruptForReaction(record)
+		record.reactionState = "Panicking"
+		record.model:SetAttribute("AIState", "Panicking")
+		Local.RefreshWalkSpeed(record)
+		Local.PropagateContagion(record)
+	end
+
+	-- Token pattern (mirrors the decision/rest epoch guards elsewhere in this file) so an NPC
+	-- re-triggered into Panic while already panicking extends the duration correctly, and the
+	-- previous PanicWander recursion chain retires itself instead of running alongside a new one.
+	local epoch = record.reactionEpoch + 1
+	record.reactionEpoch = epoch
+
+	Local.PanicWander(record, epoch, sourcePosition)
+
+	task.delay(NPCConfig.PANIC_DURATION, function()
+		if not record.actor.Parent then return end
+		if record.reactionState ~= "Panicking" then return end
+		if record.reactionEpoch ~= epoch then return end
+		Local.ResumeAfterReaction(record)
+	end)
+end
+
+function Local.PanicWander(record: NPCRecord, epoch: number, sourcePosition: Vector3?)
+	if record.reactionState ~= "Panicking" or record.reactionEpoch ~= epoch then
+		return
+	end
+
+	local origin = record.hrp.Position
+	local dist = math.random() * NPCConfig.PANIC_RADIUS
+
+	local awayFromSource = sourcePosition and (origin - sourcePosition)
+	local baseAngle: number
+	if awayFromSource and awayFromSource.Magnitude > 1 then
+		baseAngle = math.atan2(awayFromSource.Z, awayFromSource.X)
+	else
+		baseAngle = math.random() * math.pi * 2 -- no usable source direction (too close/none) — flee blindly
+	end
+
+	local angle = baseAngle + (math.random() * 2 - 1) * NPCConfig.PANIC_FLEE_CONE_ANGLE
+	local offset = Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
+
+	Local.SetWalkTarget(record, origin + offset)
+
+	task.delay(math.random(1, 2), function()
+		if not record.actor.Parent then return end
+		Local.PanicWander(record, epoch, sourcePosition)
+	end)
+end
+
+-- Radius + raycast line-of-sight gated. Spreads from the panicking NPC's own position (not the
+-- original trigger), so repeated propagation produces an outward wave rather than a fixed blast, and
+-- each newly-infected NPC flees away from the one that infected it.
+function Local.PropagateContagion(source: NPCRecord)
+	local originPos = source.hrp.Position
+
+	for _, other in _activeNPCs do
+		if other == source then continue end
+		if other.reactionState == "Panicking" then continue end
+
+		local otherPos = other.hrp.Position
+		if (otherPos - originPos).Magnitude > NPCConfig.PANIC_RADIUS then continue end
+		if not NodeGraph.HasClearLine(originPos, otherPos, { _npcsFolder }) then continue end
+
+		if math.random() < NPCConfig.CONTAGION_CHANCE then
+			Local.EnterPanic(other, originPos)
+		end
+	end
+end
+
+-- [[ Private Functions — Ambient Sprinting ]] --
+
+-- Purely cosmetic crowd flavor — independent of Alert/Panic, self-recurses for the NPC's entire
+-- lifetime. Skips rolling (but keeps the chain alive) while a reaction owns the NPC's movement.
+function Local.ScheduleNextSprintCheck(record: NPCRecord)
+	task.delay(math.random(NPCConfig.SPRINT_CHECK_INTERVAL_MIN, NPCConfig.SPRINT_CHECK_INTERVAL_MAX), function()
+		if not record.actor.Parent then return end
+
+		if
+			record.reactionState == "None"
+			and not record.sprinting
+			and math.random() < NPCConfig.SPRINT_CHANCE
+		then
+			Local.StartSprint(record)
+		end
+
+		Local.ScheduleNextSprintCheck(record)
+	end)
+end
+
+function Local.StartSprint(record: NPCRecord)
+	record.sprinting = true
+	Local.RefreshWalkSpeed(record)
+
+	task.delay(math.random(NPCConfig.SPRINT_DURATION_MIN, NPCConfig.SPRINT_DURATION_MAX), function()
+		if not record.actor.Parent then return end
+		record.sprinting = false
+		Local.RefreshWalkSpeed(record)
+	end)
 end
 
 -- [[ Public Functions ]] --
@@ -1768,14 +1995,31 @@ function Shared.GetNPCKind(npc: Model): NPCKind?
 	return nil
 end
 
+-- Called by StealService whenever an NPC is successfully stolen from or catches a Smuggler mid-steal.
 function Shared.ForceAlert(npc: Model)
 	local record = Local.FindRecordByModel(npc)
 	if not record then
 		return
 	end
 
-	Local.StopItemIdleAnimation(record)
-	record.pendingBagNode = nil
+	Local.EnterAlert(record)
+end
+
+-- Public hook for the violence-witness reaction wired to RagdollService.OnRagdolled in Shared.Init,
+-- and for any future caller (e.g. Gate Lockdown) — NpcService never depends on the caller existing.
+function Shared.ForcePanic(position: Vector3, radius: number, requireLineOfSight: boolean?)
+	for _, record in _activeNPCs do
+		local npcPos = record.hrp.Position
+		if (npcPos - position).Magnitude > radius then
+			continue
+		end
+
+		if requireLineOfSight and not NodeGraph.HasClearLine(position, npcPos, { _npcsFolder }) then
+			continue
+		end
+
+		Local.EnterPanic(record, position)
+	end
 end
 
 function Shared.Destroy()

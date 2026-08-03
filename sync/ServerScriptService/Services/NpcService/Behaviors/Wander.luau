@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 --|| References
 local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
 local NodeGraph = require(script.Parent.Parent.NodeGraph)
+local Queueing = require(script.Parent.Queueing)
 
 local Wander = {}
 
@@ -54,15 +55,8 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 	local ignore = { ctx.npc, ctx.npc.Parent }
 
 	if NodeGraph.IsSlotNode(node) then
-		local lineGroup = NodeGraph.GetLineGroup(node)
-		local nextSlot = NodeGraph.FindNextSlotForward(lineGroup, node)
-
-		if nextSlot and NodeGraph.TryClaimSlot(nextSlot, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
-			NodeGraph.ReleaseSlot(node)
-			return nextSlot, "Queueing"
-		end
-
-		return nil, "Queueing"
+		local nextSlot = Queueing.TryAdvance(node)
+		return nextSlot, "Queueing"
 	end
 
 	local originPos = NodeGraph.GetNodePosition(node)
@@ -72,6 +66,10 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 	for _, other in NodeGraph.EnumerateAllNodes(ctx.nodesFolder) do
 		if other == node or other == ctx.lastNode then continue end
 		if NodeGraph.IsEntryNode(other) then continue end
+		-- Checkpoint nodes are Linear's deliberate routing targets, not incidental wander stops —
+		-- arriving at a Conveyor Node unconditionally triggers a real belt transit (bag drop) in
+		-- NpcService.OnArrive regardless of which Behavior walked the NPC there.
+		if NodeGraph.IsConveyorNode(other) or NodeGraph.IsTransitionNode(other) then continue end
 
 		local otherZone = NodeGraph.GetZone(other, ctx.nodesFolder)
 		if ctx.confineZone then
@@ -102,19 +100,13 @@ function Wander.GetNextTarget(ctx: Context): (BasePart?, string)
 		candidate = redirected
 	end
 
-	if NodeGraph.GetNodeType(candidate) == "linenode" then
-		if not NodeGraph.TryClaimSlot(candidate, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
-			return nil, "Queueing"
-		end
-	elseif NodeGraph.GetNodeType(candidate) == "seatnode" then
-		if not NodeGraph.TryReserveSeat(candidate) then
-			return nil, "Queueing"
-		end
+	local claimed: boolean
+	candidate, claimed = Queueing.ClaimForArrival(candidate)
+	if not claimed then
+		return nil, "Queueing"
 	end
 
-	if NodeGraph.GetNodeType(node) == "linenode" then
-		NodeGraph.ReleaseSlot(node)
-	end
+	Queueing.Release(node)
 
 	return candidate, "Wandering"
 end

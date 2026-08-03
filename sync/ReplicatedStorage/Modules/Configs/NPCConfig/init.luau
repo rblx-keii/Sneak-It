@@ -79,6 +79,25 @@ NPCConfig.RESPAWN_DELAY_MIN = 5 -- seconds after a boarded NPC despawns before i
 NPCConfig.RESPAWN_DELAY_MAX = 10
 NPCConfig.BOARD_ROLL_CHANCE = 1 -- chance an NPC decides to board once the plane has arrived, rolled once per boarding window; the rest keep waiting for a later flight
 
+-- [[ Alert / Panic / Contagion ]] --
+NPCConfig.ALERT_LOOK_DURATION = 2 -- seconds an NPC pauses to "look" before rolling to escalate into Panic or calm back down
+NPCConfig.ALERT_ESCALATE_CHANCE = 0.35 -- chance an Alert escalates into full Panic once the look duration elapses
+NPCConfig.PANIC_DURATION = 6 -- seconds an NPC stays Panicking before calming back down
+NPCConfig.PANIC_RADIUS = 25 -- studs; both the erratic-wander range while panicking and ForcePanic's default trigger radius
+NPCConfig.CONTAGION_CHANCE = 0.5 -- chance a panicking NPC's nearby (LoS-gated) neighbors also start panicking
+NPCConfig.PANIC_SPEED_MULTIPLIER = 1.6 -- WalkSpeed multiplier applied for the duration of Panicking, so fleeing actually reads as running
+NPCConfig.PANIC_FLEE_CONE_ANGLE = math.rad(70) -- +/- randomization around the dead-away-from-source direction, so fleeing looks organic instead of laser-straight
+
+-- [[ Ambient Sprinting ]] --
+-- Purely cosmetic crowd variety (someone's late for their flight) — unrelated to Alert/Panic, though
+-- Panic's speed multiplier always wins over a casual sprint if both are somehow active (see RefreshWalkSpeed).
+NPCConfig.SPRINT_CHECK_INTERVAL_MIN = 8 -- seconds between random-sprint rolls per NPC
+NPCConfig.SPRINT_CHECK_INTERVAL_MAX = 15
+NPCConfig.SPRINT_CHANCE = .325 -- chance each roll starts a sprint burst
+NPCConfig.SPRINT_DURATION_MIN = 2 -- seconds a sprint burst lasts
+NPCConfig.SPRINT_DURATION_MAX = 5
+NPCConfig.SPRINT_SPEED_MULTIPLIER = 2 -- WalkSpeed multiplier while sprinting
+
 -- [[ Conveyor node (bag-in-transit) ]] --
 NPCConfig.BELT_TRAVEL_TIME = 3 -- seconds a dropped bag takes to visually ride from a Conveyor Node to its linked exit node
 

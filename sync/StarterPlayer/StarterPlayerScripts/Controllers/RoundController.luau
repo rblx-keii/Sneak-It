@@ -1,4 +1,5 @@
 --|| Services
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -66,6 +67,10 @@ function Shared.Init()
 	table.insert(_networkConnections, Network:BindEvent("Team", "Assigned", function(data: { teamName: string? })
 		Local.SetPlaying(data.teamName ~= nil)
 	end))
+
+	table.insert(_networkConnections, Network:BindEvent("Round", "StreamSpawn", function(data: { position: Vector3, timeout: number })
+		Local.StreamAroundSpawn(data.position, data.timeout)
+	end))
 end
 
 function Shared.Start()
@@ -77,6 +82,12 @@ function Local.SetPlaying(playing: boolean)
 	if _isPlaying == playing then return end
 	_isPlaying = playing
 	Shared.OnPlayingChanged:Fire(playing)
+end
+
+function Local.StreamAroundSpawn(position: Vector3, timeout: number)
+	task.spawn(function()
+		Players.LocalPlayer:RequestStreamAroundAsync(position, timeout)
+	end)
 end
 
 -- [[ Public Functions ]] --

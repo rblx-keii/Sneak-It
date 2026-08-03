@@ -258,6 +258,60 @@ function NodeGraph.IsPreciselyReachable(fromPos: Vector3, toPos: Vector3, tolera
 	return (lastWaypoint.Position - toPos).Magnitude <= tolerance
 end
 
+-- [[ Zone-level routing ]] --
+
+-- BFS shortest path over NPCConfig.ZONE_ADJACENCY, from a Behavior's current zone to a designated
+-- goal zone (e.g. Linear's "Depart"). This only shapes *which zone to head toward next* — it never
+-- picks the specific node, so all of a Behavior's live occupancy-aware decisions (line load
+-- balancing, seat retries, shop detours) keep working exactly as before this route existed. Returns
+-- the ordered zone route including both endpoints (a single-element route if already at goalZone),
+-- or nil if goalZone is unreachable from startZone via the adjacency graph.
+function NodeGraph.FindZoneRoute(startZone: string, goalZone: string): { string }?
+	if startZone == goalZone then
+		return { startZone }
+	end
+
+	local adjacency: { [string]: { string } } = {}
+	local function addEdge(a: string, b: string)
+		adjacency[a] = adjacency[a] or {}
+		table.insert(adjacency[a], b)
+	end
+	for _, pair in NPCConfig.ZONE_ADJACENCY do
+		addEdge(pair[1], pair[2])
+		addEdge(pair[2], pair[1])
+	end
+
+	local cameFrom: { [string]: string } = {}
+	local visited: { [string]: boolean } = { [startZone] = true }
+	local queue: { string } = { startZone }
+	local head = 1
+
+	while head <= #queue do
+		local current = queue[head]
+		head += 1
+
+		if current == goalZone then
+			local route = { current }
+			local walker = current
+			while cameFrom[walker] do
+				walker = cameFrom[walker]
+				table.insert(route, 1, walker)
+			end
+			return route
+		end
+
+		for _, neighbor in adjacency[current] or {} do
+			if not visited[neighbor] then
+				visited[neighbor] = true
+				cameFrom[neighbor] = current
+				table.insert(queue, neighbor)
+			end
+		end
+	end
+
+	return nil
+end
+
 -- [[ Auto-search ]] --
 
 function NodeGraph.GetNodesInZone(
@@ -700,6 +754,14 @@ function NodeGraph.SetEnRouteTransition(npc: Model, transitionNode: BasePart?)
 	value.Value = transitionNode
 end
 
+function NodeGraph.GetTransitionUseCount(transitionNode: BasePart): number
+	return transitionNode:GetAttribute("LaneUseCount") :: number or 0
+end
+
+function NodeGraph.IncrementTransitionUseCount(transitionNode: BasePart)
+	transitionNode:SetAttribute("LaneUseCount", NodeGraph.GetTransitionUseCount(transitionNode) + 1)
+end
+
 -- [[ Shop zone occupancy ]] --
 
 function NodeGraph.IsShopZone(zoneName: string): boolean
@@ -766,15 +828,6 @@ end
 function NodeGraph.GetLineNodeForEntry(nodesFolder: Instance, zoneName: string, entryNode: BasePart): BasePart?
 	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
 		if NodeGraph.GetNodeType(node) == "linenode" and NodeGraph.GetEntryNode(node) == entryNode then
-			return node
-		end
-	end
-	return nil
-end
-
-function NodeGraph.GetConveyorNodeForTransition(nodesFolder: Instance, zoneName: string, transitionNode: BasePart): BasePart?
-	for _, node in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
-		if NodeGraph.IsConveyorNode(node) and NodeGraph.GetLink(node) == transitionNode then
 			return node
 		end
 	end

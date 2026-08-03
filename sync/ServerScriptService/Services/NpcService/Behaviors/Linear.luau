@@ -4,6 +4,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 --|| References
 local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
 local NodeGraph = require(script.Parent.Parent.NodeGraph)
+local Queueing = require(script.Parent.Queueing)
+local TransitionLanes = require(script.Parent.TransitionLanes)
 
 local Linear = {}
 
@@ -20,26 +22,31 @@ export type Context = {
 	pendingBagNode: BasePart?,
 }
 
+--|| Constants
+-- Linear's only goal for now — the single fixed endpoint every Crowd NPC eventually commutes
+-- toward. NodeGraph.FindZoneRoute is goal-agnostic, though: a future trait/Behavior can call it with
+-- a different goal zone (a ticket counter, a specific shop) without needing a new routing mechanism.
+local GOAL_ZONE = "Depart"
+
 --|| Private Functions
-local function nextBackboneZone(zone: string): string?
-	local sequence = NPCConfig.LINEAR_ZONE_SEQUENCE
-	for i, z in sequence do
-		if z == zone then
-			return sequence[i + 1]
-		end
-	end
-	return nil
-end
 
--- Shop zones (Cafe/Souvenir/Convenience) branch off the backbone and have no "next" of their
--- own in LINEAR_ZONE_SEQUENCE — once a shop-dwell expires back to Linear, this is what lets
--- GetNextTarget find its way back out via whichever zone it's adjacent to (always Concourse).
+-- Pre-defines *which zone to head toward next* via a real BFS route to the goal zone (replaces the
+-- old hardcoded LINEAR_ZONE_SEQUENCE array) — shop zones (Cafe/Souvenir/Convenience) fall out of this
+-- naturally instead of needing a separate fallback, since the route from any of them back toward the
+-- goal always passes through Concourse. Only shapes the route's shape; NodeGraph.FindNearestNode and
+-- the rest of GetNextTarget still make every actual node-level pick live (load, occupancy, retries).
 local function resolveNextZone(zone: string): string?
-	local backboneNext = nextBackboneZone(zone)
-	if backboneNext then
-		return backboneNext
+	if zone == GOAL_ZONE then
+		return nil
 	end
 
+	local route = NodeGraph.FindZoneRoute(zone, GOAL_ZONE)
+	if route and #route >= 2 then
+		return route[2]
+	end
+
+	-- Goal unreachable via adjacency from here (shouldn't happen with a well-formed
+	-- NPCConfig.ZONE_ADJACENCY) — fail soft to any neighboring zone rather than stranding the NPC.
 	for _, pair in NPCConfig.ZONE_ADJACENCY do
 		if pair[1] == zone then
 			return pair[2]
@@ -76,17 +83,21 @@ local function pickShopZone(npc: Model): string
 	return NPCConfig.SHOP_ZONES[#NPCConfig.SHOP_ZONES]
 end
 
--- Linked Transition Nodes in a zone, split by where they actually lead: "forward" ones continue
--- the Lobby->Concourse->Platform->Depart backbone, "shop" ones detour into a side zone. Blending
--- both into one load-balancing pool used to silently divert backbone traffic into shops with no
--- real decision behind it — Concourse Loitering is that decision.
+-- Linked Transition Nodes in a zone, split by where they lead: "forward" ones continue the backbone,
+-- "shop" ones detour into a side zone (picked deliberately via Concourse Loitering, not by accident).
+-- Forward lanes/checkpoints are pulled straight from TransitionLanes.GetLanesTo — the same cached
+-- pairing ResolveLane uses — instead of independently rebuilding the pairing here, so there's exactly
+-- one source of truth for "what's this Transition's checkpoint."
 local function buildTransitionPools(nodesFolder: Instance, zone: string, nextZone: string?): (
 	{ BasePart },
 	{ BasePart },
 	{ [string]: { BasePart } }
 )
-	local forwardTransitions = {}
-	local forwardCheckpoints = {}
+	local forwardTransitions, forwardCheckpoints = {}, {}
+	if nextZone then
+		forwardTransitions, forwardCheckpoints = TransitionLanes.GetLanesTo(nodesFolder, zone, nextZone)
+	end
+
 	local shopTransitionsByZone: { [string]: { BasePart } } = {}
 
 	for _, transitionNode in NodeGraph.GetTransitionNodes(nodesFolder, zone) do
@@ -94,11 +105,7 @@ local function buildTransitionPools(nodesFolder: Instance, zone: string, nextZon
 		if not link then continue end
 
 		local linkZone = NodeGraph.GetZone(link, nodesFolder)
-		if linkZone == nextZone then
-			table.insert(forwardTransitions, transitionNode)
-			local conveyor = NodeGraph.GetConveyorNodeForTransition(nodesFolder, zone, transitionNode)
-			table.insert(forwardCheckpoints, conveyor or transitionNode)
-		else
+		if linkZone ~= nextZone then
 			shopTransitionsByZone[linkZone] = shopTransitionsByZone[linkZone] or {}
 			table.insert(shopTransitionsByZone[linkZone], transitionNode)
 		end
@@ -114,15 +121,8 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	local ignore = { ctx.npc, ctx.npc.Parent }
 
 	if NodeGraph.IsSlotNode(node) then
-		local lineGroup = NodeGraph.GetLineGroup(node)
-		local nextSlot = NodeGraph.FindNextSlotForward(lineGroup, node)
-
-		if nextSlot and NodeGraph.TryClaimSlot(nextSlot, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
-			NodeGraph.ReleaseSlot(node)
-			return nextSlot, "Queueing"
-		end
-
-		return nil, "Queueing"
+		local nextSlot = Queueing.TryAdvance(node)
+		return nextSlot, "Queueing"
 	end
 
 	local candidate: BasePart?
@@ -132,16 +132,15 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 	elseif NodeGraph.GetNodeType(node) == "seatnode" then
 		candidate = nil
 	else
-		-- Shop entry/exit is the same Transition Node <-> Transition Node link walked in both
-		-- directions, so a node just arrived at via link would otherwise immediately re-follow
-		-- its own Link straight back the way it came (e.g. bouncing right back into a shop it
-		-- just left). Suppress that one case and let the dispatch below find real forward
-		-- progress instead; any other Link target is still taken as normal.
 		local link = NodeGraph.GetLink(node)
 		candidate = if link ~= ctx.lastNode then link else nil
 	end
 
 	local zone = NodeGraph.GetZone(node, ctx.nodesFolder)
+
+	if candidate then
+		candidate = TransitionLanes.ResolveLane(ctx.nodesFolder, zone, candidate, ctx.npc, node)
+	end
 
 	local enteringDepart = candidate
 		and zone ~= "Depart"
@@ -151,14 +150,6 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		candidate = nil
 	end
 
-	-- Concourse Loitering: once per visit, a Concourse NPC may detour into a shop, wander the
-	-- Concourse floor itself, or sit down, instead of always making straight-line progress toward
-	-- Platform — bag-holders included, since this is crowd flavor (the belt-riding bag is just a
-	-- visual prop, not the player Smuggler/TSA game) and can afford to take the scenic route.
-	-- Evaluated here — before the Link-based dispatch below — because a "Node" with an authored
-	-- fixed Link (used to shape the walking path through Concourse) would otherwise always win
-	-- outright and the roll would never get a chance to fire. Rolled once via the
-	-- ConcourseLoiterRolled attribute (cleared in NpcService.OnArrive on leaving Concourse).
 	if zone == "Concourse"
 		and NodeGraph.GetNodeType(node) == "node"
 		and not ctx.npc:GetAttribute("ConcourseLoiterRolled")
@@ -172,12 +163,11 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			local shopThreshold = NPCConfig.CONCOURSE_LOITER_SHOP_WEIGHT
 			local wanderThreshold = shopThreshold + NPCConfig.CONCOURSE_LOITER_WANDER_WEIGHT
 			local seatThreshold = wanderThreshold + NPCConfig.CONCOURSE_LOITER_SEAT_WEIGHT
-			-- roll >= seatThreshold falls into the remaining slice: keep heading toward the next zone anyway
 
 			local wantsWander = false
 
 			if roll < shopThreshold then
-				local _, _, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextBackboneZone(zone))
+				local _, _, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, resolveNextZone(zone))
 				local pickedPool = shopTransitionsByZone[pickShopZone(ctx.npc)]
 
 				if pickedPool then
@@ -190,8 +180,6 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 				loiterCandidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
 				wantsWander = not loiterCandidate
 			end
-			-- else: Forward — no override, the existing Link/forward-progress dispatch wins as usual
-
 			if wantsWander then
 				loiterCandidate = NodeGraph.FindNearestNode(ctx.nodesFolder, node, { zone }, { node, ctx.lastNode }, ignore)
 				if loiterCandidate then
@@ -212,17 +200,22 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		local nextZone = resolveNextZone(zone)
 		local forwardTransitions, forwardCheckpoints, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, nextZone)
 
-		local chosenIndex = 1
-		local chosenLoad = math.huge
-		for i, transitionNode in forwardTransitions do
-			local load = NodeGraph.GetTransitionEnRouteCount(transitionNode)
-			if load < chosenLoad then
-				chosenLoad = load
-				chosenIndex = i
+		local chosenTransition: BasePart? = NodeGraph.GetEnRouteTransition(ctx.npc)
+		local chosenCheckpoint: BasePart? = nil
+		if chosenTransition then
+			for i, transitionNode in forwardTransitions do
+				if transitionNode == chosenTransition then
+					chosenCheckpoint = forwardCheckpoints[i]
+					break
+				end
+			end
+			if not chosenCheckpoint then
+				chosenTransition = nil
 			end
 		end
-		local chosenTransition = forwardTransitions[chosenIndex]
-		local chosenCheckpoint = forwardCheckpoints[chosenIndex]
+		if not chosenTransition then
+			chosenTransition, chosenCheckpoint = TransitionLanes.GetLeastLoadedLane(forwardTransitions, forwardCheckpoints)
+		end
 
 		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
 		local gateStage = workspace:GetAttribute("GateStage")
@@ -273,21 +266,6 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			end
 		end
 
-		if not candidate and ctx.holdingBag then
-			local nearbyConveyors =
-				NodeGraph.GetNodesInZone(ctx.nodesFolder, { zone }, NodeGraph.GetNodePosition(node), false, { "conveyornode" })
-
-			for _, conveyor in nearbyConveyors do
-				if (NodeGraph.GetNodePosition(conveyor) - NodeGraph.GetNodePosition(node)).Magnitude > NPCConfig.NODE_SEARCH_RADIUS then
-					break
-				end
-				if NodeGraph.HasClearLineBetweenNodes(node, conveyor, ignore) then
-					candidate = conveyor
-					break
-				end
-			end
-		end
-
 		if not candidate and transitionGated and not canApproachTransition and not (skipNodeTypes and skipNodeTypes.seatnode) then
 			candidate = NodeGraph.FindRandomSeatNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore)
 		end
@@ -311,8 +289,16 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 				NodeGraph.GetNodePosition(chosenCheckpoint :: BasePart)
 			)
 
+			if candidate and NodeGraph.IsTransitionNode(candidate) then
+				candidate = nil
+			end
+
 			if not candidate then
-				candidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, forwardCheckpoints)
+				if NodeGraph.HasClearLineBetweenNodes(node, chosenCheckpoint :: BasePart, ignore) then
+					candidate = chosenCheckpoint
+				else
+					candidate = NodeGraph.FindLoSBridge(ctx.nodesFolder, node, chosenCheckpoint :: BasePart, ignore)
+				end
 			end
 		end
 
@@ -398,24 +384,17 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 
 	candidate = NodeGraph.ResolveEntryRedirect(candidate, node)
 
-	if NodeGraph.GetNodeType(candidate) == "linenode" then
-		if not NodeGraph.TryClaimSlot(candidate, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
-			local openSlot = NodeGraph.FindNearestAvailableSlot(NodeGraph.GetLineGroup(candidate))
-			if not openSlot or not NodeGraph.TryClaimSlot(openSlot, NPCConfig.LINE_SLOT_PLAYER_RADIUS) then
-				return nil, "Queueing"
-			end
-			candidate = openSlot
-		end
+	local isLineCandidate = NodeGraph.GetNodeType(candidate) == "linenode"
+	local claimed: boolean
+	candidate, claimed = Queueing.ClaimForArrival(candidate)
+	if not claimed then
+		return nil, "Queueing"
+	end
+	if isLineCandidate then
 		NodeGraph.SetEnRouteLine(ctx.npc, nil)
-	elseif NodeGraph.GetNodeType(candidate) == "seatnode" then
-		if not NodeGraph.TryReserveSeat(candidate) then
-			return nil, "Queueing"
-		end
 	end
 
-	if NodeGraph.GetNodeType(node) == "linenode" then
-		NodeGraph.ReleaseSlot(node)
-	end
+	Queueing.Release(node)
 
 	return candidate, "Commuting"
 end
