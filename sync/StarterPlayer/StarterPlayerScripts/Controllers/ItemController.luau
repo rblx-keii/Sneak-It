@@ -29,6 +29,9 @@ local _isEquipped: boolean = false
 local _isHoldingBag: boolean = false
 local _currentAnimator: Animator? = nil
 
+local _pendingThrowTrack: AnimationTrack? = nil
+local _pendingThrowMarkerConn: RBXScriptConnection? = nil
+
 --|| Constants
 local THROW_ACTION = "Item_Throw"
 local DROP_ACTION = "Item_Drop"
@@ -78,12 +81,14 @@ function Shared.Init()
 			else
 				_isHoldingBag = false
 				Local.UnbindActions()
+				Local.CancelPendingThrow()
 			end
 		end)
 
 		return function()
 			stopAttribute()
 			Local.UnbindActions()
+			Local.CancelPendingThrow()
 
 			if _currentItem then
 				Shared.OnItemUnequipped:Fire(_currentItem, nil)
@@ -127,6 +132,22 @@ function Shared.Start()
 end
 
 -- [[ Private Functions ]] --
+
+-- The Throw animation's wind-up delays the actual RequestThrow fire until its "Throw" marker — if the
+-- item gets unequipped in the meantime (Drop pressed mid-windup, forced unequip, ragdoll, etc.), that
+-- marker still fires later against a now-nil _currentItem, which crashed FindFirstChild(nil). Anything
+-- that can clear the held item mid-windup must cancel the pending throw first.
+function Local.CancelPendingThrow()
+	if _pendingThrowMarkerConn then
+		_pendingThrowMarkerConn:Disconnect()
+		_pendingThrowMarkerConn = nil
+	end
+	if _pendingThrowTrack then
+		_pendingThrowTrack:Stop()
+		_pendingThrowTrack = nil
+	end
+end
+
 function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: InputObject): Enum.ContextActionResult?
 	if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
 	if not _isEquipped or not _currentAnimator then return Enum.ContextActionResult.Pass end
@@ -134,9 +155,12 @@ function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: I
 	local camera = Workspace.CurrentCamera
 	if not camera then return Enum.ContextActionResult.Pass end
 
+	Local.CancelPendingThrow()
+
 	local throwTrack = _currentAnimator:LoadAnimation(THROW_ANIM_INSTANCE)
 	throwTrack.Priority = Enum.AnimationPriority.Action
 	throwTrack:Play()
+	_pendingThrowTrack = throwTrack
 
 	local markerConnection: RBXScriptConnection? = nil
 	markerConnection = throwTrack:GetMarkerReachedSignal("Throw"):Connect(function()
@@ -144,6 +168,14 @@ function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: I
 			markerConnection:Disconnect()
 			markerConnection = nil
 		end
+		if _pendingThrowMarkerConn == markerConnection then
+			_pendingThrowMarkerConn = nil
+		end
+		if _pendingThrowTrack == throwTrack then
+			_pendingThrowTrack = nil
+		end
+
+		if not _currentItem then return end
 
 		local character = player.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -162,11 +194,18 @@ function Local.OnThrowInput(_name: string, state: Enum.UserInputState, _input: I
 			direction = cf.LookVector
 		})
 	end)
+	_pendingThrowMarkerConn = markerConnection
 
 	throwTrack.Stopped:Connect(function()
 		if markerConnection then
 			markerConnection:Disconnect()
 			markerConnection = nil
+		end
+		if _pendingThrowMarkerConn == markerConnection then
+			_pendingThrowMarkerConn = nil
+		end
+		if _pendingThrowTrack == throwTrack then
+			_pendingThrowTrack = nil
 		end
 	end)
 
@@ -177,6 +216,7 @@ function Local.OnDropInput(_name: string, state: Enum.UserInputState, _input: In
 	if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
 	if not _isEquipped then return Enum.ContextActionResult.Pass end
 
+	Local.CancelPendingThrow()
 	Shared.OnItemUnequipped:Fire(_currentItem, player.Character and player.Character:FindFirstChild(_currentItem))
 
 	Network:FireServer("Item", "RequestDrop", {})
@@ -279,6 +319,7 @@ function Shared.Destroy()
 		_stopCharacterObserver = nil
 	end
 	Local.UnbindActions()
+	Local.CancelPendingThrow()
 end
 
 return Shared

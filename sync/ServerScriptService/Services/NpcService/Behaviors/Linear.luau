@@ -28,7 +28,31 @@ export type Context = {
 -- a different goal zone (a ticket counter, a specific shop) without needing a new routing mechanism.
 local GOAL_ZONE = "Depart"
 
+-- TEMP: visualizes which shop a Concourse loiter roll committed an NPC to, for diagnosing the
+-- bridge-routing fix — remove once shop pathing is confirmed working.
+local SHOP_DEBUG_HIGHLIGHT_NAME = "ShopDebugHighlight"
+local SHOP_DEBUG_COLORS: { [string]: Color3 } = {
+	Souvenir = Color3.fromRGB(40, 130, 255),
+	Convenience = Color3.fromRGB(255, 140, 0),
+}
+
 --|| Private Functions
+
+local function applyShopDebugHighlight(npc: Model, shopZone: string)
+	local color = SHOP_DEBUG_COLORS[shopZone]
+	if not color then return end
+
+	local highlight = npc:FindFirstChild(SHOP_DEBUG_HIGHLIGHT_NAME) :: Highlight?
+	if not highlight then
+		highlight = Instance.new("Highlight")
+		highlight.Name = SHOP_DEBUG_HIGHLIGHT_NAME
+		highlight.FillTransparency = 1
+		highlight.OutlineTransparency = 0
+		highlight.Parent = npc
+	end
+
+	highlight.OutlineColor = color
+end
 
 -- Pre-defines *which zone to head toward next* via a real BFS route to the goal zone (replaces the
 -- old hardcoded LINEAR_ZONE_SEQUENCE array) — shop zones (Cafe/Souvenir/Convenience) fall out of this
@@ -125,6 +149,10 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		return nextSlot, "Queueing"
 	end
 
+	local gateStage = workspace:GetAttribute("GateStage")
+	local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
+	local planeArrived = gateStage == "Arrived" or gateStage == "Boarding"
+
 	local candidate: BasePart?
 
 	if NodeGraph.IsEntryNode(node) then
@@ -146,8 +174,13 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 		and zone ~= "Depart"
 		and NodeGraph.GetZone(candidate, ctx.nodesFolder) == "Depart"
 
-	if enteringDepart and not workspace:GetAttribute("BoardingOpen") then
-		candidate = nil
+	if enteringDepart and not boardingOpen then
+		-- Door animation lags the "Boarding" stage flip — an NPC that can already see through to the
+		-- gate shouldn't stall waiting on the marker, so LoS bypasses the strict door-open gate.
+		local hasDepartLoS = gateStage == "Boarding" and NodeGraph.HasClearLineBetweenNodes(node, candidate :: BasePart, ignore)
+		if not hasDepartLoS then
+			candidate = nil
+		end
 	end
 
 	if zone == "Concourse"
@@ -168,10 +201,33 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 
 			if roll < shopThreshold then
 				local _, _, shopTransitionsByZone = buildTransitionPools(ctx.nodesFolder, zone, resolveNextZone(zone))
-				local pickedPool = shopTransitionsByZone[pickShopZone(ctx.npc)]
+				local pickedShop = pickShopZone(ctx.npc)
+				local pickedPool = shopTransitionsByZone[pickedShop]
 
 				if pickedPool then
-					loiterCandidate = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, pickedPool)
+					local realTarget: BasePart?
+					loiterCandidate, realTarget = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, pickedPool)
+					if not loiterCandidate then
+						warn(`[Linear][Debug] shop roll picked "{pickedShop}" ({#pickedPool} Transition Node(s) wired to it) but none were reachable from`, node)
+					else
+						-- Bridge hops land on a plain Node, not the Transition itself — remember the real
+						-- target so later Concourse decisions keep chasing it instead of dropping the
+						-- pursuit the moment ConcourseLoiterRolled blocks this roll from firing again.
+						NodeGraph.SetPendingShopTransition(ctx.npc, realTarget)
+
+						if pickedShop ~= "Cafe" then
+							local isDirect = loiterCandidate == realTarget
+							warn(
+								`[Linear][Debug] shop roll picked "{pickedShop}" from`,
+								node,
+								if isDirect then "-> direct LoS to its Transition Node" else "-> no direct LoS, routing via bridge",
+								loiterCandidate
+							)
+							applyShopDebugHighlight(ctx.npc, pickedShop)
+						end
+					end
+				else
+					warn(`[Linear][Debug] shop roll picked "{pickedShop}" but no Concourse Transition Node links there — wired shops:`, shopTransitionsByZone)
 				end
 				wantsWander = not loiterCandidate
 			elseif roll < wanderThreshold then
@@ -189,6 +245,44 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 
 			if loiterCandidate then
 				candidate = loiterCandidate
+			end
+		end
+	end
+
+	-- Resumes a shop pursuit across multiple bridge hops — the roll above only fires once per Concourse
+	-- visit (gated by ConcourseLoiterRolled), so without this an NPC that landed on an intermediate
+	-- bridge node on the first hop would just fall through to the normal Platform-bound routing below.
+	if not candidate and zone == "Concourse" and NodeGraph.GetNodeType(node) == "node" then
+		local pendingShopTransition = NodeGraph.GetPendingShopTransition(ctx.npc)
+		if pendingShopTransition and not pendingShopTransition.Parent then
+			NodeGraph.SetPendingShopTransition(ctx.npc, nil)
+			pendingShopTransition = nil
+		end
+
+		if pendingShopTransition then
+			if node == pendingShopTransition then
+				NodeGraph.SetPendingShopTransition(ctx.npc, nil)
+			else
+				local nextHop: BasePart?
+				if NodeGraph.HasClearLineBetweenNodes(node, pendingShopTransition, ignore) then
+					nextHop = pendingShopTransition
+				else
+					local bridgeCandidates: { BasePart } = {}
+					for _, bridge in NodeGraph.EnumerateZoneNodes(ctx.nodesFolder, zone) do
+						if bridge ~= node and bridge ~= pendingShopTransition and bridge ~= ctx.lastNode then
+							table.insert(bridgeCandidates, bridge)
+						end
+					end
+					nextHop = NodeGraph.FindLoSBridge(ctx.nodesFolder, node, pendingShopTransition, ignore, bridgeCandidates)
+				end
+
+				if nextHop then
+					candidate = nextHop
+				else
+					-- No more progress possible from here — drop the pursuit instead of getting stuck.
+					warn(`[Linear][Debug] shop pursuit toward`, pendingShopTransition, "stalled from", node, "- giving up")
+					NodeGraph.SetPendingShopTransition(ctx.npc, nil)
+				end
 			end
 		end
 	end
@@ -217,11 +311,9 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 			chosenTransition, chosenCheckpoint = TransitionLanes.GetLeastLoadedLane(forwardTransitions, forwardCheckpoints)
 		end
 
-		local boardingOpen = workspace:GetAttribute("BoardingOpen") == true
-		local gateStage = workspace:GetAttribute("GateStage")
-		local planeArrived = gateStage == "Arrived" or gateStage == "Boarding"
-
-		local transitionGated = nextZone == "Depart"
+		-- Gated at both the Concourse->Platform and Platform->Depart hops so a "no" roll keeps an NPC
+		-- loitering upstream (Concourse/shops) instead of piling up at the gate for a flight it's skipping.
+		local transitionGated = nextZone == "Platform" or nextZone == "Depart"
 		local canApproachTransition = not transitionGated or (planeArrived and ctx.willBoard == true)
 
 		local isCurrentlySeated = NodeGraph.GetNodeType(node) == "seatnode"

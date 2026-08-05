@@ -1069,9 +1069,11 @@ function Shared.DropItem(player: Player)
 	if not hrp then return end
 
 	local droppedItem = Local.ClearEquipped(character)
-	if droppedItem then
-		Local.SafeReposition(droppedItem, hrp.CFrame * CFrame.new(0, 0, -2.5))
-		droppedItem.PrimaryPart:ApplyImpulseAtPosition(hrp.CFrame.LookVector * DROP_FORCE * droppedItem.PrimaryPart.AssemblyMass, droppedItem.PrimaryPart.Position)
+	if droppedItem and droppedItem.PrimaryPart then
+		-- Same approach as ThrowItem — launch from wherever ClearEquipped left it (still at the hand,
+		-- so always somewhere valid) instead of teleporting it forward, which had no floor/wall
+		-- validation and could land the item inside geometry or past a railing/map edge.
+		droppedItem.PrimaryPart.AssemblyLinearVelocity = hrp.CFrame.LookVector * DROP_FORCE
 		Local.MonitorItemRest(droppedItem)
 
 		Local.SyncClient(player, "ItemDropped")
@@ -1147,6 +1149,15 @@ end
 
 function Shared.ForceDropItem(character: Model): Model?
 	return Local.ClearEquipped(character)
+end
+
+-- For callers that ForceDropItem an item off a character and then, on a later failure (e.g. a
+-- steal's handoff to the player not going through), need to place it properly in the world instead
+-- of leaving it wherever its stale in-hand pose left it — mirrors DropItem's own settle behavior.
+function Shared.SettleItem(item: Model, anchor: BasePart)
+	if not item or not item.PrimaryPart then return end
+	Local.SafeReposition(item, anchor.CFrame * CFrame.new(0, 0, -2.5))
+	Local.MonitorItemRest(item)
 end
 
 function Shared.GetContrabandRating(item: Model): number

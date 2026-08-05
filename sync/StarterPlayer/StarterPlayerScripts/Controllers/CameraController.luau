@@ -258,7 +258,8 @@ function Local.OnRenderStepped(dt: number)
 
 	RAYCAST_PARAMS.FilterDescendantsInstances = UtilsLibrary.tableUtils.Extend(
 		CollectionService:GetTagged("Player"),
-		CollectionService:GetTagged("THROWN_ITEM")
+		CollectionService:GetTagged("THROWN_ITEM"),
+		CollectionService:GetTagged("NPCBarricade")
 	)
 	local direction = targetPos - focusPos
 	local result = Workspace:Raycast(focusPos, direction, RAYCAST_PARAMS)

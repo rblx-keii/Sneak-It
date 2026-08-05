@@ -138,14 +138,19 @@ function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 		while true do
 			if _beltItems[item] ~= info then return end
 
-			if not item.Parent or not CollectionService:HasTag(item, "Interactable") then
+			-- Interactable is suppressed for the whole ride (see TryPlaceItem), so its absence no
+			-- longer signals "someone already took it" — only destruction does.
+			if not item.Parent then
 				_beltItems[item] = nil
 				return
 			end
 
 			local elapsed = workspace:GetServerTimeNow() - info.startTime
 			local alpha = math.clamp(elapsed / info.travelTime, 0, 1)
-			item:PivotTo(CFrame.new(info.startPos:Lerp(info.endPos, alpha)))
+			local primaryPart = item.PrimaryPart
+			if primaryPart then
+				primaryPart.CFrame = CFrame.new(info.startPos:Lerp(info.endPos, alpha))
+			end
 
 			if alpha >= 1 then
 				item:SetAttribute("OnBelt", nil)
@@ -155,6 +160,9 @@ function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 						part.Anchored = false
 					end
 				end
+
+				-- Only pickup-able once it's actually reached the end of the belt.
+				CollectionService:AddTag(item, "Interactable")
 
 				_beltItems[item] = nil
 				return
@@ -192,6 +200,11 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 		warn(`[ConveyorService] TryPlaceItem({player.Name}) — {item.Name}'s parts aren't fully welded to its PrimaryPart, belt transit may look disjointed`)
 	end
 
+	-- ForceDropItem (ClearEquipped) tags it Interactable like any normal world-dropped item —
+	-- suppress that while it's riding the belt so it can't be snatched off mid-transit. Restored in
+	-- RunBeltTransit once it actually reaches the end.
+	CollectionService:RemoveTag(item, "Interactable")
+
 	local startSub = NodeGraph.GetSubNode(conveyorNode, "Start")
 	local endSub = NodeGraph.GetSubNode(conveyorNode, "End")
 	local startPos = startSub and NodeGraph.GetNodePosition(startSub) or NodeGraph.GetNodePosition(conveyorNode)
@@ -199,13 +212,20 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 
 	item:SetAttribute("OwnerUserId", player.UserId)
 	item:SetAttribute("OnBelt", true)
-	item:PivotTo(CFrame.new(startPos))
 
+	-- Matches ProjectileSimulation's multi-part handling (see Local.InstantiateBullet) and the same
+	-- fix in NpcService's belt transit: only the PrimaryPart is anchored and CFrame-driven; welded
+	-- descendants stay unanchored so their WeldConstraint physically drags them along. PivotTo-ing the
+	-- whole assembly here — after ClearEquipped had already left every part unanchored — was leaving
+	-- non-primary parts stuck at their stale in-hand offset for the entire ride.
+	local primaryPart = item.PrimaryPart :: BasePart
 	for _, part in item:GetDescendants() do
 		if part:IsA("BasePart") then
-			part.Anchored = true
+			part.Anchored = part == primaryPart
 		end
 	end
+
+	primaryPart.CFrame = CFrame.new(startPos)
 
 	local info: BeltItemInfo = {
 		ownerId = player.UserId,

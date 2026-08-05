@@ -121,6 +121,17 @@ local PATH_AGENT_PARAMS = {
 	WaypointSpacing = NPCConfig.PATH_WAYPOINT_SPACING,
 }
 
+-- Same agent, tighter WaypointSpacing — used instead of PATH_AGENT_PARAMS whenever origin/goal have a
+-- real vertical gap (see Local.GetPathAgentParams), since PathfindingService's waypoint-merging can
+-- otherwise span the full spacing straight through a step/ledge/stair riser it should route around.
+local PATH_AGENT_PARAMS_STEEP = {
+	AgentRadius = NPCConfig.PATH_AGENT_RADIUS,
+	AgentHeight = NPCConfig.PATH_AGENT_HEIGHT,
+	AgentCanJump = NPCConfig.PATH_AGENT_CAN_JUMP,
+	AgentCanClimb = NPCConfig.PATH_AGENT_CAN_CLIMB,
+	WaypointSpacing = NPCConfig.PATH_WAYPOINT_SPACING_STEEP,
+}
+
 --|| MAIN ||--
 
 -- [[ Startup ]] --
@@ -651,6 +662,15 @@ function Local.SpawnNPC(template: Model)
 		connections,
 		model:GetAttributeChangedSignal("HeldItem"):Connect(function()
 			Local.UpdateStealableTag(record)
+
+			-- Every path that re-equips an NPC's item starts this animation itself right after
+			-- (EquipStarterItem, CompleteBeltArrival, TryReclaimBag) — but not every path that clears
+			-- HeldItem remembers to stop it (StealService's ForceDropItem didn't), so this is the
+			-- single place that reliably catches all of them.
+			local heldItemName = model:GetAttribute("HeldItem")
+			if not heldItemName or heldItemName == "" then
+				Local.StopItemIdleAnimation(record)
+			end
 		end)
 	)
 	_npcConnections[model] = connections
@@ -867,6 +887,16 @@ end
 
 function Local.ReplaceStuckSeat(record: NPCRecord)
 	local seatPart = record.humanoid.SeatPart
+
+	-- Humanoid.SeatPart can keep pointing at a Seat that's already gone (destroyed out from under it,
+	-- e.g. a map reload) — nothing script-side can clear SeatPart directly, but toggling Jump off while
+	-- FloorMaterial reads Air nudges the engine into dropping the stale reference on its own.
+	if seatPart and not seatPart:IsDescendantOf(Workspace) then
+		if record.humanoid.FloorMaterial == Enum.Material.Air and record.humanoid.Jump then
+			record.humanoid.Jump = false
+		end
+	end
+
 	local staleSeat: Seat? = (seatPart and seatPart:IsA("Seat") and seatPart :: Seat) or record.seatObject
 	if not staleSeat or not staleSeat.Parent then
 		return
@@ -918,6 +948,22 @@ function Local.WalkClearOfSeat(record: NPCRecord, seat: Seat?)
 	end
 end
 
+-- The clear-of-seat walk can satisfy its own distance check while still mid-air (the stand-up Jump's
+-- horizontal and vertical motion happen concurrently) — waiting here for the humanoid to actually be
+-- grounded keeps Local.ComputePath (called once record.unseating flips false and a real decision comes
+-- in) from pathfinding out of a still-elevated hrp.Position, which floats the resulting waypoints at
+-- jump height instead of the real floor.
+function Local.WaitForLanding(record: NPCRecord)
+	local deadline = os.clock() + NPCConfig.SEAT_STAND_CLEAR_TIMEOUT
+	while
+		record.humanoid.Parent
+		and record.humanoid.FloorMaterial == Enum.Material.Air
+		and os.clock() < deadline
+	do
+		task.wait()
+	end
+end
+
 function Local.Unseat(record: NPCRecord)
 	if not record.seatObject and not Local.IsSeated(record) then
 		return
@@ -955,6 +1001,7 @@ function Local.Unseat(record: NPCRecord)
 
 			if not Local.IsSeated(record) and record.humanoid.SeatPart == nil then
 				Local.WalkClearOfSeat(record, seatToLeave)
+				Local.WaitForLanding(record)
 				record.seatObject = nil
 				record.unseating = false
 				return
@@ -978,7 +1025,7 @@ function Local.WalkTo(record: NPCRecord, node: BasePart)
 	end
 
 	record.targetNode = node
-	record.moveTargetPos = NodeGraph.GetMovementTargetPosition(node, NPCConfig.NODE_SPREAD_RADIUS, _nodesFolder)
+	record.moveTargetPos = NodeGraph.GetMovementTargetPosition(node, NPCConfig.NODE_SPREAD_RADIUS, _nodesFolder, { record.model, _npcsFolder })
 	Local.ComputePath(record)
 	Local.RequestPrefetch(record, node)
 end
@@ -1031,6 +1078,28 @@ function Local.RequestPrefetch(record: NPCRecord, forNode: BasePart)
 	})
 end
 
+function Local.GetPathAgentParams(origin: Vector3, goalPos: Vector3): { [string]: any }
+	if math.abs(goalPos.Y - origin.Y) > NPCConfig.PATH_STEEP_HEIGHT_DIFF then
+		return PATH_AGENT_PARAMS_STEEP
+	end
+	return PATH_AGENT_PARAMS
+end
+
+-- Waypoint 1 is always wherever PathfindingService snapped `originPos` onto the navmesh — walking to
+-- it is usually a redundant no-op, so callers skip straight to waypoint 2. But when originPos is the
+-- NPC's own live hrp.Position (a stuck-recovery retrace, not a fresh leg from a clean node arrival),
+-- that snap can be a real few-stud maneuver back onto the mesh — skipping it was the only path back
+-- to "stuck forever" once something wedged the NPC off it. Only skip when it's genuinely redundant.
+function Local.FirstUsefulWaypointIndex(waypoints: { PathWaypoint }, originPos: Vector3): number
+	if #waypoints <= 1 then
+		return 1
+	end
+	if (waypoints[1].Position - originPos).Magnitude <= NPCConfig.ARRIVAL_TOLERANCE then
+		return 2
+	end
+	return 1
+end
+
 function Local.OnPrefetchDecided(record: NPCRecord, nextNode: BasePart?, state: string)
 	local prefetch = record.prefetch
 	if not prefetch or not prefetch.awaitingDecision then
@@ -1047,7 +1116,7 @@ function Local.OnPrefetchDecided(record: NPCRecord, nextNode: BasePart?, state: 
 	end
 
 	local originPos = NodeGraph.GetNodePosition(prefetch.forNode)
-	local goalPos = NodeGraph.GetMovementTargetPosition(nextNode, NPCConfig.NODE_SPREAD_RADIUS, _nodesFolder)
+	local goalPos = NodeGraph.GetMovementTargetPosition(nextNode, NPCConfig.NODE_SPREAD_RADIUS, _nodesFolder, { record.model, _npcsFolder })
 	prefetch.moveTargetPos = goalPos
 
 	if (goalPos - originPos).Magnitude <= NPCConfig.ARRIVAL_TOLERANCE then
@@ -1056,7 +1125,7 @@ function Local.OnPrefetchDecided(record: NPCRecord, nextNode: BasePart?, state: 
 		return
 	end
 
-	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
+	local path = PathfindingService:CreatePath(Local.GetPathAgentParams(originPos, goalPos))
 	local computeOk = pcall(function()
 		path:ComputeAsync(originPos, goalPos)
 	end)
@@ -1092,7 +1161,7 @@ function Local.ConsumePrefetch(record: NPCRecord, prefetch: Prefetch)
 
 	if prefetch.waypoints and not drifted then
 		record.waypoints = prefetch.waypoints
-		record.waypointIndex = if #prefetch.waypoints > 1 then 2 else 1
+		record.waypointIndex = Local.FirstUsefulWaypointIndex(prefetch.waypoints, record.hrp.Position)
 		if prefetch.path then
 			record.pathBlockedConn = prefetch.path.Blocked:Connect(function(blockedWaypointIndex: number)
 				Local.OnPathBlocked(record, blockedWaypointIndex)
@@ -1138,7 +1207,14 @@ function Local.ComputePath(record: NPCRecord)
 
 	Local.ClearPathBlockedConnection(record)
 
-	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
+	-- ComputeAsync yields, and nothing else updates WalkToPoint while it's pending — without this the
+	-- NPC just stands still (still parked at wherever its last waypoint was) for that stretch. Walking
+	-- straight toward the goal immediately closes that gap; MoveToWaypoint overrides it the moment a
+	-- real path comes back.
+	Local.StartLeg(record, origin, goalPos)
+	Local.SetWalkTarget(record, goalPos)
+
+	local path = PathfindingService:CreatePath(Local.GetPathAgentParams(origin, goalPos))
 	local computeOk = pcall(function()
 		path:ComputeAsync(origin, goalPos)
 	end)
@@ -1146,7 +1222,7 @@ function Local.ComputePath(record: NPCRecord)
 	if computeOk and path.Status == Enum.PathStatus.Success then
 		local computedWaypoints = path:GetWaypoints()
 		record.waypoints = computedWaypoints
-		record.waypointIndex = if #computedWaypoints > 1 then 2 else 1
+		record.waypointIndex = Local.FirstUsefulWaypointIndex(computedWaypoints, origin)
 		record.pathBlockedConn = path.Blocked:Connect(function(blockedWaypointIndex: number)
 			Local.OnPathBlocked(record, blockedWaypointIndex)
 		end)
@@ -1302,7 +1378,7 @@ function Local.RetraceToPath(record: NPCRecord): boolean
 
 	local nearestWaypoint = waypoints[nearestIndex]
 
-	local path = PathfindingService:CreatePath(PATH_AGENT_PARAMS)
+	local path = PathfindingService:CreatePath(Local.GetPathAgentParams(hrp.Position, nearestWaypoint.Position))
 	local computeOk = pcall(function()
 		path:ComputeAsync(hrp.Position, nearestWaypoint.Position)
 	end)
@@ -1319,7 +1395,7 @@ function Local.RetraceToPath(record: NPCRecord): boolean
 
 	Local.ClearPathBlockedConnection(record)
 	record.waypoints = rejoined
-	record.waypointIndex = if #retraceWaypoints > 1 then 2 else 1
+	record.waypointIndex = Local.FirstUsefulWaypointIndex(retraceWaypoints, hrp.Position)
 	record.pathBlockedConn = path.Blocked:Connect(function(blockedWaypointIndex: number)
 		Local.OnPathBlocked(record, blockedWaypointIndex)
 	end)
@@ -1442,6 +1518,12 @@ function Local.StartConveyorTransit(record: NPCRecord, node: BasePart)
 	end
 	Local.StopItemIdleAnimation(record)
 
+	-- ForceDropItem (ClearEquipped) tags it Interactable like any normal world-dropped item —
+	-- suppress that while it's riding the belt so a player can't snatch it off mid-transit. Restored
+	-- right before the re-equip attempt in CompleteBeltArrival/TryReclaimBag, so it's only ever
+	-- pickup-able if that re-equip genuinely fails and it's left stranded at the end.
+	CollectionService:RemoveTag(bag, "Interactable")
+
 	local startSub = NodeGraph.GetSubNode(node, "Start")
 	local endSub = NodeGraph.GetSubNode(node, "End")
 	local startPos = startSub and NodeGraph.GetNodePosition(startSub) or NodeGraph.GetNodePosition(node)
@@ -1449,13 +1531,20 @@ function Local.StartConveyorTransit(record: NPCRecord, node: BasePart)
 
 	bag:SetAttribute("OwnerNPCUID", record.uid)
 	bag:SetAttribute("OnBelt", true)
-	bag:PivotTo(CFrame.new(startPos))
 
+	-- Matches ProjectileSimulation's multi-part handling (see Local.InstantiateBullet): only the
+	-- PrimaryPart is anchored and CFrame-driven; welded descendants stay unanchored so their
+	-- WeldConstraint physically drags them along. PivotTo-ing the whole assembly here — after
+	-- ClearEquipped had already left every part unanchored — was leaving non-primary parts stuck at
+	-- their stale in-hand offset for the entire ride, only correcting once re-equipped at the end.
+	local primaryPart = bag.PrimaryPart :: BasePart
 	for _, part in bag:GetDescendants() do
 		if part:IsA("BasePart") then
-			part.Anchored = true
+			part.Anchored = part == primaryPart
 		end
 	end
+
+	primaryPart.CFrame = CFrame.new(startPos)
 
 	local info: BeltBagInfo = {
 		npcUID = record.uid,
@@ -1483,7 +1572,9 @@ function Local.RunBeltTransit(bag: Model, info: BeltBagInfo)
 				return
 			end
 
-			if not bag.Parent or not CollectionService:HasTag(bag, "Interactable") then
+			-- Interactable is suppressed for the whole ride now, so its absence no longer signals
+			-- "someone already took it" — only destruction does.
+			if not bag.Parent then
 				_beltBags[bag] = nil
 				local owner = Local.FindRecordByUid(info.npcUID)
 				if owner then
@@ -1494,7 +1585,10 @@ function Local.RunBeltTransit(bag: Model, info: BeltBagInfo)
 
 			local elapsed = workspace:GetServerTimeNow() - info.startTime
 			local alpha = math.clamp(elapsed / info.travelTime, 0, 1)
-			bag:PivotTo(CFrame.new(info.startPos:Lerp(info.endPos, alpha)))
+			local primaryPart = bag.PrimaryPart
+			if primaryPart then
+				primaryPart.CFrame = CFrame.new(info.startPos:Lerp(info.endPos, alpha))
+			end
 
 			if alpha >= 1 then
 				info.arrived = true
@@ -1519,8 +1613,12 @@ function Local.CompleteBeltArrival(bag: Model, info: BeltBagInfo)
 	_beltBags[bag] = nil
 	record.pendingBagNode = nil
 
-	if bag.Parent and CollectionService:HasTag(bag, "Interactable") then
+	if bag.Parent then
 		bag:SetAttribute("OnBelt", nil)
+
+		-- Restore Interactable right before attempting to reclaim it — WeldToHand removes it again on
+		-- success, so it only stays pickup-able if EquipNPCItem genuinely fails and it's left stranded.
+		CollectionService:AddTag(bag, "Interactable")
 		if ItemService.EquipNPCItem(record.model, bag) then
 			Local.PlayItemIdleAnimation(record, bag.Name)
 		end
@@ -1550,8 +1648,9 @@ function Local.TryReclaimBag(record: NPCRecord)
 	_beltBags[targetBag] = nil
 	record.pendingBagNode = nil
 
-	if targetBag.Parent and CollectionService:HasTag(targetBag, "Interactable") then
+	if targetBag.Parent then
 		targetBag:SetAttribute("OnBelt", nil)
+		CollectionService:AddTag(targetBag, "Interactable")
 		if ItemService.EquipNPCItem(record.model, targetBag) then
 			Local.PlayItemIdleAnimation(record, targetBag.Name)
 		end
@@ -1634,6 +1733,14 @@ function Local.OnArrive(record: NPCRecord, node: BasePart)
 
 	if arrivalZone ~= "Concourse" then
 		record.model:SetAttribute("ConcourseLoiterRolled", nil)
+		NodeGraph.SetPendingShopTransition(record.model, nil)
+
+		-- TEMP: matches Linear's shop-debug highlight — clears once the loiter roll it was tracking
+		-- is no longer live.
+		local shopDebugHighlight = record.model:FindFirstChild("ShopDebugHighlight")
+		if shopDebugHighlight then
+			shopDebugHighlight:Destroy()
+		end
 	end
 
 	local isSeatNode = NodeGraph.GetNodeType(node) == "seatnode"
@@ -1784,7 +1891,6 @@ function Local.InterruptForReaction(record: NPCRecord)
 	record.pendingBagNode = nil
 	Local.ClearWaypointMarkers(record)
 	Local.ClearPathBlockedConnection(record)
-	Local.StopItemIdleAnimation(record)
 
 	if record.seatObject or Local.IsSeated(record) then
 		Local.Unseat(record)
@@ -1815,6 +1921,13 @@ function Local.ResumeAfterReaction(record: NPCRecord)
 	end
 
 	Local.RefreshWalkSpeed(record)
+
+	-- InterruptForReaction stopped this on the way in (Alert/Panic own movement, no idle sway needed
+	-- mid-reaction) — nothing restarts it once the reaction ends, so a still-held item was left frozen.
+	local heldItemName = record.model:GetAttribute("HeldItem")
+	if heldItemName and heldItemName ~= "" then
+		Local.PlayItemIdleAnimation(record, heldItemName)
+	end
 
 	if not _nodesFolder then
 		return

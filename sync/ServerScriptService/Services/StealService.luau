@@ -146,21 +146,30 @@ end
 
 function Local.TriggerSuccess(session: StealSession)
 	Local.EndSession(session)
+	Local.SetRetryCooldown(session.npc)
 
 	local droppedBag = ItemService.ForceDropItem(session.npc)
-
-	if droppedBag then
-		local equipped = ItemService.ForcePickupItem(session.player, droppedBag)
-		if not equipped then
-			warn(`[StealService] TriggerSuccess({session.player.Name}) — stolen bag "{droppedBag.Name}" from {session.npc.Name} failed to equip, left on the ground still tagged Interactable`)
-		end
-	else
+	if not droppedBag then
 		warn(`[StealService] TriggerSuccess({session.player.Name}) — ForceDropItem on {session.npc.Name} returned nil, nothing to hand over`)
+		Network:FireClient("Steal", session.player, "Result", { result = "Failure", reason = "NoItem" })
+		return
+	end
+
+	local equipped = ItemService.ForcePickupItem(session.player, droppedBag)
+	if not equipped then
+		warn(`[StealService] TriggerSuccess({session.player.Name}) — stolen bag "{droppedBag.Name}" from {session.npc.Name} failed to equip (player likely grabbed something else mid-steal) — settling it on the ground instead`)
+
+		local npcHrp = session.npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if npcHrp then
+			ItemService.SettleItem(droppedBag, npcHrp)
+		end
+
+		Network:FireClient("Steal", session.player, "Result", { result = "Failure", reason = "HandoffFailed" })
+		return
 	end
 
 	Network:FireClient("Steal", session.player, "Result", { result = "Success" })
 	Local.BroadcastAlert(session.npc, "Stolen")
-	Local.SetRetryCooldown(session.npc)
 end
 
 function Local.TriggerFailure(session: StealSession, reason: string)

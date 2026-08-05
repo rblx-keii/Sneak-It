@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
 
 --|| References
 local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
@@ -14,6 +15,16 @@ local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
 RAYCAST_PARAMS.CollisionGroup = "NPC"
 
+-- Source of truth for "NPCs can't walk/see through here" independent of physical collision — mappers
+-- tag an invisible (or otherwise player-passable) BasePart with this to block NPC LoS/pathing over a
+-- table top, into a seat cluster, etc. without it affecting player movement at all. Checked as a
+-- second, unrestricted-by-collision-group raycast so it's respected regardless of the part's own
+-- CanCollide/CollisionGroup — tagging alone is enough.
+local NPC_BARRICADE_TAG = "NPCBarricade"
+
+local BARRICADE_RAYCAST_PARAMS = RaycastParams.new()
+BARRICADE_RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Include
+
 local PATH_AGENT_PARAMS = {
 	AgentRadius = NPCConfig.PATH_AGENT_RADIUS,
 	AgentHeight = NPCConfig.PATH_AGENT_HEIGHT,
@@ -22,9 +33,63 @@ local PATH_AGENT_PARAMS = {
 	WaypointSpacing = NPCConfig.PATH_WAYPOINT_SPACING,
 }
 
+-- Spread-point floor validation (see NodeGraph.GetMovementTargetPosition) — a random offset alone
+-- can't tell a real floor from a table top or seat cushion sitting under it, so a downward probe
+-- confirms the candidate actually lands on the same floor the node itself sits on before it's used.
+local SPREAD_PROBE_HEIGHT = 6 -- studs above a candidate the floor probe starts from
+local SPREAD_PROBE_DEPTH = 10 -- studs the floor probe searches downward from that height
+local SPREAD_FLOOR_TOLERANCE = 1.5 -- studs; how far the probed floor may sit above/below the node's own height before it's rejected as a different surface
+local SPREAD_MAX_ATTEMPTS = 4 -- retries (each shrinking the radius) before giving up and using the exact node position
+
 --|| Private Functions
 local function normalize(name: string): string
 	return name:gsub(" ", ""):lower()
+end
+
+-- Kept in sync with the tag rather than re-queried per raycast — HasClearLine runs in the thousands
+-- during NodeGraph.PrefillLoSCache's O(n^2) pass, so this can't afford a CollectionService:GetTagged
+-- call every time.
+local _barricades: { BasePart } = {}
+
+-- Makes the SAME tag also authoritative for PathfindingService (not just the raycast LoS above) —
+-- "Unwalkable" is the built-in modifier PathfindingService recognizes with no extra Costs config, so
+-- a barricaded table top/seat is impassable for actual computed paths too, not just LoS checks.
+local function ensurePathfindingModifier(instance: BasePart)
+	if instance:FindFirstChildOfClass("PathfindingModifier") then return end
+
+	local modifier = Instance.new("PathfindingModifier")
+	modifier.PassThrough = false
+	modifier.Parent = instance
+end
+
+local function refreshBarricadeList()
+	local list: { BasePart } = {}
+	for _, instance in CollectionService:GetTagged(NPC_BARRICADE_TAG) do
+		if instance:IsA("BasePart") then
+			table.insert(list, instance)
+			ensurePathfindingModifier(instance)
+		end
+	end
+	_barricades = list
+end
+
+refreshBarricadeList()
+CollectionService:GetInstanceAddedSignal(NPC_BARRICADE_TAG):Connect(refreshBarricadeList)
+CollectionService:GetInstanceRemovedSignal(NPC_BARRICADE_TAG):Connect(refreshBarricadeList)
+
+-- Returns candidate with its Y snapped to the probed floor, or nil if nothing at roughly the node's
+-- own height was found beneath it (a table top, a seat, empty air off a ledge).
+local function validateSpreadPoint(candidate: Vector3, baseY: number, ignore: { Instance? }?): Vector3?
+	RAYCAST_PARAMS.FilterDescendantsInstances = (ignore :: { Instance }?) or {}
+
+	local origin = candidate + Vector3.new(0, SPREAD_PROBE_HEIGHT, 0)
+	local result = Workspace:Raycast(origin, Vector3.new(0, -(SPREAD_PROBE_HEIGHT + SPREAD_PROBE_DEPTH), 0), RAYCAST_PARAMS)
+
+	if not result or math.abs(result.Position.Y - baseY) > SPREAD_FLOOR_TOLERANCE then
+		return nil
+	end
+
+	return Vector3.new(candidate.X, result.Position.Y, candidate.Z)
 end
 
 -- [[ Zone / node identity ]] --
@@ -173,20 +238,40 @@ end
 
 -- [[ Movement helpers ]] --
 
-function NodeGraph.GetMovementTargetPosition(node: BasePart, spreadRadius: number, nodesFolder: Instance?): Vector3
+function NodeGraph.GetMovementTargetPosition(node: BasePart, spreadRadius: number, nodesFolder: Instance?, ignore: { Instance? }?): Vector3
 	local basePos = NodeGraph.GetNodePosition(node)
 	if NodeGraph.GetNodeType(node) ~= "node" then
 		return basePos
 	end
 
-	local radius = spreadRadius
-	if nodesFolder and NodeGraph.GetZone(node, nodesFolder) == "Depart" then
-		radius = math.min(radius, NPCConfig.DEPART_NODE_SPREAD_RADIUS)
+	local isDepartNode = nodesFolder and NodeGraph.GetZone(node, nodesFolder) == "Depart"
+	local radius = if isDepartNode then math.min(spreadRadius, NPCConfig.DEPART_NODE_SPREAD_RADIUS) else spreadRadius
+
+	for attempt = 1, SPREAD_MAX_ATTEMPTS do
+		local attemptRadius = radius * (1 - (attempt - 1) / SPREAD_MAX_ATTEMPTS)
+		local candidate: Vector3
+
+		if isDepartNode then
+			-- Spread along the node's own LookVector instead of a full circle, so NPCs land to either
+			-- side of it (positive/negative along that axis) instead of scattered all the way around.
+			local offset = (math.random() * 2 - 1) * attemptRadius
+			candidate = basePos + node.CFrame.LookVector * offset
+		else
+			local angle = math.random() * math.pi * 2
+			local dist = math.random() * attemptRadius
+			candidate = basePos + Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
+		end
+
+		local validated = validateSpreadPoint(candidate, basePos.Y, ignore)
+		if validated and NodeGraph.IsPathReachable(basePos, validated) then
+			return validated
+		end
 	end
 
-	local angle = math.random() * math.pi * 2
-	local dist = math.random() * radius
-	return basePos + Vector3.new(math.cos(angle) * dist, 0, math.sin(angle) * dist)
+	-- Every attempt landed on a table top / seat / off a ledge / behind an NPCBarricade — the node's
+	-- own placed position is always walkable, so fall back to it exactly rather than risk another bad
+	-- spread point.
+	return basePos
 end
 
 function NodeGraph.HasClearLine(fromPos: Vector3, toPos: Vector3, ignore: { Instance? }): boolean
@@ -194,8 +279,18 @@ function NodeGraph.HasClearLine(fromPos: Vector3, toPos: Vector3, ignore: { Inst
 	if direction.Magnitude < 0.05 then return true end
 
 	RAYCAST_PARAMS.FilterDescendantsInstances = ignore :: { Instance }
-	local result = Workspace:Raycast(fromPos, direction, RAYCAST_PARAMS)
-	return result == nil
+	if Workspace:Raycast(fromPos, direction, RAYCAST_PARAMS) then
+		return false
+	end
+
+	if #_barricades > 0 then
+		BARRICADE_RAYCAST_PARAMS.FilterDescendantsInstances = _barricades
+		if Workspace:Raycast(fromPos, direction, BARRICADE_RAYCAST_PARAMS) then
+			return false
+		end
+	end
+
+	return true
 end
 
 local _losCache: { [BasePart]: { [BasePart]: boolean } } = {}
@@ -430,7 +525,11 @@ function NodeGraph.FindNearestNode(
 	return NodeGraph.FindLoSBridge(nodesFolder, fromNode, nearestOverall :: BasePart, ignore, bridgeCandidates)
 end
 
-function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: string, fromNode: BasePart, exclude: { BasePart? }, ignore: { Instance? }, candidates: { BasePart }?): BasePart?
+-- Returns (candidate, realTarget) — candidate is what to actually walk to next (the Transition itself
+-- when it's directly visible, otherwise a bridge stepping-stone toward it); realTarget is always the
+-- actual Transition being pursued, so a caller can keep chasing it across multiple bridge hops instead
+-- of losing track of the goal once the first hop lands it on an intermediate node.
+function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: string, fromNode: BasePart, exclude: { BasePart? }, ignore: { Instance? }, candidates: { BasePart }?): (BasePart?, BasePart?)
 	local excludeSet: { [BasePart]: boolean } = {}
 	for _, part in exclude do
 		if part then excludeSet[part] = true end
@@ -440,6 +539,9 @@ function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: st
 	local best: BasePart? = nil
 	local bestDist = math.huge
 
+	local nearestOverall: BasePart? = nil
+	local nearestOverallDist = math.huge
+
 	local pool = candidates or NodeGraph.GetTransitionNodes(nodesFolder, zoneName)
 
 	for _, node in pool do
@@ -447,13 +549,36 @@ function NodeGraph.FindNearestTransitionNode(nodesFolder: Instance, zoneName: st
 		if not candidates and not NodeGraph.GetLink(node) then continue end
 
 		local dist = (NodeGraph.GetNodePosition(node) - fromPos).Magnitude
+
+		if dist < nearestOverallDist then
+			nearestOverallDist = dist
+			nearestOverall = node
+		end
+
 		if dist < bestDist and NodeGraph.HasClearLineBetweenNodes(fromNode, node, ignore) then
 			bestDist = dist
 			best = node
 		end
 	end
 
-	return best
+	if best then
+		return best, best
+	end
+	if not nearestOverall then
+		return nil, nil
+	end
+
+	-- No candidate had a direct line — same bridge fallback FindRandomSeatNode/FindNearestPickupNode
+	-- already use, so a shop tucked behind a pillar/kiosk from this exact spot isn't just dropped.
+	local bridgeCandidates: { BasePart } = {}
+	for _, bridge in NodeGraph.EnumerateZoneNodes(nodesFolder, zoneName) do
+		if bridge == nearestOverall or bridge == fromNode then continue end
+		if excludeSet[bridge] then continue end
+		table.insert(bridgeCandidates, bridge)
+	end
+
+	local bridge = NodeGraph.FindLoSBridge(nodesFolder, fromNode, nearestOverall :: BasePart, ignore, bridgeCandidates)
+	return bridge, nearestOverall
 end
 
 function NodeGraph.FindLoSBridge(nodesFolder: Instance, fromNode: BasePart, toNode: BasePart, ignore: { Instance? }, candidates: { BasePart }?): BasePart?
@@ -760,6 +885,29 @@ end
 
 function NodeGraph.IncrementTransitionUseCount(transitionNode: BasePart)
 	transitionNode:SetAttribute("LaneUseCount", NodeGraph.GetTransitionUseCount(transitionNode) + 1)
+end
+
+-- Which shop-bound Transition Node a Concourse loiter roll committed an NPC to — separate from
+-- EnRouteTransition (that one's tied to TransitionLanes' load-balancing counters, which shop
+-- Transitions never participate in) so a multi-hop bridge crawl toward it can be resumed on later
+-- decisions instead of being abandoned the moment the first hop lands on an intermediate node.
+function NodeGraph.GetPendingShopTransition(npc: Model): BasePart?
+	local value = npc:FindFirstChild("PendingShopTransition")
+	if value and value:IsA("ObjectValue") and value.Value and value.Value:IsA("BasePart") then
+		return value.Value :: BasePart
+	end
+	return nil
+end
+
+function NodeGraph.SetPendingShopTransition(npc: Model, transitionNode: BasePart?)
+	local value = npc:FindFirstChild("PendingShopTransition") :: ObjectValue?
+	if not value then
+		if not transitionNode then return end
+		value = Instance.new("ObjectValue")
+		value.Name = "PendingShopTransition"
+		value.Parent = npc
+	end
+	value.Value = transitionNode
 end
 
 -- [[ Shop zone occupancy ]] --

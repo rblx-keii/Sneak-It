@@ -116,13 +116,11 @@ function Local.SetupDoor()
 
 	local activeMap = MapService.GetActiveMap()
 	if not activeMap then
-		warn("[GateService] SetupDoor called but MapService.GetActiveMap() returned nil — door will not animate")
 		return
 	end
 
 	local assets = activeMap:FindFirstChild("Assets")
 	if not assets then
-		warn(`[GateService] {activeMap:GetFullName()} has no "Assets" folder — door will not animate`)
 		return
 	end
 
@@ -132,20 +130,17 @@ function Local.SetupDoor()
 		for _, child in assets:GetChildren() do
 			table.insert(childNames, child.Name)
 		end
-		warn(`[GateService] "{DOOR_ASSET_NAME}" not found under {assets:GetFullName()} — door will not animate. Assets contains: {table.concat(childNames, ", ")}`)
 		return
 	end
 	_doorModel = doorModel :: Model
 
 	local controller = doorModel:FindFirstChildOfClass("AnimationController")
 	if not controller then
-		warn(`[GateService] {doorModel:GetFullName()} has no AnimationController — door will not animate`)
 		return
 	end
 
 	local animator = controller:FindFirstChildOfClass("Animator")
 	if not animator then
-		warn(`[GateService] {controller:GetFullName()} has no Animator — door will not animate`)
 		return
 	end
 	_doorAnimator = animator
@@ -162,7 +157,6 @@ function Local.SetupDoor()
 	end
 
 	table.insert(_doorMarkerConnections, _doorTracks.openAction:GetMarkerReachedSignal(DOOR_OPEN_MARKER):Connect(function()
-		warn(`[GateService] openAction hit "{DOOR_OPEN_MARKER}" marker — swapping to openIdle`)
 		Local.SwapDoorIdle("openIdle")
 		Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_OPEN)
 
@@ -172,7 +166,6 @@ function Local.SetupDoor()
 	end))
 
 	table.insert(_doorMarkerConnections, _doorTracks.closeAction:GetMarkerReachedSignal(DOOR_CLOSE_MARKER):Connect(function()
-		warn(`[GateService] closeAction hit "{DOOR_CLOSE_MARKER}" marker — swapping to closeIdle`)
 		Local.SwapDoorIdle("closeIdle")
 		Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_CLOSED)
 	end))
@@ -180,7 +173,6 @@ function Local.SetupDoor()
 	_doorTracks.closeIdle:Play(0)
 	Local.SetDoorCollisionGroup(DOOR_COLLISION_GROUP_CLOSED)
 
-	warn(`[GateService] door set up — model={doorModel:GetFullName()}, animator={animator:GetFullName()}, tracks loaded: openIdle, openAction, closeIdle, closeAction`)
 end
 
 function Local.SwapDoorIdle(idleName: string)
@@ -193,7 +185,6 @@ function Local.SwapDoorIdle(idleName: string)
 
 	local track = _doorTracks[idleName]
 	if not track then
-		warn(`[GateService] SwapDoorIdle("{idleName}") — no such track loaded, doing nothing`)
 		return
 	end
 
@@ -202,22 +193,18 @@ end
 
 function Local.OpenDoor()
 	if not _doorTracks.openAction then
-		warn("[GateService] OpenDoor called but openAction track isn't loaded — SetupDoor never found the door, or hasn't run yet")
 		return
 	end
 
-	warn("[GateService] OpenDoor — playing openAction")
 	_doorTracks.closeAction:Stop(0)
 	_doorTracks.openAction:Play()
 end
 
 function Local.CloseDoor()
 	if not _doorTracks.closeAction then
-		warn("[GateService] CloseDoor called but closeAction track isn't loaded — SetupDoor never found the door, or hasn't run yet")
 		return
 	end
 
-	warn("[GateService] CloseDoor — playing closeAction")
 	_doorTracks.openAction:Stop(0)
 	_doorTracks.closeAction:Play()
 end

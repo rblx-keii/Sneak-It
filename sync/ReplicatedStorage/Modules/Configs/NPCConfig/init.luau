@@ -13,7 +13,7 @@ NPCConfig.OBSTRUCTION_BUFFER = 3 -- studs to stop short of a raycast-detected ob
 NPCConfig.ARRIVAL_TOLERANCE = 3 -- studs; how close counts as "reached" a node/waypoint
 NPCConfig.NODE_SEARCH_RADIUS = 150 -- Auto-search candidate radius (currently unused by distance cutoff, kept for tuning)
 NPCConfig.NODE_SPREAD_RADIUS = 10 -- studs; Basic ("Node") arrivals spread across this radius instead of one exact point
-NPCConfig.DEPART_NODE_SPREAD_RADIUS = 1.5 -- studs; tighter cap on the above specifically for Depart Folder nodes (narrow gate corridor — the full spread can land inside a wall/doorframe)
+NPCConfig.DEPART_NODE_SPREAD_RADIUS = 5 -- studs; tighter cap on the above specifically for Depart Folder nodes (narrow gate corridor — the full spread can land inside a wall/doorframe)
 NPCConfig.STUCK_TIMEOUT = 15 -- seconds a single waypoint leg can run past its own expected duration before it's given up on and rerouted to a different node entirely
 NPCConfig.LEG_TIMEOUT_GRACE_MULTIPLIER = 1.5 -- a leg's expected duration (distance/WalkSpeed) times this before the nudge-recovery cycle kicks in at all
 NPCConfig.STUCK_NUDGE_DISTANCE = 0.4 -- studs to nudge the NPC toward its current waypoint on the first stuck attempt (also the STUCK_PROGRESS_RATIO baseline)
@@ -37,6 +37,8 @@ NPCConfig.PATH_AGENT_HEIGHT = 5
 NPCConfig.PATH_AGENT_CAN_JUMP = false
 NPCConfig.PATH_AGENT_CAN_CLIMB = false
 NPCConfig.PATH_WAYPOINT_SPACING = 15 -- studs; wide enough to avoid re-issuing Humanoid:MoveTo() every few studs (which visibly hitched the walk animation), but frequent enough that long straight-line legs don't clip through walls the navmesh only avoids at the corner waypoints
+NPCConfig.PATH_STEEP_HEIGHT_DIFF = 2 -- studs; origin/goal vertical gap beyond this switches to PATH_WAYPOINT_SPACING_STEEP — PathfindingService's own waypoint-merging can span the full spacing straight through a step/ledge/stair riser it should have routed around when the leg isn't near-flat
+NPCConfig.PATH_WAYPOINT_SPACING_STEEP = 4 -- studs; tighter spacing forces more waypoints (and therefore more navmesh sampling) along a leg with real elevation change
 
 -- [[ Line Node slots ]] --
 NPCConfig.LINE_SLOT_PLAYER_RADIUS = 7 -- studs; a live player standing this close to a slot counts as occupying it
@@ -65,7 +67,7 @@ NPCConfig.SHOP_PICK_WEIGHTS = { Cafe = 1, Souvenir = 1, Convenience = 1 } -- fla
 NPCConfig.CAFFEINATED_CAFE_WEIGHT_MULTIPLIER = 3 -- Caffeinated NPCs are this many times likelier to pick Cafe over the other two shops
 
 -- [[ Concourse Loitering ]] --
-NPCConfig.CONCOURSE_LOITER_CHANCE = 0.55 -- chance a Concourse "Node" arrival detours into a shop/wander/seat/forward-anyway roll instead of always progressing toward Platform, rolled once per Concourse visit
+NPCConfig.CONCOURSE_LOITER_CHANCE = 0.75 -- chance a Concourse "Node" arrival detours into a shop/wander/seat/forward-anyway roll instead of always progressing toward Platform, rolled once per Concourse visit
 -- Sub-roll weights once the above succeeds — must sum to 1. Remainder after Shop+Wander+Seat is "keep heading toward the next zone anyway".
 NPCConfig.CONCOURSE_LOITER_SHOP_WEIGHT = 0.35
 NPCConfig.CONCOURSE_LOITER_WANDER_WEIGHT = 0.25
@@ -77,7 +79,7 @@ NPCConfig.CONCOURSE_WANDER_MAX = 45
 NPCConfig.BOARD_DWELL = .5 -- seconds an NPC lingers at the Depart Node, once boarding is open, before despawning ("boarding the plane")
 NPCConfig.RESPAWN_DELAY_MIN = 5 -- seconds after a boarded NPC despawns before its replacement spawns, randomized in this range
 NPCConfig.RESPAWN_DELAY_MAX = 10
-NPCConfig.BOARD_ROLL_CHANCE = 1 -- chance an NPC decides to board once the plane has arrived, rolled once per boarding window; the rest keep waiting for a later flight
+NPCConfig.BOARD_ROLL_CHANCE = 0.5 -- chance an NPC commits to this flight once the plane has arrived (gates leaving for Platform at all, not just the final Depart crossing), rolled once per boarding window; the rest keep loitering for a later flight
 
 -- [[ Alert / Panic / Contagion ]] --
 NPCConfig.ALERT_LOOK_DURATION = 2 -- seconds an NPC pauses to "look" before rolling to escalate into Panic or calm back down
