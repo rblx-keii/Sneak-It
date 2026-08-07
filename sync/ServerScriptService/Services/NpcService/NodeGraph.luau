@@ -156,6 +156,14 @@ function NodeGraph.GetPickupNode(node: BasePart): BasePart?
 	return nil
 end
 
+function NodeGraph.GetIndicatorModel(node: BasePart): Model?
+	local indicatorValue = node:FindFirstChild("Indicator")
+	if indicatorValue and indicatorValue:IsA("ObjectValue") and indicatorValue.Value and indicatorValue.Value:IsA("Model") then
+		return indicatorValue.Value :: Model
+	end
+	return nil
+end
+
 function NodeGraph.GetSubNode(node: BasePart, subName: string): BasePart?
 	local subFolder = node:FindFirstChild("SubNodes")
 	if not subFolder then return nil end

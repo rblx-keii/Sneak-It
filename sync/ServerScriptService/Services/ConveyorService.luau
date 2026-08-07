@@ -1,5 +1,6 @@
 --|| Services
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --|| References
@@ -11,14 +12,17 @@ local RoundService = require(script.Parent.RoundService)
 local MapService = require(script.Parent.MapService)
 local ItemService = require(script.Parent.ItemService)
 local JailService = require(script.Parent.JailService)
+local TeamService = require(script.Parent.TeamService)
 
 --|| Types
 type BeltItemInfo = {
 	ownerId: number,
+	conveyorNode: BasePart,
 	startPos: Vector3,
 	endPos: Vector3,
 	startTime: number,
 	travelTime: number,
+	indicatorFlashed: boolean,
 }
 
 --|| Variables
@@ -37,6 +41,17 @@ local Shared = {}
 local PLACE_ZONE_TAG = "ConveyorPlaceZone"
 local MAX_INTERACT_DISTANCE = 10
 
+-- Matches ScannerWand's green/red scan-result colors, so every TSA scan surface reads consistently.
+local INDICATOR_CLEAN_COLOR = Color3.fromRGB(60, 220, 90)
+local INDICATOR_CONTRABAND_COLOR = Color3.fromRGB(220, 50, 50)
+local INDICATOR_RESET_DELAY = 2
+
+local CONTRABAND_FLAG_ATTR = "ContrabandFlagged"
+local PICKUP_HIGHLIGHT_DURATION = 4 -- seconds the carrying player stays highlighted on TSA clients after pickup (see HighlightController)
+
+-- Flip off once the "Indicator doesn't flash" investigation is done.
+local DEBUG_INDICATOR = true
+
 --|| MAIN ||--
 
 -- [[ Startup ]] --
@@ -46,6 +61,8 @@ function Shared.Init()
 	table.insert(_networkConnections, Network:BindEvent("Conveyor", "Place", function(player: Player, data: {node: BasePart}?)
 		Local.TryPlaceItem(player, data and data.node)
 	end))
+
+	table.insert(_connections, ItemService.OnItemEquipped:Connect(Local.OnItemEquipped))
 
 	local currentState = RoundService.GetState()
 	if currentState == "Starting" or currentState == "InProgress" then
@@ -133,6 +150,87 @@ function Local.AreItemPartsWelded(item: Model): boolean
 	return true
 end
 
+function Local.GetTsaPlayers(): {Player}
+	local tsaPlayers = {}
+	for _, player in Players:GetPlayers() do
+		if TeamService.GetTeam(player) == "TSA" then
+			table.insert(tsaPlayers, player)
+		end
+	end
+	return tsaPlayers
+end
+
+-- TSA-only (see HighlightController — client-created Highlights don't replicate, so only whoever
+-- receives the event ever sees it), so a flagged bag/carrier doesn't out itself to Smugglers.
+function Local.BroadcastHighlight(action: "Start" | "Stop", target: Model)
+	for _, tsaPlayer in Local.GetTsaPlayers() do
+		Network:FireClient("Highlight", tsaPlayer, action, { targetCharacter = target })
+	end
+end
+
+-- Runs the actual X-ray "scan" — the Indicator light flash is purely cosmetic (see below) and is
+-- allowed to no-op if it's missing/misconfigured, but the scan result itself (flagging + highlighting
+-- a contraband bag for TSA) always runs regardless of whether that light is set up.
+function Local.ScanItem(conveyorNode: BasePart, item: Model): boolean
+	local hasContraband = ItemService.GetContrabandItemCount(item) > 0
+
+	if hasContraband and not item:GetAttribute(CONTRABAND_FLAG_ATTR) then
+		item:SetAttribute(CONTRABAND_FLAG_ATTR, true)
+		Local.BroadcastHighlight("Start", item)
+	end
+
+	Local.FlashIndicatorLight(conveyorNode, hasContraband)
+
+	return hasContraband
+end
+
+-- Flashes the conveyor's "Indicator" model (an ObjectValue on the node — see NodeGraph.GetIndicatorModel)
+-- red/green based on the scan result.
+function Local.FlashIndicatorLight(conveyorNode: BasePart, hasContraband: boolean)
+	local indicatorModel = NodeGraph.GetIndicatorModel(conveyorNode)
+	if not indicatorModel then
+		if DEBUG_INDICATOR then
+			warn(`[ConveyorService][Debug] FlashIndicatorLight({conveyorNode:GetFullName()}) — no "Indicator" ObjectValue found on the node (or its Value isn't a Model)`)
+		end
+		return
+	end
+
+	local primaryPart = indicatorModel.PrimaryPart
+	if not primaryPart then
+		if DEBUG_INDICATOR then
+			warn(`[ConveyorService][Debug] FlashIndicatorLight({conveyorNode:GetFullName()}) — Indicator model "{indicatorModel:GetFullName()}" has no PrimaryPart set`)
+		end
+		return
+	end
+
+	local originalColor = primaryPart:GetAttribute("OriginalColor")
+	if typeof(originalColor) ~= "Color3" then
+		originalColor = primaryPart.Color
+		primaryPart:SetAttribute("OriginalColor", originalColor)
+	end
+
+	primaryPart.Color = hasContraband and INDICATOR_CONTRABAND_COLOR or INDICATOR_CLEAN_COLOR
+
+	task.delay(INDICATOR_RESET_DELAY, function()
+		if primaryPart and primaryPart.Parent then
+			primaryPart.Color = originalColor
+		end
+	end)
+end
+
+-- Once a flagged bag is actually picked up, the standalone bag highlight is redundant (it's now
+-- welded to a moving character) — swap it for a bounded "spotted" pulse on the carrying player.
+function Local.OnItemEquipped(_player: Player, character: Model, item: Model)
+	if not item:GetAttribute(CONTRABAND_FLAG_ATTR) then return end
+
+	Local.BroadcastHighlight("Stop", item)
+	Local.BroadcastHighlight("Start", character)
+
+	task.delay(PICKUP_HIGHLIGHT_DURATION, function()
+		Local.BroadcastHighlight("Stop", character)
+	end)
+end
+
 function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 	task.spawn(function()
 		while true do
@@ -150,6 +248,11 @@ function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 			local primaryPart = item.PrimaryPart
 			if primaryPart then
 				primaryPart.CFrame = CFrame.new(info.startPos:Lerp(info.endPos, alpha))
+			end
+
+			if not info.indicatorFlashed and alpha >= 0.35 then
+				info.indicatorFlashed = true
+				Local.ScanItem(info.conveyorNode, item)
 			end
 
 			if alpha >= 1 then
@@ -229,10 +332,12 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 
 	local info: BeltItemInfo = {
 		ownerId = player.UserId,
+		conveyorNode = conveyorNode,
 		startPos = startPos,
 		endPos = endPos,
 		startTime = workspace:GetServerTimeNow(),
 		travelTime = NPCConfig.BELT_TRAVEL_TIME,
+		indicatorFlashed = false,
 	}
 	_beltItems[item] = info
 

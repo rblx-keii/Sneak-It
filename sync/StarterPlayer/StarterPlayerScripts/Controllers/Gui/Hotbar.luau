@@ -11,23 +11,36 @@ local GuiController = require(script.Parent.Parent.GuiController)
 local RoundController = require(script.Parent.Parent.RoundController)
 local inventoryUi = GuiController.Guis.Hotbar
 
-local hotbar = inventoryUi.Hotbar
-local slot1 = hotbar.Slot1
-local slot1Content = slot1.Content
-local slot1Button = slot1Content.Button :: TextButton
+local hotbar = inventoryUi.Frame
+local inventoryPanel = hotbar.Inventory
 
-local perkSlot = hotbar.PerkSlot
-local perkSlotContent = perkSlot.Content
-local perkSlotButton = perkSlotContent.Button :: TextButton
+local equippedFrame = inventoryPanel.Equipped
+local equippedContent = equippedFrame.Content :: Frame
+local equippedButton = equippedContent.Button :: TextButton
+local equippedIcon = equippedContent.Icon :: ImageLabel
+local equippedItemName = equippedContent.ItemName :: TextLabel
 
-local arrowFrame = hotbar.Arrow
-local arrowContent = arrowFrame.Content
-local arrowImage = arrowContent.ImageLabel
-local arrowButton = arrowContent.Button
+local perkFrame = hotbar.Perk
+local perkWrapper = perkFrame.Content :: Frame
+local perkContainer = perkWrapper.Container :: Frame
+local perkButton = perkContainer.Button :: TextButton
+local perkIcon = perkContainer.Icon :: ImageLabel
+local perkItemName = perkContainer.ItemName :: TextLabel
 
-local bagPanel = inventoryUi.BagContent
-local bagContentFrame = bagPanel.Content
-local bagTemplate = bagContentFrame.Template
+local bagContentFrame = inventoryPanel.Content :: Frame
+local bagTitle = bagContentFrame.Title :: TextLabel
+local bagContainer = bagContentFrame.Container :: Frame
+local bagLine = inventoryPanel.Line :: Frame
+
+local bagSlots: { Frame } = {
+	bagContainer.Slot1,
+	bagContainer.Slot2,
+	bagContainer.Slot3,
+	bagContainer.Slot4,
+	bagContainer.Slot5,
+}
+
+local arrowImage = hotbar.Arrow :: ImageLabel
 
 local player = Players.LocalPlayer
 
@@ -39,6 +52,7 @@ type ItemSyncData = {
 	isBag: boolean,
 	uid: string,
 	iconId: number?,
+	maxWeight: number?,
 }
 
 type BagSlotData = {
@@ -46,6 +60,12 @@ type BagSlotData = {
 	weight: number,
 	rating: number,
 	iconId: number?,
+}
+
+type BagGroupData = {
+	name: string,
+	iconId: number?,
+	count: number,
 }
 
 type LoadoutSlot = "Perk" | "Inventory"
@@ -61,36 +81,47 @@ type SyncPayload = {
 
 --|| Variables
 local _networkConnections: { Network.Cleanup } = {}
-local _bagToggleHandle: any = nil
 local _slotSwapHandle: any = nil
-local _arrowButtonConn: RBXScriptConnection? = nil
-local _slot1ButtonConn: RBXScriptConnection? = nil
-local _perkSlotButtonConn: RBXScriptConnection? = nil
+local _equippedButtonConn: RBXScriptConnection? = nil
+local _perkButtonConn: RBXScriptConnection? = nil
 
 local _heldItem: ItemSyncData? = nil
 local _perkItem: ItemSyncData? = nil
 local _inventoryItem: ItemSyncData? = nil
 local _activeSlot: LoadoutSlot? = nil
 local _bagContents: { BagSlotData } = {}
-local _isBagOpen: boolean = false
+
+local _hadInventoryItem: boolean = false
+local _hadPerkItem: boolean = false
+local _gridVisible: boolean = false
 
 --|| Constants
-local BAG_TOGGLE_ACTION = "Inventory_ToggleBag"
-local BAG_TOGGLE_KEYS = { Enum.KeyCode.B, Enum.KeyCode.DPadDown }
-
 local SLOT_SWAP_ACTION = "Hotbar_SlotSwap"
 local SLOT_SWAP_KEYS = { Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.DPadUp, Enum.UserInputType.MouseWheel }
 
 local ACTIVE_SLOT_TRANSPARENCY = 0.25
-local INACTIVE_SLOT_TRANSPARENCY = 0.65
+local INACTIVE_SLOT_TRANSPARENCY = 0.9
 
 local TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-local BAG_OPEN_POS = UDim2.new(0.5, 0, 0.5, 0)
-local BAG_CLOSE_POS = UDim2.new(0.5, 0, 1.5, 0)
+local CLOSED_SLOT_SCALE = 0.001
 
-local FULL_STAR = "rbxassetid://103313807540511"
-local EMPTY_STAR = "rbxassetid://130804386846291"
-local HALF_STAR = "rbxassetid://123385895224097"
+-- Target geometry pulled from the Bag/Not Bag/Null reference states in gui-sync/Hotbar.model.json.
+-- Inventory/Perk sit under a UIListLayout on Frame, so only their Size needs tweening; Equipped is
+-- freely positioned inside Inventory, so it needs both Position and Size.
+local INVENTORY_SIZE_NULL = UDim2.fromScale(0, 1)
+local INVENTORY_SIZE_NOT_BAG = UDim2.fromScale(0.17738783359527588, 1)
+local INVENTORY_SIZE_BAG = UDim2.fromScale(0.7293499708175659, 1)
+
+local PERK_SIZE_NULL = UDim2.fromScale(0, 1)
+local PERK_SIZE_SHOWN = UDim2.fromScale(0.17716999351978302, 1)
+
+local EQUIPPED_POS_NOT_BAG = UDim2.fromScale(0.15412628650665283, 0.49414753913879395)
+local EQUIPPED_SIZE_NOT_BAG = UDim2.fromScale(0.8979531526565552, 0.8748841285705566)
+local EQUIPPED_POS_BAG = UDim2.fromScale(0.03852999955415726, 0.5)
+local EQUIPPED_SIZE_BAG = UDim2.fromScale(0.21908000111579895, 0.8814799785614014)
+
+local LINE_SIZE_HIDDEN = UDim2.fromScale(0.0014903086703270674, 0)
+local LINE_SIZE_SHOWN = UDim2.fromScale(0.0014903086703270674, 0.888887345790863)
 
 --|| MAIN ||--
 local Local = {}
@@ -98,23 +129,15 @@ local Shared = {}
 
 -- [[ Startup ]] --
 function Shared.Init()
-	bagTemplate.Visible = false
-	slot1.Visible = false
-	perkSlot.Visible = false
-	bagPanel.Visible = false
-	arrowFrame.Visible = false
+	Local.ApplyNullState()
 
-	table.insert(_networkConnections, Network:BindEvent("Inventory", "Sync", function(payload: SyncPayload)
-		Local.ApplySync(payload)
+	table.insert(_networkConnections, Network:BindEvent("Inventory", "Sync", Local.ApplySync))
 
-		arrowFrame.Visible = payload and payload.heldItem and payload.heldItem.isBag
-	end))
-
-	_slot1ButtonConn = slot1Button.Activated:Connect(function()
+	_equippedButtonConn = equippedButton.Activated:Connect(function()
 		Local.RequestSwap("Inventory")
 	end)
 
-	_perkSlotButtonConn = perkSlotButton.Activated:Connect(function()
+	_perkButtonConn = perkButton.Activated:Connect(function()
 		Local.RequestSwap("Perk")
 	end)
 
@@ -135,181 +158,207 @@ function Local.SetInventoryEnabled(enabled: boolean)
 	else
 		Local.UnbindSlotSwapControls()
 	end
+end
 
-	if not enabled and _isBagOpen then
-		Local.SetBagPanelVisible(false)
+function Local.GetScale(instance: GuiObject): UIScale
+	local scale = instance:FindFirstChildOfClass("UIScale")
+	if not scale then
+		scale = Instance.new("UIScale")
+		scale.Parent = instance
+	end
+	return scale
+end
+
+-- Hides and collapses every sub frame under Frame so values can be set up before revealing.
+function Local.ApplyNullState()
+	inventoryPanel.Visible = false
+	inventoryPanel.Size = INVENTORY_SIZE_NULL
+
+	equippedFrame.Visible = false
+	equippedFrame.Position = EQUIPPED_POS_NOT_BAG
+	equippedFrame.Size = EQUIPPED_SIZE_NOT_BAG
+
+	bagContentFrame.Visible = false
+	bagLine.Visible = false
+	bagLine.Size = LINE_SIZE_HIDDEN
+	bagTitle.TextTransparency = 1
+
+	for _, slot in bagSlots do
+		slot.Visible = false
+		Local.GetScale(slot).Scale = CLOSED_SLOT_SCALE
+	end
+
+	perkFrame.Visible = false
+	perkFrame.Size = PERK_SIZE_NULL
+
+	arrowImage.Visible = false
+	Local.GetScale(arrowImage).Scale = CLOSED_SLOT_SCALE
+end
+
+function Local.PopulateItemSlot(itemNameLabel: TextLabel, icon: ImageLabel, data: ItemSyncData)
+	itemNameLabel.Text = data.name
+	icon.Image = if data.iconId then `rbxassetid://{data.iconId}` else ""
+end
+
+function Local.ClearItemSlot(itemNameLabel: TextLabel, icon: ImageLabel)
+	itemNameLabel.Text = ""
+	icon.Image = ""
+end
+
+function Local.RefreshHotbarSlotContent()
+	if _inventoryItem then
+		Local.PopulateItemSlot(equippedItemName, equippedIcon, _inventoryItem)
+		equippedContent.BackgroundTransparency = if _activeSlot == "Inventory" then ACTIVE_SLOT_TRANSPARENCY else INACTIVE_SLOT_TRANSPARENCY
+	else
+		Local.ClearItemSlot(equippedItemName, equippedIcon)
+	end
+
+	if _perkItem then
+		Local.PopulateItemSlot(perkItemName, perkIcon, _perkItem)
+		perkContainer.BackgroundTransparency = if _activeSlot == "Perk" then ACTIVE_SLOT_TRANSPARENCY else INACTIVE_SLOT_TRANSPARENCY
+	else
+		Local.ClearItemSlot(perkItemName, perkIcon)
 	end
 end
 
-function Local.PopulateStars(ratingFrame: Frame, rating: number)
-	local template = ratingFrame:FindFirstChild("Template") :: ImageLabel
-	if not template then return end
+function Local.GroupBagContents(contents: { BagSlotData }): { BagGroupData }
+	local groups: { BagGroupData } = {}
+	local index: { [string]: BagGroupData } = {}
 
-	for _, child in ratingFrame:GetChildren() do
-		if child.Name ~= "Template" and child:IsA("GuiObject") then
-			child:Destroy()
-		end
-	end
-
-	template.Visible = false
-
-	for i = 1, 5 do
-		local star = template:Clone()
-		star.Name = `Star_{i}`
-		star.Visible = true
-		star.LayoutOrder = i
-
-		if i <= math.floor(rating) then
-			star.Image = FULL_STAR
-		elseif i == math.ceil(rating) and rating % 1 >= 0.5 then
-			star.Image = HALF_STAR
+	for _, entry in contents do
+		local group = index[entry.name]
+		if group then
+			group.count += 1
 		else
-			star.Image = EMPTY_STAR
-		end
-
-		star.Parent = ratingFrame
-	end
-end
-
-function Local.PopulateSlot(content: Frame, data: BagSlotData)
-	local itemName = content:FindFirstChild("ItemName") :: TextLabel
-	local weight = content:FindFirstChild("Weight") :: TextLabel
-	local rating = content:FindFirstChild("Rating") :: Frame
-	local icon = content:FindFirstChild("ImageLabel") :: ImageLabel
-
-	if itemName then itemName.Text = data.name end
-	if weight then weight.Text = `{data.weight} kg` end
-	if rating then Local.PopulateStars(rating, data.rating) end
-	if icon then icon.Image = if data.iconId then `rbxassetid://{data.iconId}` else "" end
-end
-
-function Local.ClearSlot(content: Frame)
-	local itemName = content:FindFirstChild("ItemName") :: TextLabel
-	local weight = content:FindFirstChild("Weight") :: TextLabel
-	local rating = content:FindFirstChild("Rating") :: Frame
-	local icon = content:FindFirstChild("ImageLabel") :: ImageLabel
-
-	if itemName then itemName.Text = "" end
-	if weight then weight.Text = "" end
-	if icon then icon.Image = "" end
-	if rating then
-		for _, child in rating:GetChildren() do
-			if child.Name ~= "Template" and child:IsA("GuiObject") then
-				child:Destroy()
-			end
+			group = { name = entry.name, iconId = entry.iconId, count = 1 }
+			index[entry.name] = group
+			table.insert(groups, group)
 		end
 	end
+
+	return groups
 end
 
-function Local.RefreshSlot(frame: Frame, content: Frame, data: ItemSyncData?, isActive: boolean)
-	if not data then
-		frame.Visible = false
-		Local.ClearSlot(content)
-		return
-	end
-
-	Local.PopulateSlot(content, data)
-	frame.Visible = true
-	content.BackgroundTransparency = if isActive then ACTIVE_SLOT_TRANSPARENCY else INACTIVE_SLOT_TRANSPARENCY
-end
-
-function Local.RefreshHotbarSlots()
-	Local.RefreshSlot(slot1, slot1Content, _inventoryItem, _activeSlot == "Inventory")
-	Local.RefreshSlot(perkSlot, perkSlotContent, _perkItem, _activeSlot == "Perk")
-end
-
-function Local.RefreshBagSlots()
-	Local.ClearBagSlots()
-
-	local emptyLabel = bagContentFrame:FindFirstChild("Empty")
-	if emptyLabel then
-		emptyLabel.Visible = #_bagContents == 0
-	end
-
-	for _, slotData in _bagContents do
-		local clone = bagTemplate:Clone()
-		clone.Visible = true
-
-		local content = clone:FindFirstChild("Content")
-		if content then
-			Local.PopulateSlot(content, slotData)
+function Local.RefreshBagSlots(groups: { BagGroupData })
+	for i, slot in bagSlots do
+		local group = groups[i]
+		if not group then
+			slot.Visible = false
+			continue
 		end
 
-		clone.Parent = bagContentFrame
+		local wasHidden = not slot.Visible
+		slot.Visible = true
+
+		local icon = slot:FindFirstChild("Icon") :: ImageLabel
+		local itemName = slot:FindFirstChild("ItemName") :: TextLabel
+		local itemCount = slot:FindFirstChild("ItemCount") :: TextLabel
+
+		icon.Image = if group.iconId then `rbxassetid://{group.iconId}` else ""
+		itemName.Text = group.name
+		itemCount.Visible = group.count > 1
+		itemCount.Text = `x{group.count}`
+
+		-- A slot appearing while the grid is already open (2nd+ item in an open bag) needs its
+		-- own pop-in tween here — UpdateInventoryVisual only replays when the grid's overall
+		-- visibility flips, which won't happen for this case.
+		if wasHidden then
+			local scale = Local.GetScale(slot)
+			scale.Scale = CLOSED_SLOT_SCALE
+			TweenService:Create(scale, TWEEN_INFO, { Scale = 1 }):Play()
+		end
 	end
+
+	local weightText = `{string.format("%.1f", (_heldItem and _heldItem.weight) or 0)}/{string.format("%.1f", (_heldItem and _heldItem.maxWeight) or 0)}`
+	local hiddenCount = #groups - #bagSlots
+	local hiddenText = if hiddenCount > 0 then ` ({hiddenCount} Hidden)` else ""
+
+	bagTitle.Text = `BAG CONTENTS ({weightText}){hiddenText}`
 end
 
 function Local.ClearBagSlots()
-	for _, child in bagContentFrame:GetChildren() do
-		if child ~= bagTemplate and child:IsA("Frame") then
-			child:Destroy()
+	for _, slot in bagSlots do
+		slot.Visible = false
+	end
+end
+
+-- Tweens Inventory/Equipped/the bag grid to the size that matches (hasItem, gridVisible).
+-- hardReset snaps everything back to the Null look first — used for a brand new pickup so the
+-- "grow in" always starts clean; a bag's contents going 0 -> 1 skips it and morphs directly.
+function Local.UpdateInventoryVisual(hasItem: boolean, gridVisible: boolean, hardReset: boolean)
+	if hardReset then
+		inventoryPanel.Size = INVENTORY_SIZE_NULL
+		equippedFrame.Position = EQUIPPED_POS_NOT_BAG
+		equippedFrame.Size = EQUIPPED_SIZE_NOT_BAG
+		bagLine.Size = LINE_SIZE_HIDDEN
+		bagTitle.TextTransparency = 1
+		for _, slot in bagSlots do
+			if slot.Visible then
+				Local.GetScale(slot).Scale = CLOSED_SLOT_SCALE
+			end
 		end
 	end
-end
 
-function Local.SetBagPanelVisible(visible: boolean)
-	if visible == _isBagOpen then return end
-	_isBagOpen = visible
+	if hasItem then
+		inventoryPanel.Visible = true
+		equippedFrame.Visible = true
+	end
 
-	bagPanel.Visible = true
+	if gridVisible then
+		bagContentFrame.Visible = true
+		bagLine.Visible = true
+	end
 
-	local tween = TweenService:Create(bagContentFrame, TWEEN_INFO, {
-		Position = visible and BAG_OPEN_POS or BAG_CLOSE_POS
-	})
+	local targetInventorySize = if not hasItem then INVENTORY_SIZE_NULL elseif gridVisible then INVENTORY_SIZE_BAG else INVENTORY_SIZE_NOT_BAG
+	local targetEquippedPos = if gridVisible then EQUIPPED_POS_BAG else EQUIPPED_POS_NOT_BAG
+	local targetEquippedSize = if gridVisible then EQUIPPED_SIZE_BAG else EQUIPPED_SIZE_NOT_BAG
 
-	local arrowTween = TweenService:Create(
-		hotbar.Arrow.Content.ImageLabel,
-		TWEEN_INFO,
-		{ Rotation = visible and -90 or 90 }
-	)
+	TweenService:Create(inventoryPanel, TWEEN_INFO, { Size = targetInventorySize }):Play()
+	TweenService:Create(equippedFrame, TWEEN_INFO, { Position = targetEquippedPos, Size = targetEquippedSize }):Play()
+	TweenService:Create(bagLine, TWEEN_INFO, { Size = gridVisible and LINE_SIZE_SHOWN or LINE_SIZE_HIDDEN }):Play()
+	TweenService:Create(bagTitle, TWEEN_INFO, { TextTransparency = gridVisible and 0 or 1 }):Play()
 
-	tween:Play()
-	arrowTween:Play()
+	for _, slot in bagSlots do
+		TweenService:Create(Local.GetScale(slot), TWEEN_INFO, { Scale = gridVisible and 1 or CLOSED_SLOT_SCALE }):Play()
+	end
 
-	if visible then
-		task.defer(function()
-			tween.Completed:Wait()
-			bagPanel.ClipsDescendants = false
-		end)
-	else
-		bagPanel.ClipsDescendants = true
-		tween.Completed:Once(function()
-			bagPanel.Visible = false
+	if not hasItem or not gridVisible then
+		task.delay(TWEEN_INFO.Time, function()
+			if _hadInventoryItem ~= hasItem or _gridVisible ~= gridVisible then return end
+
+			if not gridVisible then
+				bagContentFrame.Visible = false
+				bagLine.Visible = false
+			end
+
+			if not hasItem then
+				inventoryPanel.Visible = false
+				equippedFrame.Visible = false
+			end
 		end)
 	end
 end
 
-function Local.ToggleBag()
-	if not _heldItem or not _heldItem.isBag then return end
-	Local.SetBagPanelVisible(not _isBagOpen)
-end
-
-function Local.BindBagControls()
-	if _bagToggleHandle then return end
-
-	_bagToggleHandle = InputController.BindAction({
-		name = BAG_TOGGLE_ACTION,
-		keys = BAG_TOGGLE_KEYS,
-		priority = Enum.ContextActionPriority.Medium.Value,
-		callback = function(_name: string, state: Enum.UserInputState, _input: InputObject)
-			if state ~= Enum.UserInputState.Begin then return Enum.ContextActionResult.Pass end
-			Local.ToggleBag()
-			return Enum.ContextActionResult.Sink
-		end,
-	})
-
-	_arrowButtonConn = arrowButton.Activated:Connect(Local.ToggleBag)
-end
-
-function Local.UnbindBagControls()
-	if _bagToggleHandle then
-		_bagToggleHandle:Unbind()
-		_bagToggleHandle = nil
+function Local.UpdatePerkVisual(hasPerk: boolean, hardReset: boolean)
+	if hardReset then
+		perkFrame.Size = PERK_SIZE_NULL
+		Local.GetScale(arrowImage).Scale = CLOSED_SLOT_SCALE
 	end
 
-	if _arrowButtonConn then
-		_arrowButtonConn:Disconnect()
-		_arrowButtonConn = nil
+	if hasPerk then
+		perkFrame.Visible = true
+		arrowImage.Visible = true
+	end
+
+	TweenService:Create(perkFrame, TWEEN_INFO, { Size = hasPerk and PERK_SIZE_SHOWN or PERK_SIZE_NULL }):Play()
+	TweenService:Create(Local.GetScale(arrowImage), TWEEN_INFO, { Scale = hasPerk and 1 or CLOSED_SLOT_SCALE }):Play()
+
+	if not hasPerk then
+		task.delay(TWEEN_INFO.Time, function()
+			if _hadPerkItem then return end
+			perkFrame.Visible = false
+			arrowImage.Visible = false
+		end)
 	end
 end
 
@@ -370,19 +419,31 @@ function Local.ApplySync(payload: SyncPayload)
 	_inventoryItem = payload.inventoryItem or nil
 	_activeSlot = payload.activeSlot or nil
 
-	Local.RefreshHotbarSlots()
+	Local.RefreshHotbarSlotContent()
 
-	local holdingBag = _heldItem ~= nil and _heldItem.isBag
+	local groups = Local.GroupBagContents(_bagContents)
+	local isHoldingBag = _heldItem ~= nil and _heldItem.isBag
+	local hasInventoryItem = _inventoryItem ~= nil
+	local hasPerkItem = _perkItem ~= nil
+	local gridVisible = isHoldingBag and #groups > 0
 
-	if holdingBag then
-		Local.RefreshBagSlots()
-		Local.BindBagControls()
+	if isHoldingBag then
+		Local.RefreshBagSlots(groups)
 	else
-		if _isBagOpen then
-			Local.SetBagPanelVisible(false)
-		end
 		Local.ClearBagSlots()
-		Local.UnbindBagControls()
+	end
+
+	if hasInventoryItem ~= _hadInventoryItem or gridVisible ~= _gridVisible then
+		local hardReset = hasInventoryItem and not _hadInventoryItem
+		_hadInventoryItem = hasInventoryItem
+		_gridVisible = gridVisible
+		Local.UpdateInventoryVisual(hasInventoryItem, gridVisible, hardReset)
+	end
+
+	if hasPerkItem ~= _hadPerkItem then
+		local hardReset = hasPerkItem
+		_hadPerkItem = hasPerkItem
+		Local.UpdatePerkVisual(hasPerkItem, hardReset)
 	end
 end
 
@@ -393,25 +454,20 @@ function Shared.Destroy()
 	end
 	table.clear(_networkConnections)
 
-	if _slot1ButtonConn then
-		_slot1ButtonConn:Disconnect()
-		_slot1ButtonConn = nil
+	if _equippedButtonConn then
+		_equippedButtonConn:Disconnect()
+		_equippedButtonConn = nil
 	end
 
-	if _perkSlotButtonConn then
-		_perkSlotButtonConn:Disconnect()
-		_perkSlotButtonConn = nil
+	if _perkButtonConn then
+		_perkButtonConn:Disconnect()
+		_perkButtonConn = nil
 	end
 
-	Local.UnbindBagControls()
 	Local.UnbindSlotSwapControls()
-	Local.ClearSlot(slot1Content)
-	Local.ClearSlot(perkSlotContent)
+	Local.ClearItemSlot(equippedItemName, equippedIcon)
+	Local.ClearItemSlot(perkItemName, perkIcon)
 	Local.ClearBagSlots()
-
-	if _isBagOpen then
-		Local.SetBagPanelVisible(false)
-	end
 end
 
 return Shared

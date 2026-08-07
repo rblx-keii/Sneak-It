@@ -137,7 +137,7 @@ end
 
 function Local.LoadBundles()
 	if not BUNDLES_FOLDER then
-		warn("[Monetization.Bundles] Config.BundlesFolder is nil — no bundles loaded.")
+		-- warn("[Monetization.Bundles] Config.BundlesFolder is nil — no bundles loaded.")
 		return
 	end
 

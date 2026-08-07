@@ -102,13 +102,13 @@ function Shared.Init()
 	for _, name in ipairs(SUB_MODULE_NAMES) do
 		local child = script:FindFirstChild(name)
 		if not child then
-			warn("[Monetization] Optional sub-module not found, skipping:", name)
+			-- warn("[Monetization] Optional sub-module not found, skipping:", name)
 			continue
 		end
 
 		local ok, mod = pcall(require, child)
 		if not ok then
-			warn("[Monetization] Failed to require sub-module:", name, "-", tostring(mod))
+			-- warn("[Monetization] Failed to require sub-module:", name, "-", tostring(mod))
 			continue
 		end
 

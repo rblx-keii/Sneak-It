@@ -1,0 +1,154 @@
+{
+	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"DisplayOrder": 1000000000,
+		"ResetOnSpawn": false,
+		"Attributes": {
+			"Ignored": {
+				"Bool": true
+			},
+			"Startup": {
+				"Bool": false
+			}
+		},
+		"ZIndexBehavior": "Sibling"
+	},
+	"Children": [
+		{
+			"Children": [
+				{
+					"Properties": {
+						"AspectRatio": 0.9230769872665405,
+						"DominantAxis": "Height",
+						"AspectType": "ScaleWithParentSize"
+					},
+					"Name": "UIAspectRatioConstraint",
+					"ClassName": "UIAspectRatioConstraint"
+				},
+				{
+					"Children": [
+						{
+							"Properties": {
+								"StrokeSizingMode": "ScaledSize",
+								"Thickness": 0.06499999761581421,
+								"Color": [
+									0.05098039656877518,
+									0.05098039656877518,
+									0.05098039656877518
+								]
+							},
+							"Name": "UIStroke",
+							"ClassName": "UIStroke"
+						}
+					],
+					"Properties": {
+						"FontFace": {
+							"family": "rbxasset://fonts/families/SourceSansPro.json",
+							"style": "Normal",
+							"weight": "Bold"
+						},
+						"TextColor3": [
+							1,
+							1,
+							1
+						],
+						"BorderColor3": [
+							0,
+							0,
+							0
+						],
+						"Text": "E",
+						"TextWrapped": true,
+						"AnchorPoint": [
+							0.5,
+							0.5
+						],
+						"TextSize": 14,
+						"BackgroundTransparency": 1,
+						"Position": {
+							"UDim2": [
+								[
+									0.5672348141670227,
+									0
+								],
+								[
+									0.6295258402824402,
+									0
+								]
+							]
+						},
+						"TextScaled": true,
+						"Size": {
+							"UDim2": [
+								[
+									0.7155293822288513,
+									0
+								],
+								[
+									0.5909490585327148,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"BackgroundColor3": [
+							1,
+							1,
+							1
+						]
+					},
+					"Name": "Label",
+					"ClassName": "TextLabel"
+				}
+			],
+			"Properties": {
+				"ScaleType": "Fit",
+				"BorderColor3": [
+					0,
+					0,
+					0
+				],
+				"AnchorPoint": [
+					0.5,
+					0.5
+				],
+				"Image": "rbxassetid://116210993712818",
+				"BackgroundTransparency": 1,
+				"Position": {
+					"UDim2": [
+						[
+							0.5,
+							0
+						],
+						[
+							0.5,
+							0
+						]
+					]
+				},
+				"Size": {
+					"UDim2": [
+						[
+							0.02500000037252903,
+							0
+						],
+						[
+							0.04800000041723251,
+							0
+						]
+					]
+				},
+				"BorderSizePixel": 0,
+				"BackgroundColor3": [
+					1,
+					1,
+					1
+				]
+			},
+			"Name": "Grab",
+			"ClassName": "ImageLabel"
+		}
+	],
+	"ClassName": "ScreenGui"
+}

@@ -1,12 +1,9 @@
 --|| Services
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 --|| References
 local Network = require(ReplicatedStorage.Modules.Network)
-
-local player = Players.LocalPlayer
 
 --|| Types
 type HighlightSession = {
@@ -16,7 +13,7 @@ type HighlightSession = {
 }
 
 --|| Variables
-local _activeSessions: {[number]: HighlightSession} = {}
+local _activeSessions: {[Model]: HighlightSession} = {}
 local _networkConnections: {Network.Cleanup} = {}
 
 --|| Constants
@@ -34,12 +31,12 @@ local Shared = {}
 
 -- [[ Startup ]] --
 function Shared.Init()
-	table.insert(_networkConnections, Network:BindEvent("Highlight", "Start", function(data: { targetUserId: number })
-		Local.StartHighlight(data.targetUserId)
+	table.insert(_networkConnections, Network:BindEvent("Highlight", "Start", function(data: { targetCharacter: Model })
+		Local.StartHighlight(data and data.targetCharacter)
 	end))
 
-	table.insert(_networkConnections, Network:BindEvent("Highlight", "Stop", function(data: { targetUserId: number })
-		Local.StopHighlight(data.targetUserId)
+	table.insert(_networkConnections, Network:BindEvent("Highlight", "Stop", function(data: { targetCharacter: Model })
+		Local.StopHighlight(data and data.targetCharacter)
 	end))
 end
 
@@ -48,17 +45,9 @@ function Shared.Start()
 end
 
 -- [[ Private Functions ]] --
-function Local.GetCharacterByUserId(userId: number): Model?
-	local targetPlayer = Players:GetPlayerByUserId(userId)
-	if not targetPlayer then return nil end
-	return targetPlayer.Character
-end
-
-function Local.StartHighlight(targetUserId: number)
-	if _activeSessions[targetUserId] then return end
-
-	local character = Local.GetCharacterByUserId(targetUserId)
+function Local.StartHighlight(character: Model?)
 	if not character then return end
+	if _activeSessions[character] then return end
 
 	local highlight = Instance.new("Highlight")
 	highlight.FillColor = HIGHLIGHT_FILL_COLOR
@@ -74,10 +63,10 @@ function Local.StartHighlight(targetUserId: number)
 		watchThread = nil
 	}
 
-	_activeSessions[targetUserId] = session
+	_activeSessions[character] = session
 
 	session.pulseThread = task.spawn(function()
-		while _activeSessions[targetUserId] do
+		while _activeSessions[character] do
 			local fadeIn = TweenService:Create(
 				highlight,
 				TweenInfo.new(PULSE_FADE_IN_TIME, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
@@ -101,8 +90,10 @@ function Local.StartHighlight(targetUserId: number)
 	end)
 end
 
-function Local.StopHighlight(targetUserId: number)
-	local session = _activeSessions[targetUserId]
+function Local.StopHighlight(character: Model?)
+	if not character then return end
+
+	local session = _activeSessions[character]
 	if not session then return end
 
 	if session.pulseThread then
@@ -129,13 +120,13 @@ function Local.StopHighlight(targetUserId: number)
 		end)
 	end
 
-	_activeSessions[targetUserId] = nil
+	_activeSessions[character] = nil
 end
 
 -- [[ Public Functions ]] --
 function Shared.Destroy()
-	for userId, _ in _activeSessions do
-		Local.StopHighlight(userId)
+	for character, _ in _activeSessions do
+		Local.StopHighlight(character)
 	end
 
 	for _, conn in _networkConnections do

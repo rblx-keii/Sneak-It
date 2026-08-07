@@ -1,0 +1,241 @@
+{
+	"Properties": {
+		"ScreenInsets": "DeviceSafeInsets",
+		"DisplayOrder": 1000000000,
+		"ResetOnSpawn": false,
+		"Attributes": {
+			"Ignored": {
+				"Bool": true
+			},
+			"Startup": {
+				"Bool": true
+			}
+		},
+		"ZIndexBehavior": "Sibling"
+	},
+	"Children": [
+		{
+			"Children": [
+				{
+					"Properties": {
+						"HorizontalAlignment": "Center",
+						"SortOrder": "LayoutOrder"
+					},
+					"Name": "UIListLayout",
+					"ClassName": "UIListLayout"
+				},
+				{
+					"Children": [
+						{
+							"Children": [
+								{
+									"Children": [
+										{
+											"Properties": {
+												"StrokeSizingMode": "ScaledSize",
+												"Thickness": 0.06499999761581421
+											},
+											"Name": "UIStroke",
+											"ClassName": "UIStroke"
+										}
+									],
+									"Properties": {
+										"FontFace": {
+											"family": "rbxasset://fonts/families/SourceSansPro.json",
+											"style": "Normal",
+											"weight": "Bold"
+										},
+										"TextColor3": [
+											1,
+											1,
+											1
+										],
+										"BorderColor3": [
+											0,
+											0,
+											0
+										],
+										"TextWrapped": true,
+										"AnchorPoint": [
+											0.5,
+											0.5
+										],
+										"TextSize": 14,
+										"BackgroundTransparency": 1,
+										"Position": {
+											"UDim2": [
+												[
+													0.5,
+													0
+												],
+												[
+													0.5,
+													0
+												]
+											]
+										},
+										"TextScaled": true,
+										"Size": {
+											"UDim2": [
+												[
+													1,
+													0
+												],
+												[
+													1,
+													0
+												]
+											]
+										},
+										"BorderSizePixel": 0,
+										"BackgroundColor3": [
+											1,
+											1,
+											1
+										]
+									},
+									"Name": "Label",
+									"ClassName": "TextLabel"
+								}
+							],
+							"Properties": {
+								"AnchorPoint": [
+									0.5,
+									0.5
+								],
+								"BackgroundTransparency": 1,
+								"Position": {
+									"UDim2": [
+										[
+											0.5,
+											0
+										],
+										[
+											0.5,
+											0
+										]
+									]
+								},
+								"BorderColor3": [
+									0,
+									0,
+									0
+								],
+								"Size": {
+									"UDim2": [
+										[
+											1,
+											0
+										],
+										[
+											1,
+											0
+										]
+									]
+								},
+								"BorderSizePixel": 0,
+								"BackgroundColor3": [
+									1,
+									1,
+									1
+								]
+							},
+							"Name": "Content",
+							"ClassName": "Frame"
+						}
+					],
+					"Properties": {
+						"AnchorPoint": [
+							0.5,
+							0.5
+						],
+						"Visible": false,
+						"BackgroundTransparency": 1,
+						"Position": {
+							"UDim2": [
+								[
+									0.5,
+									0
+								],
+								[
+									0.05062045156955719,
+									0
+								]
+							]
+						},
+						"BorderColor3": [
+							0,
+							0,
+							0
+						],
+						"Size": {
+							"UDim2": [
+								[
+									1,
+									0
+								],
+								[
+									0.10124090313911438,
+									0
+								]
+							]
+						},
+						"BorderSizePixel": 0,
+						"BackgroundColor3": [
+							1,
+							1,
+							1
+						]
+					},
+					"Name": "Template",
+					"ClassName": "Frame"
+				}
+			],
+			"Properties": {
+				"AnchorPoint": [
+					0.5,
+					0.5
+				],
+				"BackgroundTransparency": 1,
+				"Position": {
+					"UDim2": [
+						[
+							0.5,
+							0
+						],
+						[
+							0.43883225321769714,
+							0
+						]
+					]
+				},
+				"BorderColor3": [
+					0,
+					0,
+					0
+				],
+				"Size": {
+					"UDim2": [
+						[
+							0.4166666567325592,
+							0
+						],
+						[
+							0.4633920192718506,
+							0
+						]
+					]
+				},
+				"BorderSizePixel": 0,
+				"BackgroundColor3": [
+					1,
+					1,
+					1
+				]
+			},
+			"Name": "List",
+			"ClassName": "Frame"
+		}
+	],
+	"ClassName": "ScreenGui"
+}

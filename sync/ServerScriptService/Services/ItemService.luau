@@ -9,6 +9,7 @@ local HttpService = game:GetService("HttpService")
 --|| References
 local Network = require(ReplicatedStorage.Modules.Network)
 local Observers = require(ReplicatedStorage.Modules.Libs.Observers)
+local ModuleUtils = require(ReplicatedStorage.Modules.Utils.ModuleUtils)
 
 local ItemsConfig = require(ReplicatedStorage.Modules.Configs.ItemsConfig)
 
@@ -49,6 +50,7 @@ type ItemSyncData = {
 	isBag: boolean,
 	uid: string,
 	iconId: number?,
+	maxWeight: number?,
 }
 
 type BagSlotData = {
@@ -106,6 +108,9 @@ local SPAWN_CAST_THICKNESS = 0.2 -- studs; kept thin since only the footprint (X
 --|| MAIN ||--
 local Local = {}
 local Shared = {}
+
+-- [[ Signals ]] --
+Shared.OnItemEquipped = ModuleUtils.signal.new()
 
 -- [[ Startup ]] --
 function Shared.Init()
@@ -218,6 +223,8 @@ function Local.EquipItemDirect(player: Player, character: Model, item: Model)
 
 	Local.RecalculateContraband(character)
 	Local.SyncClient(player, "ItemPickup")
+
+	Shared.OnItemEquipped:Fire(player, character, item)
 end
 
 -- Captures the currently-held item's identity into its loadout slot and destroys the live Model —
@@ -512,7 +519,7 @@ function Local.EnsureUID(model: Model): string
 	return uid
 end
 
-function Local.GetItemConfigAttributes(itemName: string): { Weight: number, Rating: number, IsContraband: boolean }
+function Local.GetItemConfigAttributes(itemName: string): { Weight: number, Rating: number, IsContraband: boolean, MaxWeight: number? }
 	local itemConfig = ItemsConfig.GetItem(itemName)
 	local attributes = (itemConfig and itemConfig.attributes) or {}
 
@@ -520,6 +527,7 @@ function Local.GetItemConfigAttributes(itemName: string): { Weight: number, Rati
 		Weight = attributes.Weight or 1,
 		Rating = attributes.Rating or 1,
 		IsContraband = attributes.IsContraband == true,
+		MaxWeight = attributes.MaxWeight,
 	}
 end
 
@@ -784,6 +792,7 @@ function Local.BuildSyncItemData(itemName: string, uid: string): ItemSyncData
 		isBag = Local.IsBagItem(itemName),
 		uid = uid,
 		iconId = Local.GetItemIconId(itemName),
+		maxWeight = baseAttrs.MaxWeight,
 	}
 end
 

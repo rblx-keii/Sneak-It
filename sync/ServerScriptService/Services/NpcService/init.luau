@@ -35,11 +35,13 @@ type Prefetch = {
 
 type BeltBagInfo = {
 	npcUID: string,
+	conveyorNode: BasePart,
 	startPos: Vector3,
 	endPos: Vector3,
 	startTime: number,
 	travelTime: number,
 	arrived: boolean,
+	indicatorFlashed: boolean,
 }
 
 type NPCRecord = {
@@ -104,6 +106,11 @@ Local.decisionReportEvent = Instance.new("BindableEvent")
 local NPC_FOLDER_NAME = "NPCs"
 local DEBUG_MARKERS_FOLDER_NAME = "NPCDebugMarkers"
 local STEALABLE_NPC_TAG = "StealableNPC"
+
+-- Matches ScannerWand's green/red scan-result colors, so every TSA scan surface reads consistently.
+local INDICATOR_CLEAN_COLOR = Color3.fromRGB(60, 220, 90)
+local INDICATOR_CONTRABAND_COLOR = Color3.fromRGB(220, 50, 50)
+local INDICATOR_RESET_DELAY = 2
 
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
@@ -592,6 +599,10 @@ function Local.SpawnNPC(template: Model)
 	model:SetAttribute("UID", uid)
 	model:SetAttribute("Kind", "Crowd")
 	model:SetAttribute("BehaviorType", "Linear")
+
+	-- Every crowd NPC gets the same "Arrestable" affordance as a real Smuggler (see ArrestService) so
+	-- the Handcuffs prompt can't be used to spot Smugglers just by which characters show a prompt.
+	CollectionService:AddTag(model, "Arrestable")
 
 	local actor = Local.InjectActor(model)
 	Local.Warn(
@@ -1548,11 +1559,13 @@ function Local.StartConveyorTransit(record: NPCRecord, node: BasePart)
 
 	local info: BeltBagInfo = {
 		npcUID = record.uid,
+		conveyorNode = node,
 		startPos = startPos,
 		endPos = endPos,
 		startTime = workspace:GetServerTimeNow(),
 		travelTime = NPCConfig.BELT_TRAVEL_TIME,
 		arrived = false,
+		indicatorFlashed = false,
 	}
 	_beltBags[bag] = info
 
@@ -1590,6 +1603,11 @@ function Local.RunBeltTransit(bag: Model, info: BeltBagInfo)
 				primaryPart.CFrame = CFrame.new(info.startPos:Lerp(info.endPos, alpha))
 			end
 
+			if not info.indicatorFlashed and alpha >= 0.5 then
+				info.indicatorFlashed = true
+				Local.FlashIndicator(info.conveyorNode, bag)
+			end
+
 			if alpha >= 1 then
 				info.arrived = true
 				Local.CompleteBeltArrival(bag, info)
@@ -1597,6 +1615,37 @@ function Local.RunBeltTransit(bag: Model, info: BeltBagInfo)
 			end
 
 			task.wait(0.1)
+		end
+	end)
+end
+
+-- Flashes the conveyor's "Indicator" model (an ObjectValue on the node — see NodeGraph.GetIndicatorModel)
+-- red/green based on whether the item riding the belt actually contains contraband.
+function Local.FlashIndicator(conveyorNode: BasePart, item: Model)
+	local indicatorModel = NodeGraph.GetIndicatorModel(conveyorNode)
+	if not indicatorModel then
+		Local.Warn(`[NpcService] FlashIndicator({conveyorNode:GetFullName()}) — no "Indicator" ObjectValue found on the node (or its Value isn't a Model)`)
+		return
+	end
+
+	local primaryPart = indicatorModel.PrimaryPart
+	if not primaryPart then
+		Local.Warn(`[NpcService] FlashIndicator({conveyorNode:GetFullName()}) — Indicator model "{indicatorModel:GetFullName()}" has no PrimaryPart set`)
+		return
+	end
+
+	local originalColor = primaryPart:GetAttribute("OriginalColor")
+	if typeof(originalColor) ~= "Color3" then
+		originalColor = primaryPart.Color
+		primaryPart:SetAttribute("OriginalColor", originalColor)
+	end
+
+	local hasContraband = ItemService.GetContrabandItemCount(item) > 0
+	primaryPart.Color = hasContraband and INDICATOR_CONTRABAND_COLOR or INDICATOR_CLEAN_COLOR
+
+	task.delay(INDICATOR_RESET_DELAY, function()
+		if primaryPart and primaryPart.Parent then
+			primaryPart.Color = originalColor
 		end
 	end)
 end

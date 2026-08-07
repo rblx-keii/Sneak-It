@@ -34,6 +34,7 @@ Shared.onActiveGuiChanged = ModuleUtils.signal.new()
 --[[ GUIS ]]--
 
 Shared.Guis = {
+	Alarm = playerGui:WaitForChild("Alarm") :: typeof(StarterGui.Alarm),
 	Cursor = playerGui:WaitForChild("Cursor") :: typeof(StarterGui.Cursor),
 	Hotbar = playerGui:WaitForChild("Hotbar") :: typeof(StarterGui.Hotbar),
 	Hud = playerGui:WaitForChild("Hud") :: typeof(StarterGui.Hud),
