@@ -368,9 +368,15 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 	local startPos = startSub and NodeGraph.GetNodePosition(startSub) or NodeGraph.GetNodePosition(conveyorNode)
 	local endPos = endSub and NodeGraph.GetNodePosition(endSub) or NodeGraph.GetNodePosition(pickupNode)
 
+	-- Node markers (placePart/conveyorNode/startSub/endSub) are waypoint parts, not the belt's actual
+	-- surface — excluded so the probe/blockcast can't rest the item on top of one of them instead.
+	local surfaceExcludeInstances: { Instance } = { item, character, placePart, conveyorNode }
+	if startSub then table.insert(surfaceExcludeInstances, startSub) end
+	if endSub then table.insert(surfaceExcludeInstances, endSub) end
+
 	local surfaceRaycastParams = RaycastParams.new()
 	surfaceRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	surfaceRaycastParams.FilterDescendantsInstances = { item, character }
+	surfaceRaycastParams.FilterDescendantsInstances = surfaceExcludeInstances
 
 	local conveyorRotation = Local.GetConveyorRotation(item)
 	startPos = Local.GetRestingPosition(item, conveyorRotation, startPos, localBoxCFrame, boxSize, surfaceRaycastParams)
