@@ -30,7 +30,7 @@ local item = {}
 
 item.properties = {
 	iconId = 78637835345128, -- item icon asset id
-	conveyorOrientation = CFrame.Angles(math.rad(0), math.rad(180), math.rad(90)),
+	conveyorOrientation = CFrame.Angles(math.rad(-180), math.rad(0), math.rad(-90)),
 	cooldown = 8,
 	projectileName = "OverchargedBattery",
 	throwSpeed = 60,

@@ -25,6 +25,7 @@ local item = {}
 
 item.properties = {
 	icondId = 96813226314066,
+	conveyorOrientation = CFrame.Angles(math.rad(-90), math.rad(0), math.rad(-90)),
 	cooldown = 1,                  -- seconds between shots
 	range = 35,                   -- studs
 	zapSoundId = 0,                 -- fill in — taser zap sound

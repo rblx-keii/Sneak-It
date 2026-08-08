@@ -1265,6 +1265,12 @@ function Shared.ForceDropItem(character: Model): Model?
 	return Local.ClearEquipped(character)
 end
 
+-- Exposed for callers (e.g. ConveyorService) that ForceDropItem a player's held item outside the
+-- normal DropItem/ConsumeEquipped flows and need the hotbar to reflect the now-empty hand.
+function Shared.SyncClient(player: Player, action: string)
+	Local.SyncClient(player, action)
+end
+
 -- For callers that ForceDropItem an item off a character and then, on a later failure (e.g. a
 -- steal's handoff to the player not going through), need to place it properly in the world instead
 -- of leaving it wherever its stale in-hand pose left it — mirrors DropItem's own settle behavior.

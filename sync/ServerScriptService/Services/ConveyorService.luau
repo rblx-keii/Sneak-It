@@ -51,6 +51,10 @@ local INDICATOR_RESET_DELAY = 2
 local CONTRABAND_FLAG_ATTR = "ContrabandFlagged"
 local PICKUP_HIGHLIGHT_DURATION = 4 -- seconds the carrying player stays highlighted on TSA clients after pickup (see HighlightController)
 
+local SURFACE_PROBE_HEIGHT = 15 -- studs of clearance kept above the detected belt surface before blockcasting down onto it
+local SURFACE_PROBE_DISTANCE = 30 -- max studs searched downward for the belt surface
+local RESTING_CLEARANCE = 0.02 -- tiny gap left above the surface so the item doesn't z-fight/clip into the belt
+
 -- Flip off once the "Indicator doesn't flash" investigation is done.
 local DEBUG_INDICATOR = false
 
@@ -291,6 +295,35 @@ function Local.GetConveyorRotation(item: Model): CFrame
 	return conveyorOrientation or CFrame.identity
 end
 
+-- Captured before the item is moved, so welded descendants (which lag a physics step behind a raw
+-- primaryPart.CFrame set — see the note above) can't skew the reading: the box's pose relative to
+-- primaryPart is invariant under rigid transforms, so it can be reapplied at any later position/
+-- rotation via pure math instead of waiting a frame for the weld to catch up.
+function Local.GetItemLocalBoundingBox(item: Model): (CFrame, Vector3)
+	local primaryPart = item.PrimaryPart :: BasePart
+	local boxCFrame, boxSize = item:GetBoundingBox()
+	return primaryPart.CFrame:ToObjectSpace(boxCFrame), boxSize
+end
+
+-- Rests item's oriented bounding box on whatever's under `nodePos`: a plain raycast first locates
+-- the belt's approximate surface height (so the blockcast below always starts from a safe, surface-
+-- relative clearance regardless of how a given map's belt is built), then a blockcast using the
+-- item's own size/orientation finds exactly where its lowest point touches down — accounting for
+-- conveyorOrientation tilts that put a corner, not the box center, closest to the belt.
+function Local.GetRestingPosition(item: Model, targetRotation: CFrame, nodePos: Vector3, localBoxCFrame: CFrame, boxSize: Vector3, raycastParams: RaycastParams): Vector3
+	local probeOrigin = nodePos + Vector3.new(0, SURFACE_PROBE_HEIGHT, 0)
+	local probeResult = workspace:Raycast(probeOrigin, Vector3.new(0, -SURFACE_PROBE_DISTANCE, 0), raycastParams)
+	local castHeight = if probeResult then (probeResult.Position.Y - nodePos.Y) + SURFACE_PROBE_HEIGHT else SURFACE_PROBE_HEIGHT
+
+	local tentativeCFrame = targetRotation + (nodePos + Vector3.new(0, castHeight, 0))
+	local castCFrame = tentativeCFrame * localBoxCFrame
+
+	local castResult = workspace:Blockcast(castCFrame, boxSize, Vector3.new(0, -(castHeight + SURFACE_PROBE_DISTANCE), 0), raycastParams)
+	local dropDistance = if castResult then castResult.Distance - RESTING_CLEARANCE else castHeight
+
+	return nodePos + Vector3.new(0, castHeight - dropDistance, 0)
+end
+
 function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 	if not placePart then return end
 
@@ -314,6 +347,13 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 	local item = ItemService.ForceDropItem(character)
 	if not item or not item.PrimaryPart then return end
 
+	-- ForceDropItem clears HeldItem server-side but doesn't sync the client — do it here so the
+	-- hotbar drops the equipped slot instead of leaving the stale item displayed.
+	ItemService.SyncClient(player, "ItemDropped")
+
+	-- Must be captured now, before the item is repositioned below — see GetItemLocalBoundingBox.
+	local localBoxCFrame, boxSize = Local.GetItemLocalBoundingBox(item)
+
 	if not Local.AreItemPartsWelded(item) then
 		warn(`[ConveyorService] TryPlaceItem({player.Name}) — {item.Name}'s parts aren't fully welded to its PrimaryPart, belt transit may look disjointed`)
 	end
@@ -327,6 +367,14 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 	local endSub = NodeGraph.GetSubNode(conveyorNode, "End")
 	local startPos = startSub and NodeGraph.GetNodePosition(startSub) or NodeGraph.GetNodePosition(conveyorNode)
 	local endPos = endSub and NodeGraph.GetNodePosition(endSub) or NodeGraph.GetNodePosition(pickupNode)
+
+	local surfaceRaycastParams = RaycastParams.new()
+	surfaceRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	surfaceRaycastParams.FilterDescendantsInstances = { item, character }
+
+	local conveyorRotation = Local.GetConveyorRotation(item)
+	startPos = Local.GetRestingPosition(item, conveyorRotation, startPos, localBoxCFrame, boxSize, surfaceRaycastParams)
+	endPos = Local.GetRestingPosition(item, conveyorRotation, endPos, localBoxCFrame, boxSize, surfaceRaycastParams)
 
 	item:SetAttribute("OwnerUserId", player.UserId)
 	item:SetAttribute("OnBelt", true)
@@ -343,7 +391,6 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 		end
 	end
 
-	local conveyorRotation = Local.GetConveyorRotation(item)
 	primaryPart.CFrame = conveyorRotation + startPos
 
 	local info: BeltItemInfo = {

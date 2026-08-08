@@ -24,7 +24,7 @@ local item = {}
 
 item.properties = {
 	iconId = 133209233236404, -- item icon asset id
-	conveyorOrientation = CFrame.Angles(math.rad(-90), math.rad(90), math.rad(0)),
+	conveyorOrientation = CFrame.Angles(math.rad(90), math.rad(0), math.rad(-180)),
 	cooldown = 1,                  -- seconds between shots
 	range = 120,                   -- studs
 	bonkSoundId = "rbxassetid://137041944943141",
