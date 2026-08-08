@@ -15,7 +15,7 @@ Template.Visible = false
 local _activePrompts: {[string]: Frame} = {}
 local _activeConnections: {[Frame]: RBXScriptConnection} = {}
 local _networkConnections: {Network.Cleanup} = {}
-local _mobileLayoutConn: any = nil
+local _touchDeviceConn: any = nil
 
 --|| Constants
 local ANIM_DURATION = 0.35
@@ -40,9 +40,11 @@ local Shared = {}
 function Shared.Init()
 	table.insert(_networkConnections, RoundController.OnPlayingChanged:Connect(Local.SetInteractEnabled))
 
-	-- Keyboard/mouse "press E"-style prompts don't mean anything on a touch device — re-evaluate
-	-- whenever GuiController's mobile layout flips instead of only on round-state changes.
-	_mobileLayoutConn = GuiController.OnMobileLayoutChanged:Connect(function()
+	-- Keyboard/mouse "press E"-style prompts don't mean anything once MobileControls' own touch
+	-- overlay is up — tracks GuiController.IsTouchDevice (the same signal MobileControlsController
+	-- uses for its own Gui.Enabled) rather than the viewport-based IsMobileLayout, since those two
+	-- can disagree (e.g. a touch-only device below the mobile viewport width floor).
+	_touchDeviceConn = GuiController.OnTouchDeviceChanged:Connect(function()
 		Local.SetInteractEnabled(RoundController.IsPlaying())
 	end)
 
@@ -55,7 +57,7 @@ end
 
 -- [[ Private Functions ]] --
 function Local.SetInteractEnabled(enabled: boolean)
-	local shouldShow = enabled and not GuiController.IsMobileLayout
+	local shouldShow = enabled and not GuiController.IsTouchDevice
 	Gui.Enabled = shouldShow
 
 	if not shouldShow then
@@ -222,9 +224,9 @@ function Shared.Destroy()
 	end
 	table.clear(_networkConnections)
 
-	if _mobileLayoutConn then
-		_mobileLayoutConn:Disconnect()
-		_mobileLayoutConn = nil
+	if _touchDeviceConn then
+		_touchDeviceConn:Disconnect()
+		_touchDeviceConn = nil
 	end
 
 	for _, conn in _activeConnections do

@@ -19,6 +19,7 @@ local item = {}
 
 item.properties = {
 	iconId = 111542237914064, -- item icon asset id
+	conveyorOrientation = CFrame.Angles(math.rad(90), math.rad(90), math.rad(0)),
 	idleAnimationId = 0, -- fill in
 	spawnWeight = 45, -- relative chance to spawn where this item is scattered (higher = more common)
 	itemType = "Non-functional", -- item-spawn category (ItemSpawnService); "Chaos" | "Non-functional"

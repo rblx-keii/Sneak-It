@@ -29,6 +29,7 @@ local item = {}
 
 item.properties = {
 	iconId = 97735903841449, -- item icon asset id
+	conveyorOrientation = CFrame.Angles(math.rad(0), math.rad(0), math.rad(90)),
 	cooldown = 5,
 	placementDistance = 3,
 	floorRaycastDrop = 20,

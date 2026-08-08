@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 --|| References
 local Network = require(ReplicatedStorage.Modules.Network)
 local NPCConfig = require(ReplicatedStorage.Modules.Configs.NPCConfig)
+local ItemsConfig = require(ReplicatedStorage.Modules.Configs.ItemsConfig)
 
 local NodeGraph = require(script.Parent.NpcService.NodeGraph)
 local RoundService = require(script.Parent.RoundService)
@@ -23,6 +24,7 @@ type BeltItemInfo = {
 	startTime: number,
 	travelTime: number,
 	indicatorFlashed: boolean,
+	rotation: CFrame,
 }
 
 --|| Variables
@@ -247,7 +249,7 @@ function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 			local alpha = math.clamp(elapsed / info.travelTime, 0, 1)
 			local primaryPart = item.PrimaryPart
 			if primaryPart then
-				primaryPart.CFrame = CFrame.new(info.startPos:Lerp(info.endPos, alpha))
+				primaryPart.CFrame = info.rotation + info.startPos:Lerp(info.endPos, alpha)
 			end
 
 			if not info.indicatorFlashed and alpha >= 0.35 then
@@ -274,6 +276,19 @@ function Local.RunBeltTransit(item: Model, info: BeltItemInfo)
 			task.wait(0.1)
 		end
 	end)
+end
+
+-- Items that don't sit right on the belt in their default orientation (e.g. Suitcase, which is too
+-- tall standing up) declare a corrective properties.conveyorOrientation — an absolute, position-less
+-- CFrame, found by rotating the item in Studio until it lies flat and reading the pivot back with
+-- :GetPivot():ToOrientation(). Applied unconditionally whenever an item's config declares one, since
+-- that's already a deliberate per-item decision, not something to re-derive from geometry at runtime.
+-- Returned rotation-only (not combined with a position) since RunBeltTransit needs to keep
+-- re-applying it every tick.
+function Local.GetConveyorRotation(item: Model): CFrame
+	local itemConfig = ItemsConfig.GetItem(item.Name)
+	local conveyorOrientation = itemConfig and itemConfig.properties.conveyorOrientation :: CFrame?
+	return conveyorOrientation or CFrame.identity
 end
 
 function Local.TryPlaceItem(player: Player, placePart: BasePart?)
@@ -328,7 +343,8 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 		end
 	end
 
-	primaryPart.CFrame = CFrame.new(startPos)
+	local conveyorRotation = Local.GetConveyorRotation(item)
+	primaryPart.CFrame = conveyorRotation + startPos
 
 	local info: BeltItemInfo = {
 		ownerId = player.UserId,
@@ -338,6 +354,7 @@ function Local.TryPlaceItem(player: Player, placePart: BasePart?)
 		startTime = workspace:GetServerTimeNow(),
 		travelTime = NPCConfig.BELT_TRAVEL_TIME,
 		indicatorFlashed = false,
+		rotation = conveyorRotation,
 	}
 	_beltItems[item] = info
 

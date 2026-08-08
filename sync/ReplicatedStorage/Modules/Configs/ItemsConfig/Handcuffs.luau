@@ -19,6 +19,7 @@ local item = {}
 
 item.properties = {
 	iconId = 123308856629534,
+	conveyorOrientation = CFrame.Angles(math.rad(90), math.rad(-180), math.rad(0)),
 	clinkSoundId = 0, -- fill in — handcuffs click sound
 	idleAnimationId = 0, -- fill in
 }

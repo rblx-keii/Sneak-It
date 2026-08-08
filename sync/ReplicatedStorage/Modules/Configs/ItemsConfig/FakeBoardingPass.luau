@@ -35,6 +35,7 @@ local item = {}
 
 item.properties = {
 	iconId = 130085333520025, -- item icon asset id
+	conveyorOrientation = CFrame.Angles(math.rad(0), math.rad(0), math.rad(90)),
 	cooldown = 0, -- single-use consumable, no reuse cooldown needed
 	idleAnimationId = 77856338533905,
 	useAnimationId = 0, -- add a "flash the pass" animation id if/when one exists

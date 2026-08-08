@@ -20,6 +20,10 @@ local item = {}
 item.properties = {
 	iconId = 131859491595724, -- item icon asset id
 	idleAnimationId = 75766598049781, -- TODO: no held-idle animation id provided yet
+	-- Too tall standing up to clear the conveyor's scanner housing — laid on its side instead.
+	-- Found by rotating in Studio until it lies flat and reading the pivot back with
+	-- :GetPivot():ToOrientation().
+	conveyorOrientation = CFrame.Angles(math.rad(-0), math.rad(90), math.rad(180)),
 }
 
 item.attributes = {
