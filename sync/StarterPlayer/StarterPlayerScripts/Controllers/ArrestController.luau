@@ -140,6 +140,15 @@ function Local.TeardownPrompt(character: Instance)
 	_activePrompts[character :: Model] = nil
 end
 
+function Local.GetDistanceToCharacter(targetCharacter: Model): number?
+	local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local targetHrp = targetCharacter:FindFirstChild("HumanoidRootPart") :: BasePart?
+
+	if not hrp or not targetHrp then return nil end
+
+	return (hrp.Position - targetHrp.Position).Magnitude
+end
+
 function Local.GetArrestTargetFromResult(result: RaycastResult): Model?
 	local ancestor = result.Instance
 
@@ -153,8 +162,12 @@ function Local.GetArrestTargetFromResult(result: RaycastResult): Model?
 	return nil
 end
 
+function Local.IsLocalPlayerTSA(): boolean
+	return player.Team ~= nil and player.Team.Name == "TSA"
+end
+
 function Local.OnRenderStepped()
-	if not RoundController.IsPlaying() or not _hasHandcuffsEquipped then
+	if not RoundController.IsPlaying() or not _hasHandcuffsEquipped or not Local.IsLocalPlayerTSA() then
 		if _currentTargetCharacter then Local.OnTargetExited() end
 		return
 	end
@@ -163,6 +176,16 @@ function Local.OnRenderStepped()
 	-- arrest, only the prompt's own distance check (maxActivationDistance) should be able to cancel it.
 	if _holdingCharacter and _holdingCharacter == _currentTargetCharacter then
 		return
+	end
+
+	-- Once acquired via LoS, a target stays locked on (highlight + prompt enabled) even if the
+	-- crosshair drifts off a moving target — only falling out of range (mirroring the prompt's own
+	-- proximity check) or actively looking at a *different* valid target lets go of it.
+	if _currentTargetCharacter then
+		local distance = Local.GetDistanceToCharacter(_currentTargetCharacter)
+		if not distance or distance > MAX_ARREST_DISTANCE then
+			Local.OnTargetExited()
+		end
 	end
 
 	local CUSTOM_RAYPARAMS = RaycastParams.new()
@@ -176,15 +199,16 @@ function Local.OnRenderStepped()
 		newTarget = Local.GetArrestTargetFromResult(result)
 	end
 
-	if newTarget == _currentTargetCharacter then return end
+	if not newTarget or newTarget == _currentTargetCharacter then return end
+
+	local distance = Local.GetDistanceToCharacter(newTarget)
+	if not distance or distance > MAX_ARREST_DISTANCE then return end
 
 	if _currentTargetCharacter then
 		Local.OnTargetExited()
 	end
 
-	if newTarget then
-		Local.OnTargetEntered(newTarget)
-	end
+	Local.OnTargetEntered(newTarget)
 end
 
 function Local.OnTargetEntered(character: Model)

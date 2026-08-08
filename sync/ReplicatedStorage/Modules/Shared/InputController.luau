@@ -134,4 +134,14 @@ function InputController.IsActionBound(name: string): boolean
 	return _registry[name] ~= nil
 end
 
+-- Invokes a bound action's callback directly, bypassing ContextActionService — lets synthetic
+-- input sources (mobile touch buttons) trigger the exact same code path as their keyboard/gamepad
+-- equivalent. No-ops if the action isn't currently bound (mirrors an unbound key doing nothing).
+function InputController.FireAction(name: string, state: Enum.UserInputState, input: InputObject?)
+	local entry = _registry[name]
+	if not entry or not entry.enabled then return end
+
+	entry.config.callback(name, state, input :: InputObject)
+end
+
 return InputController

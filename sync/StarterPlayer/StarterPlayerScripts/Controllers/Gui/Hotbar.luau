@@ -448,6 +448,10 @@ function Local.ApplySync(payload: SyncPayload)
 end
 
 -- [[ Public Functions ]] --
+function Shared.ToggleSlot()
+	Local.ToggleSlot()
+end
+
 function Shared.Destroy()
 	for _, conn in _networkConnections do
 		conn:Disconnect()

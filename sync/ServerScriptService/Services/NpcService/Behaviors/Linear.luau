@@ -207,27 +207,12 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 				if pickedPool then
 					local realTarget: BasePart?
 					loiterCandidate, realTarget = NodeGraph.FindNearestTransitionNode(ctx.nodesFolder, zone, node, { node, ctx.lastNode }, ignore, pickedPool)
-					if not loiterCandidate then
-						warn(`[Linear][Debug] shop roll picked "{pickedShop}" ({#pickedPool} Transition Node(s) wired to it) but none were reachable from`, node)
-					else
+					if loiterCandidate then
 						-- Bridge hops land on a plain Node, not the Transition itself — remember the real
 						-- target so later Concourse decisions keep chasing it instead of dropping the
 						-- pursuit the moment ConcourseLoiterRolled blocks this roll from firing again.
 						NodeGraph.SetPendingShopTransition(ctx.npc, realTarget)
-
-						if pickedShop ~= "Cafe" then
-							local isDirect = loiterCandidate == realTarget
-							warn(
-								`[Linear][Debug] shop roll picked "{pickedShop}" from`,
-								node,
-								if isDirect then "-> direct LoS to its Transition Node" else "-> no direct LoS, routing via bridge",
-								loiterCandidate
-							)
-							applyShopDebugHighlight(ctx.npc, pickedShop)
-						end
 					end
-				else
-					warn(`[Linear][Debug] shop roll picked "{pickedShop}" but no Concourse Transition Node links there — wired shops:`, shopTransitionsByZone)
 				end
 				wantsWander = not loiterCandidate
 			elseif roll < wanderThreshold then
@@ -280,7 +265,6 @@ function Linear.GetNextTarget(ctx: Context): (BasePart?, string)
 					candidate = nextHop
 				else
 					-- No more progress possible from here — drop the pursuit instead of getting stuck.
-					warn(`[Linear][Debug] shop pursuit toward`, pendingShopTransition, "stalled from", node, "- giving up")
 					NodeGraph.SetPendingShopTransition(ctx.npc, nil)
 				end
 			end

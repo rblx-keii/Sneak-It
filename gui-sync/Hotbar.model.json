@@ -1,5 +1,8 @@
 {
 	"Properties": {
+		"Enabled": false,
+		"ScreenInsets": "DeviceSafeInsets",
+		"ZIndexBehavior": "Sibling",
 		"ResetOnSpawn": false,
 		"Attributes": {
 			"Ignored": {
@@ -8,9 +11,7 @@
 			"Startup": {
 				"Bool": false
 			}
-		},
-		"ScreenInsets": "DeviceSafeInsets",
-		"ZIndexBehavior": "Sibling"
+		}
 	},
 	"Children": [
 		{
@@ -5294,7 +5295,7 @@
 			"Properties": {
 				"AnchorPoint": [
 					0.5,
-					0.9750000238418579
+					0.5
 				],
 				"BackgroundTransparency": 1,
 				"Active": true,
@@ -5306,7 +5307,7 @@
 							0
 						],
 						[
-							0.9449999928474426,
+							0.9100000262260437,
 							0
 						]
 					]
@@ -7935,6 +7936,7 @@
 				],
 				"BackgroundTransparency": 1,
 				"Active": true,
+				"Visible": false,
 				"Position": {
 					"UDim2": [
 						[
@@ -7972,26 +7974,26 @@
 							"Properties": {
 								"TopRightRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"BottomRightRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"TopLeftRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"BottomLeftRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								}
 							},
@@ -8008,7 +8010,7 @@
 											"weight": "ExtraBold"
 										},
 										"Active": true,
-										"Text": "EQIPPED",
+										"Text": "EQUIPPED",
 										"TextWrapped": true,
 										"AnchorPoint": [
 											0.5,
@@ -8070,26 +8072,26 @@
 											"Properties": {
 												"TopRightRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"BottomRightRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"TopLeftRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"BottomLeftRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												}
 											},
@@ -8404,26 +8406,26 @@
 													"Properties": {
 														"TopRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"TopLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														}
 													},
@@ -8707,26 +8709,26 @@
 													"Properties": {
 														"TopRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"TopLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														}
 													},
@@ -9010,26 +9012,26 @@
 													"Properties": {
 														"TopRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"TopLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														}
 													},
@@ -9313,26 +9315,26 @@
 													"Properties": {
 														"TopRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"TopLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														}
 													},
@@ -9616,26 +9618,26 @@
 													"Properties": {
 														"TopRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomRightRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"TopLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														},
 														"BottomLeftRadius": {
 															"UDim": [
-																0,
-																6
+																0.10000000149011612,
+																0
 															]
 														}
 													},
@@ -9974,12 +9976,12 @@
 								"Size": {
 									"UDim2": [
 										[
-											0,
-											449
+											0.7317842841148376,
+											0
 										],
 										[
-											0,
-											108
+											0.8748841285705566,
+											0
 										]
 									]
 								}
@@ -10067,11 +10069,11 @@
 						"Position": {
 							"UDim2": [
 								[
-									0.26596999168395996,
+									0.3843035399913788,
 									0
 								],
 								[
-									0.5,
+									0.8103221654891968,
 									0
 								]
 							]
@@ -10139,26 +10141,26 @@
 							"Properties": {
 								"TopRightRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"BottomRightRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"TopLeftRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								},
 								"BottomLeftRadius": {
 									"UDim": [
-										0,
-										14
+										0.10000000149011612,
+										0
 									]
 								}
 							},
@@ -10224,26 +10226,26 @@
 											"Properties": {
 												"TopRightRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"BottomRightRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"TopLeftRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												},
 												"BottomLeftRadius": {
 													"UDim": [
-														0,
-														6
+														0.10000000149011612,
+														0
 													]
 												}
 											},
@@ -10565,11 +10567,10 @@
 			"Properties": {
 				"AnchorPoint": [
 					0.5,
-					0.9750000238418579
+					0.5
 				],
 				"BackgroundTransparency": 1,
 				"Active": true,
-				"Visible": false,
 				"Position": {
 					"UDim2": [
 						[
@@ -10577,7 +10578,7 @@
 							0
 						],
 						[
-							0.9449999928474426,
+							0.9100000262260437,
 							0
 						]
 					]
@@ -10586,11 +10587,11 @@
 				"Size": {
 					"UDim2": [
 						[
-							0.4809200167655945,
+							0.48100000619888306,
 							0
 						],
 						[
-							0.1144067794084549,
+							0.11400000005960464,
 							0
 						]
 					]
@@ -13199,6 +13200,7 @@
 				],
 				"BackgroundTransparency": 1,
 				"Active": true,
+				"Visible": false,
 				"Position": {
 					"UDim2": [
 						[

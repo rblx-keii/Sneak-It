@@ -48,7 +48,7 @@ local WATCH_TICK_RATE = 0.25
 local ARREST_REWARD = 15 -- Terminal Tokens for a correct arrest, matches Handcuffs' prior arrestReward
 
 -- Flip off once the "can't arrest" investigation is done.
-local DEBUG_ARREST = true
+local DEBUG_ARREST = false
 
 --|| MAIN ||--
 

@@ -3,6 +3,8 @@ export type MobileButtonLayout = {
 	scale: {number}, -- {X, Y}
 	pos: {number}, -- {X, Y}
 	transparency: number,
+	locked: boolean, -- Excluded from position/size editing in the mobile controls editor
+	enabled: boolean, -- Only meaningful for optional controls (e.g. Camera Joystick)
 }
 
 export type PlayerData = {
@@ -28,8 +30,8 @@ export type PlayerData = {
 	},
 
 	settings: {
-		music: boolean,
-		sfx: boolean,
+		music: number,
+		sfx: number,
 	},
 
 	mobileLayout: {
@@ -106,8 +108,8 @@ local PLAYER_DATA_TEMPLATE: PlayerData = {
 	},
 
 	settings = {
-		music = true,
-		sfx = true,
+		music = 50,
+		sfx = 50,
 	},
 
 	mobileLayout = {},

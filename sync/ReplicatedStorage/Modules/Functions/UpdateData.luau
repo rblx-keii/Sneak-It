@@ -93,6 +93,8 @@ return function(playerData: PlayerData, action: UpdateAction)
 			scale = layout.scale,
 			pos = layout.pos,
 			transparency = math.clamp(layout.transparency, 0, 1),
+			locked = layout.locked == true,
+			enabled = layout.enabled ~= false,
 		}
 
 	elseif action.type == "SetLoadout" then

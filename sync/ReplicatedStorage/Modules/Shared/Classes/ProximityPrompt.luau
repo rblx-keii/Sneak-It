@@ -383,6 +383,51 @@ end
 
 -- [[ Public Methods ]] --
 
+-- Routes a single external button (e.g. a mobile "Prompt Helper" button) to whichever prompt
+-- instance is currently visible+enabled, resolved fresh on each press — unlike BindExternalButton,
+-- this isn't tied to one instance since only one prompt is ever meant to be on screen at a time.
+function ProximityPrompt.BindGlobalExternalButton(button: GuiButton): () -> ()
+	local activeInstance: ClassType? = nil
+
+	local function findActiveInstance(): ClassType?
+		for instance in _instances do
+			if instance._isEnabled and instance._isVisible then
+				return instance
+			end
+		end
+		return nil
+	end
+
+	local downConn = button.MouseButton1Down:Connect(function()
+		local instance = findActiveInstance()
+		if not instance then return end
+		activeInstance = instance
+		instance._StartHold(instance)
+	end)
+
+	local upConn = button.MouseButton1Up:Connect(function()
+		if not activeInstance then return end
+		activeInstance._StopHold(activeInstance, false)
+		activeInstance = nil
+	end)
+
+	local leaveConn = button.MouseLeave:Connect(function()
+		if not activeInstance then return end
+		activeInstance._StopHold(activeInstance, false)
+		activeInstance = nil
+	end)
+
+	return function()
+		downConn:Disconnect()
+		upConn:Disconnect()
+		leaveConn:Disconnect()
+		if activeInstance then
+			activeInstance._StopHold(activeInstance, false)
+			activeInstance = nil
+		end
+	end
+end
+
 function ProximityPrompt.BindExternalButton(self: ClassType, button: GuiButton)
 	table.insert(self._externalBtnConns, button.MouseButton1Down:Connect(function()
 		if not self._isEnabled or not self._isVisible then return end

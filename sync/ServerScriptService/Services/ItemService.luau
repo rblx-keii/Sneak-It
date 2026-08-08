@@ -17,6 +17,7 @@ local JailService = require(script.Parent.JailService)
 local RagdollService = require(script.Parent.RagdollService)
 local RoundService = require(script.Parent.RoundService)
 local DataService = require(script.Parent.DataService)
+local TeamService = require(script.Parent.TeamService)
 
 local DebrisFolder = ReplicatedStorage:FindFirstChild("Debris") or ReplicatedStorage
 local _assetsFolder = ReplicatedStorage:FindFirstChild("Assets")
@@ -37,10 +38,14 @@ local _activeThrowListeners: { [Model]: () -> () } = {}
 -- Inventory item (per design), so those players never get an entry here and never see a swap.
 local _loadoutSlots: { [Player]: LoadoutSlots } = {}
 
--- True once a player has legitimately spent their single-use Perk this round (Shared.UseItem ->
--- ConsumeEquipped while it was active) — GrantPerkItem must not refund it, only recover it if it was
--- lost involuntarily (dropped on arrest).
+-- True once a player has spent their single-use Perk this life (Shared.UseItem -> ConsumeEquipped
+-- while it was active). Smugglers get it refunded via GrantPerkItem's own triggers (deposit success,
+-- jail release); TSA has no such cycle, so theirs refunds on a timer instead (_perkCooldownThreads).
 local _perkConsumed: { [Player]: boolean } = {}
+
+-- Pending TSA perk-refund timers, keyed by player — cancelled on a fresh round grant or on leave so a
+-- stale timer can't fire a duplicate grant after the loadout's already been reset.
+local _perkCooldownThreads: { [Player]: thread } = {}
 
 --|| Types
 type ItemSyncData = {
@@ -100,6 +105,13 @@ local RAGDOLL_LISTEN_TIMEOUT = 5
 
 local RAYCAST_PARAMS = RaycastParams.new()
 RAYCAST_PARAMS.FilterType = Enum.RaycastFilterType.Exclude
+
+-- Flip off once the "perk doesn't get granted" investigation is done.
+local DEBUG_LOADOUT = false
+
+-- TSA has no deposit/jail-release cycle to key a Perk refund off of, so a consumed one refills on a
+-- timer instead — overridable per-item via attributes.PerkCooldown (e.g. a stronger tool = longer wait).
+local DEFAULT_PERK_REGRANT_COOLDOWN = 240
 
 local SPAWN_DROP_HEIGHT = 5 -- studs above the target CFrame the surface blockcast starts from
 local SPAWN_MAX_DROP = 50 -- studs the blockcast searches downward before giving up
@@ -161,6 +173,12 @@ function Shared.Init()
 	table.insert(_connections, Players.PlayerRemoving:Connect(function(player: Player)
 		_loadoutSlots[player] = nil
 		_perkConsumed[player] = nil
+
+		local cooldownThread = _perkCooldownThreads[player]
+		if cooldownThread then
+			task.cancel(cooldownThread)
+			_perkCooldownThreads[player] = nil
+		end
 	end))
 
 	JailService.OnJailed:Connect(function(player: Player)
@@ -175,7 +193,9 @@ function Shared.Init()
 	RoundService.OnStateChange:Connect(function(newState: RoundService.RoundState)
 		if newState ~= "InProgress" then return end
 
-		for _, player in RoundService.GetMatchParticipants() do
+		local participants = RoundService.GetMatchParticipants()
+		
+		for _, player in participants do
 			local team = player.Team
 			if team then
 				Shared.GrantLoadout(player, team.Name)
@@ -207,6 +227,12 @@ end
 function Local.GetItemIconId(itemName: string): number?
 	local itemConfig = ItemsConfig.GetItem(itemName)
 	return itemConfig and itemConfig.properties.iconId
+end
+
+function Local.GetPerkCooldown(itemName: string): number
+	local itemConfig = ItemsConfig.GetItem(itemName)
+	local cooldown = itemConfig and itemConfig.attributes and itemConfig.attributes.PerkCooldown
+	return if typeof(cooldown) == "number" then cooldown else DEFAULT_PERK_REGRANT_COOLDOWN
 end
 
 -- Equips `item` as the new HeldItem with no regard for whatever was held before — callers are
@@ -259,13 +285,19 @@ end
 function Local.ActivateSlot(player: Player, character: Model, slot: LoadoutSlot): boolean
 	local slots = _loadoutSlots[player]
 	local data = slots and slots[slot]
-	if not data then return false end
+	if not data then
+		return false
+	end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not hrp then return false end
+	if not hrp then
+		return false
+	end
 
 	local item = Shared.SpawnItem(data.itemName, hrp.CFrame)
-	if not item then return false end
+	if not item then
+		return false
+	end
 
 	item:SetAttribute("UID", data.uid)
 	if item:GetAttribute("IsBag") then
@@ -275,28 +307,42 @@ function Local.ActivateSlot(player: Player, character: Model, slot: LoadoutSlot)
 	-- Set before equipping — EquipItemDirect syncs to the client as its last step.
 	character:SetAttribute("ActiveSlot", slot)
 	Local.EquipItemDirect(player, character, item)
+
 	return true
 end
 
--- Perk-only, no consumable stock touched — used for the round-start grant (via GrantLoadout below)
--- and for perk-loss recovery (successful deposit, jail release), which must not re-roll consumables.
+-- Perk-only, no consumable stock touched — used for the round-start grant (via GrantLoadout below),
+-- perk-loss recovery (dropped on arrest), and the deliberate per-cycle refund on deposit success / jail
+-- release / TSA cooldown (Local.SchedulePerkCooldown) — this call IS the refund, so it must override a
+-- legitimately-spent perk, not just recover one lost involuntarily.
 function Shared.GrantPerkItem(player: Player, teamName: string): Model?
 	local character = player.Character
-	if not character then return nil end
+	if not character then
+		return nil
+	end
 
 	local playerData = DataService.GetData(player)
-	if not playerData then return nil end
+	if not playerData then
+		return nil
+	end
 
 	local perkItemName = playerData.loadout[teamName]
-	if not perkItemName then return nil end
-	if _perkConsumed[player] then return nil end
+	if not perkItemName then
+		return nil
+	end
+
+	_perkConsumed[player] = nil
 
 	if Local.IsBagItem(perkItemName) then
 		local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-		if not hrp then return nil end
+		if not hrp then
+			return nil
+		end
 
 		local item = Shared.SpawnItem(perkItemName, hrp.CFrame)
-		if not item then return nil end
+		if not item then
+			return nil
+		end
 
 		character:SetAttribute("ActiveSlot", "Inventory")
 
@@ -316,6 +362,14 @@ function Shared.GrantPerkItem(player: Player, teamName: string): Model?
 
 	slots.Perk = { itemName = perkItemName, uid = HttpService:GenerateGUID(false) }
 
+	-- Only physically swap it into their hand if nothing else is currently held (e.g. right after a
+	-- fresh spawn) — a mid-life refund (TSA cooldown) must not yank an actively-held Inventory item
+	-- away from the player; it just queues the Perk for their next manual slot swap.
+	local heldItemName = character:GetAttribute("HeldItem")
+	if heldItemName and heldItemName ~= "" then
+		return nil
+	end
+
 	if Local.ActivateSlot(player, character, "Perk") then
 		return character:FindFirstChild(perkItemName) :: Model?
 	end
@@ -327,15 +381,27 @@ end
 -- never on perk-loss recovery, or players would get free reloads on every deposit/jail cycle.
 function Shared.GrantLoadout(player: Player, teamName: string)
 	local character = player.Character
-	if not character then return end
+	if not character then
+		return
+	end
 
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not hrp then return end
+	if not hrp then
+		return
+	end
 
 	local playerData = DataService.GetData(player)
-	if not playerData then return end
+	if not playerData then
+		return
+	end
 
 	_perkConsumed[player] = nil
+
+	local cooldownThread = _perkCooldownThreads[player]
+	if cooldownThread then
+		task.cancel(cooldownThread)
+		_perkCooldownThreads[player] = nil
+	end
 
 	local perkItemName = playerData.loadout[teamName]
 
@@ -376,6 +442,7 @@ function Shared.GrantLoadout(player: Player, teamName: string)
 	_loadoutSlots[player] = slots
 
 	local defaultSlot: LoadoutSlot? = if slots.Perk then "Perk" elseif slots.Inventory then "Inventory" else nil
+
 	if defaultSlot then
 		Local.ActivateSlot(player, character, defaultSlot)
 	end
@@ -1108,6 +1175,29 @@ function Shared.UseItem(player: Player, ...:any)
 	itemModule.Use(player, consume, ...)
 end
 
+-- TSA has no deposit/jail-release cycle to key a refund off of (see GrantPerkItem), so a consumed
+-- Perk refills on a timer instead. Smugglers are excluded — theirs refunds via GrantPerkItem's own
+-- trigger points, and a timer on top would double-grant.
+function Local.SchedulePerkCooldown(player: Player, perkItemName: string)
+	if TeamService.GetTeam(player) ~= "TSA" then return end
+
+	local existing = _perkCooldownThreads[player]
+	if existing then
+		task.cancel(existing)
+	end
+
+	local cooldown = Local.GetPerkCooldown(perkItemName)
+
+	_perkCooldownThreads[player] = task.delay(cooldown, function()
+		_perkCooldownThreads[player] = nil
+
+		if not player.Parent then return end
+		if TeamService.GetTeam(player) ~= "TSA" then return end
+
+		Shared.GrantPerkItem(player, "TSA")
+	end)
+end
+
 function Shared.ConsumeEquipped(player: Player)
 	local character = player.Character
 	if not character then return end
@@ -1117,19 +1207,23 @@ function Shared.ConsumeEquipped(player: Player)
 
 	local item = character:FindFirstChild(heldItemName)
 	if not item or not item:IsA("Model") then return end
-	
+
 	local uid = item:GetAttribute("UID")
 	if uid and _bagContents[uid] then
 		_bagContents[uid] = nil
 	end
 
+	-- Whichever slot was active is now genuinely spent (Perk via Use, or an Inventory consumable via
+	-- Use) — clear its record so a later slot swap can't reconstruct an item that's gone.
 	local activeSlot = character:GetAttribute("ActiveSlot") :: LoadoutSlot?
+	local slots = _loadoutSlots[player]
+	if slots and (activeSlot == "Perk" or activeSlot == "Inventory") then
+		slots[activeSlot] = nil
+	end
+
 	if activeSlot == "Perk" then
 		_perkConsumed[player] = true
-		local slots = _loadoutSlots[player]
-		if slots then
-			slots.Perk = nil
-		end
+		Local.SchedulePerkCooldown(player, heldItemName)
 	end
 
 	character:SetAttribute("HeldItem", "")
@@ -1141,6 +1235,17 @@ function Shared.ConsumeEquipped(player: Player)
 
 	item:Destroy()
 	Local.SyncClient(player, "ItemConsumed")
+end
+
+-- Perks can't be deposited (DepositService blocks holding the Perk slot before reaching a deposit
+-- zone), so a successful deposit only ever needs to purge the Inventory slot record — called from
+-- DepositService's respawn callback as an explicit, order-independent backstop alongside
+-- ConsumeEquipped's own activeSlot-based clearing above.
+function Shared.ConsumeInventory(player: Player)
+	local slots = _loadoutSlots[player]
+	if not slots then return end
+
+	slots.Inventory = nil
 end
 
 function Shared.IsHoldingBag(player: Player): boolean
@@ -1307,6 +1412,11 @@ function Shared.Destroy()
 
 	table.clear(_loadoutSlots)
 	table.clear(_perkConsumed)
+
+	for _, thread in _perkCooldownThreads do
+		task.cancel(thread)
+	end
+	table.clear(_perkCooldownThreads)
 end
 
 return Shared

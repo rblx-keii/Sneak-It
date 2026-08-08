@@ -170,6 +170,7 @@ function Local.ScheduleRespawn(player: Player, character: Model)
 		if record and record.isJailed then return end
 
 		local teamName = player.Team and player.Team.Name or "Smuggler"
+		ItemService.ConsumeInventory(player)
 		SpawnService.SpawnPlayer(player, teamName)
 		ItemService.GrantPerkItem(player, teamName)
 	end)

@@ -41,7 +41,7 @@ local RETRY_COOLDOWN = 5
 local NPC_FOLDER_NAME = "NPCs"
 
 -- Flip off once the "can't steal" investigation is done.
-local DEBUG_STEAL = true
+local DEBUG_STEAL = false
 
 --|| MAIN ||--
 

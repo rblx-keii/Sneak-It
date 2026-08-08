@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 --|| References
 local ModuleUtils = require(ReplicatedStorage.Modules.Utils.ModuleUtils)
@@ -16,11 +17,36 @@ local camera = workspace.CurrentCamera
 local BASE_WIDTH = 1920
 local MIN_RATIO = 0.01
 
+-- TouchEnabled alone would also catch tablets/iPads, which already have plenty of screen space —
+-- the viewport-width floor is what actually limits this to phone-sized touch screens.
+local MOBILE_MIN_VIEWPORT_X = 950
+
+local MOBILE_LAYOUT_OVERRIDES: { {
+	gui: string,
+	element: string,
+	position: UDim2?,
+	size: UDim2?,
+} } = {
+	{ gui = "Hotbar", element = "Frame", position = UDim2.fromScale(0.5, 0.996), size = UDim2.fromScale(0.488, 0.127) },
+	{ gui = "Cursor", element = "Frame", position = UDim2.fromScale(0.5, 0.5), size = UDim2.fromScale(0.009, 0.018) },
+	{ gui = "Hud", element = "Sidebar", position = UDim2.fromScale(0.026, 0.5), size = UDim2.fromScale(0.142, 0.496) },
+	{ gui = "Hud", element = "Status", position = UDim2.fromScale(0.5, 0.166), size = UDim2.fromScale(0.473, 0.064) },
+	{ gui = "Hud", element = "Timer", position = UDim2.fromScale(0.5, 0.026), size = UDim2.fromScale(0.262, 0.115) },
+	{ gui = "Inventory", element = "Frame", size = UDim2.new(0.676, 0, 0.559, 25) },
+	{ gui = "Items", element = "Frame", size = UDim2.new(0.676, 0, 0.559, 25) },
+	{ gui = "Perks", element = "Frame", size = UDim2.new(0.676, 0, 0.559, 25) },
+	{ gui = "Quest", element = "Frame", size = UDim2.new(0.676, 0, 0.559, 25) },
+	{ gui = "Shop", element = "Frame", size = UDim2.new(0.676, 0, 0.559, 25) },
+	{ gui = "Alarm", element = "List", position = UDim2.fromScale(0.5, 0.527), size = UDim2.fromScale(0.505, 0.561) },
+}
+
 --|| Variables
 local activeGuiName = nil
 local frameConns = {}
 local ignored = {}
 local scrollbarRatios = {}
+local originalLayout: { [GuiObject]: { position: UDim2, size: UDim2 } } = {}
+local isMobileLayout = false
 
 --|| MAIN ||--
 local Local = {}
@@ -30,6 +56,16 @@ Shared.Priority = -1
 
 --[[ Signals ]]--
 Shared.onActiveGuiChanged = ModuleUtils.signal.new()
+Shared.OnMobileLayoutChanged = ModuleUtils.signal.new()
+Shared.OnTouchDeviceChanged = ModuleUtils.signal.new()
+
+Shared.IsMobileLayout = false
+
+-- Not viewport-gated like IsMobileLayout (which also excludes tablets by screen width) — this is
+-- what decides whether we take over from Roblox's default TouchGui at all. PreferredInput is
+-- Roblox's own live source of truth for this (ControlModule uses the same property to pick a
+-- controller), so it reacts correctly when e.g. a tablet's keyboard/mouse disconnects mid-session.
+Shared.IsTouchDevice = false
 
 --[[ GUIS ]]--
 
@@ -41,8 +77,10 @@ Shared.Guis = {
 	Interact = playerGui:WaitForChild("Interact") :: typeof(StarterGui.Interact),
 	Inventory = playerGui:WaitForChild("Inventory") :: typeof(StarterGui.Inventory),
 	Items = playerGui:WaitForChild("Items") :: typeof(StarterGui.Items),
+	MobileControls = playerGui:WaitForChild("MobileControls") :: typeof(StarterGui.MobileControls),
 	Perks = playerGui:WaitForChild("Perks") :: typeof(StarterGui.Perks),
 	Quest = playerGui:WaitForChild("Quests") :: typeof(StarterGui.Quests),
+	Settings = playerGui:WaitForChild("Settings") :: typeof(StarterGui.Settings),
 	Shop = playerGui:WaitForChild("Shop") :: typeof(StarterGui.Shop)
 }
 
@@ -66,6 +104,20 @@ function Shared.Init()
 
 	camera:GetPropertyChangedSignal("ViewportSize"):Connect(Local.updateAllScrollbars)
 	Local.updateAllScrollbars()
+
+	for _, entry in MOBILE_LAYOUT_OVERRIDES do
+		local gui = Shared.Guis[entry.gui]
+		local element = gui and gui:FindFirstChild(entry.element)
+		if element then
+			originalLayout[element] = { position = element.Position, size = element.Size }
+		end
+	end
+
+	camera:GetPropertyChangedSignal("ViewportSize"):Connect(Local.updateMobileLayout)
+	Local.updateMobileLayout()
+
+	UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(Local.updateTouchDevice)
+	Local.updateTouchDevice()
 
 	for _, frame in CollectionService:GetTagged("FrameButton") do
 		Local.addFrameButton(frame)
@@ -109,6 +161,41 @@ function Local.updateAllScrollbars()
 			scrollbarRatios[frame] = nil
 		end
 	end
+end
+
+function Local.isMobileLayoutActive(): boolean
+	return UserInputService.TouchEnabled and camera.ViewportSize.X >= MOBILE_MIN_VIEWPORT_X
+end
+
+function Local.updateMobileLayout()
+	local shouldBeMobile = Local.isMobileLayoutActive()
+	if shouldBeMobile == isMobileLayout then return end
+	isMobileLayout = shouldBeMobile
+	Shared.IsMobileLayout = shouldBeMobile
+
+	for _, entry in MOBILE_LAYOUT_OVERRIDES do
+		local gui = Shared.Guis[entry.gui]
+		local element = gui and gui:FindFirstChild(entry.element)
+		local original = element and originalLayout[element]
+		if not element or not original then continue end
+
+		if shouldBeMobile then
+			if entry.position then element.Position = entry.position end
+			if entry.size then element.Size = entry.size end
+		else
+			element.Position = original.position
+			element.Size = original.size
+		end
+	end
+
+	Shared.OnMobileLayoutChanged:Fire(shouldBeMobile)
+end
+
+function Local.updateTouchDevice()
+	local isTouch = UserInputService.PreferredInput == Enum.PreferredInput.Touch
+	if isTouch == Shared.IsTouchDevice then return end
+	Shared.IsTouchDevice = isTouch
+	Shared.OnTouchDeviceChanged:Fire(isTouch)
 end
 
 function Local.hideAllGuis(includeIgnore: boolean?)

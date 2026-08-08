@@ -101,13 +101,11 @@ function Local.OnPlayerAdded(player: Player)
 		profile:EndSession()
 		return
 	end
-
+	
 	if IS_STUDIO then
 		profile.Data = UtilsLibrary.tableUtils.DeepCopy(
 			PlayerDataTemplate.PLAYER_DATA_TEMPLATE
 		)
-		profile.Data.settings.music = false
-		profile.Data.settings.sfx = false
 		profile.Data.stats.coins = 1_000_000_000
 		profile.Data.profile.smugglerWins = 100
 		profile.Data.profile.tsaWins = 100

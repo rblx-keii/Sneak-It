@@ -1,6 +1,5 @@
 local actor = script:GetActor()
 if not actor then
-	warn("[NpcService ActorScript] Not parented under an Actor — decisions will never run")
 	return
 end
 

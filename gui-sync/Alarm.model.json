@@ -1,5 +1,6 @@
 {
 	"Properties": {
+		"Enabled": false,
 		"ScreenInsets": "DeviceSafeInsets",
 		"DisplayOrder": 1000000000,
 		"ResetOnSpawn": false,

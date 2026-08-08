@@ -32,6 +32,7 @@ local _snapTargetYaw: number = 0
 
 local _lastInputWasGamepad: boolean = false
 local _suppressed: boolean = false
+local _touchLookDelta: Vector2 = Vector2.zero
 
 --|| Constants
 local FREE_LOOK_ACTION = "Camera_FreeLook"
@@ -41,6 +42,7 @@ local ROUND_STATE_ATTR = "RoundState"
 local CAMERA_OFFSET = Vector3.new(2.5, 1.5, 7.5)
 local SENSITIVITY = 0.15
 local GAMEPAD_SENSITIVITY = 3.5
+local TOUCH_SENSITIVITY = 3.5
 local PITCH_LIMIT = 75
 local GAMEPAD_DEADZONE = 0.15
 
@@ -171,6 +173,10 @@ function Local.GetInputDelta(dt: number): Vector2
 	if thumbstick.Magnitude > 0 then
 		_lastInputWasGamepad = true
 		return thumbstick * GAMEPAD_SENSITIVITY * dt * 60
+	end
+
+	if _touchLookDelta.Magnitude > 0 then
+		return _touchLookDelta * TOUCH_SENSITIVITY * dt * 60
 	end
 
 	if mouseDelta.Magnitude > 0 then
@@ -392,6 +398,12 @@ end
 
 function Shared.IsFreeLook(): boolean
 	return _isFreeLook
+end
+
+-- Fed a persistent held-stick vector (not a one-shot delta) by the mobile Camera Joystick, since
+-- unlike mouse movement, a held touch stick keeps applying look input every frame until released.
+function Shared.SetTouchLookDelta(delta: Vector2)
+	_touchLookDelta = delta
 end
 
 -- Lets other controllers hold free-look/mouse-lock off during a forced UI window without racing the

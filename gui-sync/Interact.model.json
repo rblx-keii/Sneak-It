@@ -9,7 +9,7 @@
 				"Bool": true
 			},
 			"Startup": {
-				"Bool": true
+				"Bool": false
 			}
 		}
 	},

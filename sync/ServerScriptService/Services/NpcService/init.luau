@@ -106,6 +106,7 @@ Local.decisionReportEvent = Instance.new("BindableEvent")
 local NPC_FOLDER_NAME = "NPCs"
 local DEBUG_MARKERS_FOLDER_NAME = "NPCDebugMarkers"
 local STEALABLE_NPC_TAG = "StealableNPC"
+local PLAYER_SEAT_TAG = "PlayerSeat"
 
 -- Matches ScannerWand's green/red scan-result colors, so every TSA scan surface reads consistently.
 local INDICATOR_CLEAN_COLOR = Color3.fromRGB(60, 220, 90)
@@ -423,6 +424,10 @@ function Local.WatchSeats(nodesFolder: Instance)
 		if not seat then
 			continue
 		end
+
+		-- Tagged so players can sit in the same seats NPCs use (SeatController) — blending a Smuggler
+		-- in among seated passengers is the point, so this is deliberately not restricted by team.
+		CollectionService:AddTag(seat, PLAYER_SEAT_TAG)
 
 		table.insert(
 			_seatWatchConnections,
@@ -829,6 +834,7 @@ end
 
 function Local.VisualizeWaypoints(record: NPCRecord, waypoints: { PathWaypoint })
 	Local.ClearWaypointMarkers(record)
+	if not Local.IsDebugEnabled() then return end
 
 	local markers: { BasePart } = {}
 	local folder = Local.GetDebugMarkersFolder()

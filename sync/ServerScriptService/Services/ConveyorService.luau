@@ -50,7 +50,7 @@ local CONTRABAND_FLAG_ATTR = "ContrabandFlagged"
 local PICKUP_HIGHLIGHT_DURATION = 4 -- seconds the carrying player stays highlighted on TSA clients after pickup (see HighlightController)
 
 -- Flip off once the "Indicator doesn't flash" investigation is done.
-local DEBUG_INDICATOR = true
+local DEBUG_INDICATOR = false
 
 --|| MAIN ||--
 

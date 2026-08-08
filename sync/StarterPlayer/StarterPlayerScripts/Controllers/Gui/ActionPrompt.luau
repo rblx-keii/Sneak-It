@@ -15,6 +15,7 @@ Template.Visible = false
 local _activePrompts: {[string]: Frame} = {}
 local _activeConnections: {[Frame]: RBXScriptConnection} = {}
 local _networkConnections: {Network.Cleanup} = {}
+local _mobileLayoutConn: any = nil
 
 --|| Constants
 local ANIM_DURATION = 0.35
@@ -38,6 +39,13 @@ local Shared = {}
 -- [[ Startup ]] --
 function Shared.Init()
 	table.insert(_networkConnections, RoundController.OnPlayingChanged:Connect(Local.SetInteractEnabled))
+
+	-- Keyboard/mouse "press E"-style prompts don't mean anything on a touch device — re-evaluate
+	-- whenever GuiController's mobile layout flips instead of only on round-state changes.
+	_mobileLayoutConn = GuiController.OnMobileLayoutChanged:Connect(function()
+		Local.SetInteractEnabled(RoundController.IsPlaying())
+	end)
+
 	Local.SetInteractEnabled(RoundController.IsPlaying())
 end
 
@@ -47,9 +55,10 @@ end
 
 -- [[ Private Functions ]] --
 function Local.SetInteractEnabled(enabled: boolean)
-	Gui.Enabled = enabled
+	local shouldShow = enabled and not GuiController.IsMobileLayout
+	Gui.Enabled = shouldShow
 
-	if not enabled then
+	if not shouldShow then
 		Shared.HideAllPrompts()
 	end
 end
@@ -212,6 +221,11 @@ function Shared.Destroy()
 		conn:Disconnect()
 	end
 	table.clear(_networkConnections)
+
+	if _mobileLayoutConn then
+		_mobileLayoutConn:Disconnect()
+		_mobileLayoutConn = nil
+	end
 
 	for _, conn in _activeConnections do
 		conn:Disconnect()
